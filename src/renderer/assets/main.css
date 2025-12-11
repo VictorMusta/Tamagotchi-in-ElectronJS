@@ -5,7 +5,6 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-image: url('./wavy-lines.svg');
   background-size: cover;
   background-color: transparent;
   user-select: none;
@@ -45,16 +44,9 @@ code {
 }
 
 .logo:hover {
-  filter: drop-shadow(0 0 1.2em #6988e6aa);
+  filter: drop-shadow(0 0 1.2em black);
 }
 
-.creator {
-  font-size: 14px;
-  line-height: 16px;
-  color: var(--ev-c-text-2);
-  font-weight: 600;
-  margin-bottom: 10px;
-}
 
 .text {
   font-size: 28px;
@@ -162,3 +154,246 @@ code {
     display: none;
   }
 }
+
+/* Mob Styles */
+#mob-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.mob:hover {
+  transform: scale(1.05);
+}
+
+.mob.selected {
+  outline: 3px solid #4fc3f7;
+  outline-offset: 4px;
+  box-shadow: 0 0 20px rgba(79, 195, 247, 0.5);
+}
+
+.mob-image {
+  width: 128px;
+  height: 128px;
+  object-fit: contain;
+  -webkit-user-drag: none;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.mob-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 12px;
+  gap: 4px;
+}
+
+.mob-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ev-c-text-1);
+}
+
+.mob-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+
+.mob-status.vivant {
+  background-color: #4caf50;
+  color: white;
+}
+
+.mob-status.mort {
+  background-color: #f44336;
+  color: white;
+}
+
+.mob-stats {
+  width: 100%;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mob-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mob-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ev-c-text-2);
+  text-transform: uppercase;
+}
+
+.mob-stat-bar {
+  width: 100%;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mob-stat-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.mob-stat-vie .mob-stat-fill {
+  background: linear-gradient(90deg, #e53935, #4caf50);
+}
+
+.mob-stat-energie .mob-stat-fill {
+  background: linear-gradient(90deg, #ff9800, #ffeb3b);
+}
+
+.mob-stat-faim .mob-stat-fill {
+  background: linear-gradient(90deg, #8bc34a, #ff5722);
+}
+
+/* Action Panel Styles */
+#action-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.action-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.action-btn svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* Bouton Attaquer - Rouge */
+#btn-damage {
+  background: linear-gradient(135deg, #e53935, #b71c1c);
+  color: white;
+}
+
+#btn-damage:hover {
+  background: linear-gradient(135deg, #ef5350, #c62828);
+}
+
+/* Bouton Soigner - Rose/Rouge */
+#btn-heal {
+  background: linear-gradient(135deg, #ec407a, #c2185b);
+  color: white;
+}
+
+#btn-heal:hover {
+  background: linear-gradient(135deg, #f06292, #d81b60);
+}
+
+/* Bouton Nourrir - Orange */
+#btn-feed {
+  background: linear-gradient(135deg, #ff9800, #e65100);
+  color: white;
+}
+
+#btn-feed:hover {
+  background: linear-gradient(135deg, #ffa726, #f57c00);
+}
+
+/* Bouton Réanimer - Bleu/Blanc */
+#btn-revive {
+  background: linear-gradient(135deg, #64b5f6, #1976d2);
+  color: white;
+}
+
+#btn-revive:hover {
+  background: linear-gradient(135deg, #90caf9, #2196f3);
+}
+
+/* Séparateur d'actions */
+.action-separator {
+  width: 40px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  margin: 5px auto;
+  border-radius: 1px;
+}
+
+/* Bouton Sauvegarder - Vert */
+#btn-save {
+  background: linear-gradient(135deg, #66bb6a, #2e7d32);
+  color: white;
+}
+
+#btn-save:hover {
+  background: linear-gradient(135deg, #81c784, #388e3c);
+}
+
+/* Bouton Charger - Violet */
+#btn-load {
+  background: linear-gradient(135deg, #ab47bc, #7b1fa2);
+  color: white;
+}
+
+#btn-load:hover {
+  background: linear-gradient(135deg, #ba68c8, #8e24aa);
+}
+
+/* Animation pour les notifications */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
