@@ -1,3 +1,5 @@
+import { playSound } from './SoundManager'
+
 export type MobStatus = 'vivant' | 'mort'
 
 // Interface pour la sérialisation des mobs
@@ -108,9 +110,18 @@ export class Mob {
    * Inflige des dégâts au mob
    */
   takeDamage(amount: number): void {
+    const wasAlive = this.status === 'vivant'
     this.vie = Math.max(0, this.vie - amount)
     this.updateStatus()
     this.updateDisplay()
+
+    // Jouer le son de punch
+    playSound('punch')
+
+    // Si le mob vient de mourir, jouer le son de mort
+    if (wasAlive && this.status === 'mort') {
+      setTimeout(() => playSound('death'), 200)
+    }
   }
 
   /**
@@ -121,6 +132,9 @@ export class Mob {
     this.vie = Math.min(100, this.vie + amount)
     this.updateStatus()
     this.updateDisplay()
+
+    // Jouer le son de soin
+    playSound('heal')
   }
 
   /**
@@ -130,6 +144,9 @@ export class Mob {
     if (this.status === 'mort') return
     this.faim = Math.max(0, this.faim - amount)
     this.updateDisplay()
+
+    // Jouer le son de nourriture
+    playSound('feed')
   }
 
   /**
@@ -144,6 +161,9 @@ export class Mob {
     this.updateDisplay()
     // Redémarrer le comportement autonome
     this.startBehavior()
+
+    // Jouer le son de réanimation
+    playSound('revive')
   }
 
   /**
