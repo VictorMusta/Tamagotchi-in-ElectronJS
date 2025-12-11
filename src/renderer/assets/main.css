@@ -157,61 +157,105 @@ code {
 
 /* Mob Styles */
 #mob-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-  padding: 20px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  pointer-events: none;
 }
 
 .mob {
+  position: absolute;
+  bottom: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s ease;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: none;
 }
 
-.mob:hover {
-  transform: scale(1.05);
+.mob:hover .mob-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mob.selected .mob-tooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .mob.selected {
-  outline: 3px solid #4fc3f7;
-  outline-offset: 4px;
-  box-shadow: 0 0 20px rgba(79, 195, 247, 0.5);
+  filter: drop-shadow(0 0 10px rgba(79, 195, 247, 0.8));
+}
+
+.mob.selected .mob-image {
+  filter: drop-shadow(0 0 5px #4fc3f7);
 }
 
 .mob-image {
-  width: 128px;
-  height: 128px;
+  width: 120px;
+  height: 120px;
   object-fit: contain;
   -webkit-user-drag: none;
   transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.mob.jumping .mob-image {
+  animation: none;
+}
+
+.mob.facing-left .mob-image {
+  transform: scaleX(-1);
+}
+
+/* Tooltip avec infos du mob */
+.mob-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 120px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  margin-bottom: 10px;
+}
+
+.mob-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.85);
 }
 
 .mob-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 12px;
   gap: 4px;
 }
 
 .mob-name {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 700;
-  color: var(--ev-c-text-1);
+  color: white;
+  white-space: nowrap;
 }
 
 .mob-status {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
   text-transform: uppercase;
 }
 
@@ -227,10 +271,10 @@ code {
 
 .mob-stats {
   width: 100%;
-  margin-top: 12px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .mob-stat {
@@ -240,23 +284,23 @@ code {
 }
 
 .mob-stat-label {
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 600;
-  color: var(--ev-c-text-2);
+  color: rgba(255, 255, 255, 0.7);
   text-transform: uppercase;
 }
 
 .mob-stat-bar {
   width: 100%;
-  height: 8px;
+  height: 6px;
   background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border-radius: 3px;
   overflow: hidden;
 }
 
 .mob-stat-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: width 0.3s ease;
 }
 
@@ -270,6 +314,35 @@ code {
 
 .mob-stat-faim .mob-stat-fill {
   background: linear-gradient(90deg, #8bc34a, #ff5722);
+}
+
+/* Animation de saut - hauteur variable via CSS custom property */
+@keyframes jump {
+  0% {
+    transform: translateY(0) scaleY(1) scaleX(1);
+  }
+  15% {
+    transform: translateY(0) scaleY(0.85) scaleX(1.1);
+  }
+  30% {
+    transform: translateY(calc(var(--jump-height, -40px))) scaleY(1.1) scaleX(0.95);
+  }
+  50% {
+    transform: translateY(calc(var(--jump-height, -40px) * 1.1)) scaleY(1.05) scaleX(0.98);
+  }
+  70% {
+    transform: translateY(calc(var(--jump-height, -40px) * 0.5)) scaleY(1) scaleX(1);
+  }
+  85% {
+    transform: translateY(-5px) scaleY(0.95) scaleX(1.02);
+  }
+  100% {
+    transform: translateY(0) scaleY(1) scaleX(1);
+  }
+}
+
+.mob.jumping {
+  animation: jump var(--jump-duration, 0.5s) cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* Action Panel Styles */
@@ -395,5 +468,71 @@ code {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* Bouton Ajouter Mob - Cyan */
+#btn-add-mob {
+  background: linear-gradient(135deg, #26c6da, #00838f);
+  color: white;
+}
+
+#btn-add-mob:hover {
+  background: linear-gradient(135deg, #4dd0e1, #00acc1);
+}
+
+/* Bouton Supprimer Mob - Gris (Rouge au hover) */
+#btn-delete-mob {
+  background: linear-gradient(135deg, #78909c, #455a64);
+  color: white;
+}
+
+#btn-delete-mob:hover {
+  background: linear-gradient(135deg, #e57373, #c62828);
+}
+
+/* Styles pour les boutons d'action actifs */
+.action-btn.active {
+  transform: scale(1.15);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  outline: 3px solid white;
+  outline-offset: 2px;
+}
+
+/* Curseurs personnalisés pour les modes d'action */
+.action-mode-damage,
+.action-mode-damage .mob {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23e53935'%3E%3Cpath d='M18.984 12.984h-6v6h-1.969v-6h-6v-1.969h6v-6h1.969v6h6v1.969z' transform='rotate(45 12 12)'/%3E%3C/svg%3E"), crosshair;
+}
+
+.action-mode-heal,
+.action-mode-heal .mob {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23ec407a'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E"), pointer;
+}
+
+.action-mode-feed,
+.action-mode-feed .mob {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23ff9800'%3E%3Cpath d='M2 16h20v2c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2v-2zm0-2c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2H2zm2.5-5C4.5 6 7 3 12 3s7.5 3 7.5 6H4.5zm3 1h9c.28 0 .5-.22.5-.5s-.22-.5-.5-.5h-9c-.28 0-.5.22-.5.5s.22.5.5.5z'/%3E%3C/svg%3E"), pointer;
+}
+
+.action-mode-revive,
+.action-mode-revive .mob {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%2364b5f6'%3E%3Cpath d='M12 2L6.5 11H9v6h6v-6h2.5L12 2zm0 2.84L15.26 9H14v6h-4V9H8.74L12 4.84zM5 19h14v2H5v-2z'/%3E%3C/svg%3E"), pointer;
+}
+
+/* Effet visuel sur les mobs quand un mode est actif */
+.action-mode-damage .mob:hover .mob-image {
+  filter: drop-shadow(0 0 10px #e53935) !important;
+}
+
+.action-mode-heal .mob:hover .mob-image {
+  filter: drop-shadow(0 0 10px #ec407a) !important;
+}
+
+.action-mode-feed .mob:hover .mob-image {
+  filter: drop-shadow(0 0 10px #ff9800) !important;
+}
+
+.action-mode-revive .mob:hover .mob-image {
+  filter: drop-shadow(0 0 10px #64b5f6) !important;
 }
 

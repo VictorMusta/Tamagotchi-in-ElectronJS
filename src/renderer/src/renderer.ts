@@ -1,16 +1,111 @@
-import { Mob, MobData, getSelectedMob, setSelectedMob } from './Mob'
+import { Mob, MobData, getSelectedMob, setSelectedMob, setOnRenameCallback, setOnMobClick, setIsActionModeActive } from './Mob'
 import potatoImage from '../assets/Potato still.png'
 
 // Liste de tous les mobs
 let mobs: Mob[] = []
 
+// Mode d'action actuel
+type ActionMode = 'none' | 'damage' | 'heal' | 'feed' | 'revive'
+let currentActionMode: ActionMode = 'none'
+
+/**
+ * Vérifie si un mode d'action est actif
+ */
+function isActionModeActive(): boolean {
+  return currentActionMode !== 'none'
+}
+
+/**
+ * Génère un nom unique en ajoutant un numéro incrémental si nécessaire
+ */
+function getUniqueName(baseName: string, excludeMob?: Mob): string {
+  let name = baseName
+  let counter = 2
+
+  while (mobs.some((m) => m !== excludeMob && m.nom === name)) {
+    name = `${baseName} ${counter}`
+    counter++
+  }
+
+  return name
+}
+
+/**
+ * Définit le mode d'action actuel
+ */
+function setActionMode(mode: ActionMode): void {
+  currentActionMode = mode
+  const mobContainer = document.getElementById('mob-container')
+  const body = document.body
+
+  // Retirer toutes les classes de mode précédentes
+  body.classList.remove('action-mode-damage', 'action-mode-heal', 'action-mode-feed', 'action-mode-revive')
+  mobContainer?.classList.remove('action-mode-damage', 'action-mode-heal', 'action-mode-feed', 'action-mode-revive')
+
+  // Retirer la classe active de tous les boutons
+  document.querySelectorAll('.action-btn').forEach((btn) => btn.classList.remove('active'))
+
+  if (mode !== 'none') {
+    body.classList.add(`action-mode-${mode}`)
+    mobContainer?.classList.add(`action-mode-${mode}`)
+
+    // Ajouter la classe active au bouton correspondant
+    const activeBtn = document.getElementById(`btn-${mode}`)
+    activeBtn?.classList.add('active')
+  }
+}
+
+/**
+ * Applique l'action actuelle sur un mob
+ */
+function applyActionToMob(mob: Mob): void {
+  switch (currentActionMode) {
+    case 'damage':
+      mob.takeDamage(20)
+      break
+    case 'heal':
+      mob.heal(20)
+      break
+    case 'feed':
+      mob.feed(20)
+      break
+    case 'revive':
+      mob.revive()
+      break
+    default:
+      // Pas de mode actif, juste sélectionner le mob
+      setSelectedMob(mob)
+  }
+}
+
 function init(): void {
   window.addEventListener('DOMContentLoaded', async () => {
     doAThing()
+    setupRenameCallback()
     await initMobs()
     setupClickThrough()
     setupActionButtons()
     setupSaveLoadButtons()
+    setupMobManagementButtons()
+  })
+}
+
+/**
+ * Configure le callback pour la validation des noms uniques lors du renommage
+ */
+function setupRenameCallback(): void {
+  setOnRenameCallback((mob, newName) => {
+    return getUniqueName(newName, mob)
+  })
+
+  // Configurer le callback pour les clics sur les mobs
+  setOnMobClick((mob) => {
+    applyActionToMob(mob)
+  })
+
+  // Configurer le callback pour vérifier si une action est active
+  setIsActionModeActive(() => {
+    return isActionModeActive()
   })
 }
 
@@ -170,6 +265,74 @@ function setupSaveLoadButtons(): void {
   })
 }
 
+/**
+ * Ajoute un nouveau mob avec un nom unique
+ */
+function addNewMob(): void {
+  const mobContainer = document.getElementById('mob-container')
+  if (!mobContainer) return
+
+  const uniqueName = getUniqueName('Nouveau Mob')
+  const newMob = new Mob(uniqueName, potatoImage, 100, 100, 0)
+  newMob.render(mobContainer)
+  mobs.push(newMob)
+
+  // Sélectionner le nouveau mob
+  setSelectedMob(newMob)
+
+  showNotification(`${uniqueName} créé !`, 'success')
+}
+
+/**
+ * Supprime le mob sélectionné (seulement s'il est mort)
+ */
+function deleteSelectedMob(): void {
+  const mob = getSelectedMob()
+  if (!mob) {
+    showNotification('Aucun mob sélectionné', 'error')
+    return
+  }
+
+  if (mob.status !== 'mort') {
+    showNotification('Le mob doit être mort pour être supprimé', 'error')
+    return
+  }
+
+  // Retirer le mob de la liste
+  const index = mobs.indexOf(mob)
+  if (index > -1) {
+    mobs.splice(index, 1)
+  }
+
+  // Supprimer du DOM
+  mob.destroy()
+
+  // Sélectionner un autre mob si disponible
+  if (mobs.length > 0) {
+    setSelectedMob(mobs[0])
+  } else {
+    setSelectedMob(null)
+  }
+
+  showNotification('Mob supprimé', 'success')
+}
+
+/**
+ * Configure les boutons d'ajout et de suppression de mobs
+ */
+function setupMobManagementButtons(): void {
+  const btnAddMob = document.getElementById('btn-add-mob')
+  const btnDeleteMob = document.getElementById('btn-delete-mob')
+
+  btnAddMob?.addEventListener('click', () => {
+    addNewMob()
+  })
+
+  btnDeleteMob?.addEventListener('click', () => {
+    deleteSelectedMob()
+  })
+}
+
 function setupClickThrough(): void {
   const mobContainer = document.getElementById('mob-container')
   const actionPanel = document.getElementById('action-panel')
@@ -197,35 +360,39 @@ function setupActionButtons(): void {
   const btnFeed = document.getElementById('btn-feed')
   const btnRevive = document.getElementById('btn-revive')
 
-  // Bouton Attaquer - inflige 20 dégâts
+  // Fonction pour toggle un mode d'action
+  const toggleActionMode = (mode: ActionMode): void => {
+    if (currentActionMode === mode) {
+      setActionMode('none')
+    } else {
+      setActionMode(mode)
+    }
+  }
+
+  // Bouton Attaquer
   btnDamage?.addEventListener('click', () => {
-    const mob = getSelectedMob()
-    if (mob) {
-      mob.takeDamage(20)
-    }
+    toggleActionMode('damage')
   })
 
-  // Bouton Soigner - soigne 20 PV
+  // Bouton Soigner
   btnHeal?.addEventListener('click', () => {
-    const mob = getSelectedMob()
-    if (mob) {
-      mob.heal(20)
-    }
+    toggleActionMode('heal')
   })
 
-  // Bouton Nourrir - diminue la faim de 20
+  // Bouton Nourrir
   btnFeed?.addEventListener('click', () => {
-    const mob = getSelectedMob()
-    if (mob) {
-      mob.feed(20)
-    }
+    toggleActionMode('feed')
   })
 
-  // Bouton Réanimer - ressuscite le mob
+  // Bouton Réanimer
   btnRevive?.addEventListener('click', () => {
-    const mob = getSelectedMob()
-    if (mob) {
-      mob.revive()
+    toggleActionMode('revive')
+  })
+
+  // Désactiver le mode avec Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      setActionMode('none')
     }
   })
 }
