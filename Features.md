@@ -10,8 +10,9 @@ Ce document liste toutes les fonctionnalités du jeu, les interactions possibles
 2. [Actions sur les Mobs](#actions-sur-les-mobs)
 3. [Système de Mode d'Action](#système-de-mode-daction)
 4. [Mouvement et Animation](#mouvement-et-animation)
-5. [Sauvegarde et Chargement](#sauvegarde-et-chargement)
-6. [Interface Utilisateur](#interface-utilisateur)
+5. [Système de Sons](#système-de-sons)
+6. [Sauvegarde et Chargement](#sauvegarde-et-chargement)
+7. [Interface Utilisateur](#interface-utilisateur)
 
 ---
 
@@ -155,6 +156,34 @@ Ce document liste toutes les fonctionnalités du jeu, les interactions possibles
 
 ---
 
+## 🔊 Système de Sons
+
+### Sons disponibles
+| Action | Fichier | Déclencheur |
+|--------|---------|-------------|
+| Punch | `placeholder_punch.mp3` | Quand on inflige des dégâts à un mob |
+| Heal | `placeholder_heal.mp3` | Quand on soigne un mob |
+| Feed | `placeholder_feed.mp3` | Quand on nourrit un mob |
+| Death | `placeholder_death.mp3` | Quand un mob meurt (après le son de punch) |
+| Revive | `placeholder_revive.mp3` | Quand on réanime un mob |
+
+### Emplacement des fichiers
+| Chemin | Description |
+|--------|-------------|
+| `src/renderer/assets/sounds/` | Dossier contenant tous les fichiers audio |
+
+### Personnalisation
+Pour personnaliser les sons, remplacez les fichiers `placeholder_*.mp3` par vos propres fichiers audio en gardant les mêmes noms.
+
+### Paramètres audio
+| Paramètre | Valeur |
+|-----------|--------|
+| Volume par défaut | 50% |
+| Format supporté | MP3, WAV, OGG |
+| Préchargement | Au démarrage de l'application |
+
+---
+
 ## 💾 Sauvegarde et Chargement
 
 ### Sauvegarder
@@ -257,6 +286,7 @@ interface MobData {
 |---------|------|
 | `Mob.ts` | Classe Mob et gestion des comportements |
 | `renderer.ts` | Logique principale, gestion des modes d'action |
+| `SoundManager.ts` | Gestionnaire de sons (lecture, préchargement, volume) |
 | `main.css` | Styles, animations, curseurs personnalisés |
 | `index.html` | Structure HTML et boutons d'action |
 | `index.ts` (main) | Process principal Electron, sauvegarde/chargement fichiers |

@@ -1,4 +1,5 @@
 import { Mob, MobData, getSelectedMob, setSelectedMob, setOnRenameCallback, setOnMobClick, setIsActionModeActive } from './Mob'
+import { preloadSounds } from './SoundManager'
 import potatoImage from '../assets/Potato still.png'
 
 // Liste de tous les mobs
@@ -81,6 +82,7 @@ function applyActionToMob(mob: Mob): void {
 function init(): void {
   window.addEventListener('DOMContentLoaded', async () => {
     doAThing()
+    preloadSounds()
     setupRenameCallback()
     await initMobs()
     setupClickThrough()
