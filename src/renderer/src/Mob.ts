@@ -2,8 +2,9 @@ import { playSound } from './SoundManager'
 
 export type MobStatus = 'vivant' | 'mort'
 
-// Interface pour la sérialisation des mobs
+// Interface pour les données des mobs (provenant du backend)
 export interface MobData {
+  id: string
   nom: string
   imageUrl: string
   vie: number
@@ -13,45 +14,47 @@ export interface MobData {
 }
 
 // Gestionnaire global pour le mob sélectionné
-let selectedMob: Mob | null = null
+let selectedMobRenderer: MobRenderer | null = null
 
-// Callback pour valider/modifier le nom lors du renommage
-let onRenameCallback: ((mob: Mob, newName: string) => string) | null = null
+// Callback pour le renommage via IPC
+let onRenameCallback: ((mobRenderer: MobRenderer, newName: string) => Promise<string>) | null = null
 
 // Callback pour les clics sur les mobs
-let onMobClickCallback: ((mob: Mob) => void) | null = null
+let onMobClickCallback: ((mobRenderer: MobRenderer) => void) | null = null
 
 // Callback pour vérifier si une action est sélectionnée
 let isActionModeActiveCallback: (() => boolean) | null = null
 
-export function getSelectedMob(): Mob | null {
-  return selectedMob
+export function getSelectedMob(): MobRenderer | null {
+  return selectedMobRenderer
 }
 
-export function setSelectedMob(mob: Mob | null): void {
+export function setSelectedMob(mobRenderer: MobRenderer | null): void {
   // Retirer la classe selected de l'ancien mob
-  if (selectedMob) {
-    selectedMob.setSelected(false)
+  if (selectedMobRenderer) {
+    selectedMobRenderer.setSelected(false)
   }
-  selectedMob = mob
+  selectedMobRenderer = mobRenderer
   // Ajouter la classe selected au nouveau mob
-  if (selectedMob) {
-    selectedMob.setSelected(true)
+  if (selectedMobRenderer) {
+    selectedMobRenderer.setSelected(true)
   }
 }
 
 /**
  * Définit le callback appelé lors du renommage d'un mob
- * Le callback reçoit le mob et le nouveau nom souhaité, et retourne le nom final
+ * Le callback reçoit le mob et le nouveau nom souhaité, et retourne le nom final (via IPC)
  */
-export function setOnRenameCallback(callback: (mob: Mob, newName: string) => string): void {
+export function setOnRenameCallback(
+  callback: (mobRenderer: MobRenderer, newName: string) => Promise<string>
+): void {
   onRenameCallback = callback
 }
 
 /**
  * Définit le callback appelé lors d'un clic sur un mob
  */
-export function setOnMobClick(callback: (mob: Mob) => void): void {
+export function setOnMobClick(callback: (mobRenderer: MobRenderer) => void): void {
   onMobClickCallback = callback
 }
 
@@ -62,16 +65,23 @@ export function setIsActionModeActive(callback: () => boolean): void {
   isActionModeActiveCallback = callback
 }
 
-export class Mob {
+/**
+ * Classe MobRenderer - Gère uniquement le rendu visuel et les animations
+ * La logique métier est dans le backend (MobService)
+ */
+export class MobRenderer {
+  // Données provenant du backend
+  id: string
+  nom: string
+  imageUrl: string
   vie: number
   energie: number
   faim: number
   status: MobStatus
-  nom: string
-  imageUrl: string
+
   private element: HTMLElement | null = null
 
-  // Propriétés de mouvement
+  // Propriétés de mouvement (gérées côté frontend uniquement)
   private posX: number = 0
   private targetX: number = 0
   private isMoving: boolean = false
@@ -80,19 +90,14 @@ export class Mob {
   private thinkInterval: ReturnType<typeof setInterval> | null = null
   private isRenaming: boolean = false
 
-  constructor(
-    nom: string,
-    imageUrl: string,
-    vie: number = 100,
-    energie: number = 100,
-    faim: number = 0
-  ) {
-    this.nom = nom
-    this.imageUrl = imageUrl
-    this.vie = vie
-    this.energie = energie
-    this.faim = faim
-    this.status = vie > 0 ? 'vivant' : 'mort'
+  constructor(data: MobData) {
+    this.id = data.id
+    this.nom = data.nom
+    this.imageUrl = data.imageUrl
+    this.vie = data.vie
+    this.energie = data.energie
+    this.faim = data.faim
+    this.status = data.status
 
     // Position initiale aléatoire
     this.posX = Math.random() * (window.innerWidth - 100)
@@ -100,86 +105,62 @@ export class Mob {
   }
 
   /**
-   * Met à jour le statut du mob en fonction de sa vie
+   * Met à jour les données du mob depuis le backend
    */
-  updateStatus(): void {
-    this.status = this.vie > 0 ? 'vivant' : 'mort'
-  }
-
-  /**
-   * Inflige des dégâts au mob
-   */
-  takeDamage(amount: number): void {
+  updateFromData(data: MobData): void {
     const wasAlive = this.status === 'vivant'
-    this.vie = Math.max(0, this.vie - amount)
-    this.updateStatus()
+
+    this.nom = data.nom
+    this.vie = data.vie
+    this.energie = data.energie
+    this.faim = data.faim
+    this.status = data.status
+
     this.updateDisplay()
 
-    // Jouer le son de punch
-    playSound('punch')
-
-    // Si le mob vient de mourir, jouer le son de mort
+    // Si le mob vient de mourir, arrêter le comportement
     if (wasAlive && this.status === 'mort') {
-      setTimeout(() => playSound('death'), 200)
+      this.stopBehavior()
+    }
+    // Si le mob vient de revivre, redémarrer le comportement
+    if (!wasAlive && this.status === 'vivant') {
+      this.startBehavior()
     }
   }
 
   /**
-   * Soigne le mob
+   * Joue un son et affiche un effet visuel (appelé après confirmation du backend)
    */
-  heal(amount: number): void {
-    if (this.status === 'mort') return // Ne peut pas soigner un mob mort
-    this.vie = Math.min(100, this.vie + amount)
-    this.updateStatus()
-    this.updateDisplay()
-
-    // Jouer le son de soin
-    playSound('heal')
+  playSoundEffect(sound: 'punch' | 'death' | 'heal' | 'feed' | 'revive'): void {
+    playSound(sound)
+    // Ajouter un effet visuel pour indiquer l'action (utile quand l'audio ne fonctionne pas)
+    this.showSoundVisualFeedback(sound)
   }
 
   /**
-   * Nourrit le mob (diminue la faim)
+   * Affiche un feedback visuel pour les sons (flash coloré sur le mob)
    */
-  feed(amount: number): void {
-    if (this.status === 'mort') return
-    this.faim = Math.max(0, this.faim - amount)
-    this.updateDisplay()
+  private showSoundVisualFeedback(sound: string): void {
+    if (!this.element) return
 
-    // Jouer le son de nourriture
-    playSound('feed')
-  }
+    // Couleurs selon le type de son
+    const colors: Record<string, string> = {
+      punch: '#ff4444',
+      death: '#000000',
+      heal: '#44ff44',
+      feed: '#ffaa44',
+      revive: '#44ffff'
+    }
 
-  /**
-   * Réanime le mob
-   */
-  revive(): void {
-    if (this.status === 'vivant') return // Déjà vivant
-    this.vie = 50 // Revient avec 50% de vie
-    this.energie = 50
-    this.faim = 50
-    this.updateStatus()
-    this.updateDisplay()
-    // Redémarrer le comportement autonome
-    this.startBehavior()
-
-    // Jouer le son de réanimation
-    playSound('revive')
-  }
-
-  /**
-   * Modifie l'énergie du mob
-   */
-  setEnergie(amount: number): void {
-    this.energie = Math.max(0, Math.min(100, amount))
-    this.updateDisplay()
-  }
-
-  /**
-   * Modifie la faim du mob
-   */
-  setFaim(amount: number): void {
-    this.faim = Math.max(0, Math.min(100, amount))
-    this.updateDisplay()
+    const color = colors[sound] || '#ffffff'
+    const img = this.element.querySelector('.mob-image') as HTMLElement
+    if (img) {
+      const originalFilter = img.style.filter
+      img.style.filter = `drop-shadow(0 0 20px ${color}) brightness(1.3)`
+      setTimeout(() => {
+        img.style.filter = originalFilter
+      }, 200)
+    }
   }
 
   /**
@@ -303,7 +284,8 @@ export class Mob {
     // Déplacer pendant le saut (au milieu de l'animation)
     setTimeout(() => {
       if (!this.element) return
-      const actualDistance = Math.min(Math.abs(distance), Math.abs(jumpDistance)) * Math.sign(distance)
+      const actualDistance =
+        Math.min(Math.abs(distance), Math.abs(jumpDistance)) * Math.sign(distance)
       this.posX += actualDistance
       this.element.style.left = `${this.posX}px`
     }, (jumpDuration * 1000) / 3)
@@ -351,12 +333,12 @@ export class Mob {
       outline: none;
     `
 
-    const finishRenaming = (): void => {
+    const finishRenaming = async (): Promise<void> => {
       let newName = input.value.trim()
       if (newName && newName !== currentName) {
-        // Utiliser le callback pour obtenir un nom unique si nécessaire
+        // Utiliser le callback pour renommer via IPC
         if (onRenameCallback) {
-          newName = onRenameCallback(this, newName)
+          newName = await onRenameCallback(this, newName)
         }
         this.nom = newName
       }
@@ -366,7 +348,9 @@ export class Mob {
 
       // Redémarrer le comportement après le renommage
       this.isRenaming = false
-      this.startBehavior()
+      if (this.status === 'vivant') {
+        this.startBehavior()
+      }
     }
 
     input.addEventListener('blur', finishRenaming)
@@ -412,9 +396,10 @@ export class Mob {
       statusEl.className = `mob-status ${this.status}`
     }
 
-    // Arrêter le mouvement si le mob meurt
-    if (this.status === 'mort') {
-      this.stopBehavior()
+    // Mettre à jour le nom
+    const nameEl = this.element.querySelector('.mob-name') as HTMLElement
+    if (nameEl) {
+      nameEl.textContent = this.nom
     }
   }
 
@@ -489,8 +474,10 @@ export class Mob {
     container.appendChild(this.element)
     this.updateDisplay()
 
-    // Démarrer le comportement autonome
-    this.startBehavior()
+    // Démarrer le comportement autonome si vivant
+    if (this.status === 'vivant') {
+      this.startBehavior()
+    }
 
     return this.element
   }
@@ -505,27 +492,5 @@ export class Mob {
       this.element = null
     }
   }
-
-  /**
-   * Sérialise le mob en objet JSON
-   */
-  toJSON(): MobData {
-    return {
-      nom: this.nom,
-      imageUrl: this.imageUrl,
-      vie: this.vie,
-      energie: this.energie,
-      faim: this.faim,
-      status: this.status
-    }
-  }
-
-  /**
-   * Crée un mob à partir de données sérialisées
-   */
-  static fromJSON(data: MobData): Mob {
-    const mob = new Mob(data.nom, data.imageUrl, data.vie, data.energie, data.faim)
-    mob.status = data.status
-    return mob
-  }
 }
+

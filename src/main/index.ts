@@ -1,10 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { electronApp, is } from '@electron-toolkit/utils'
-
-// Chemin du fichier de sauvegarde
-const getSavePath = (): string => join(app.getPath('userData'), 'mobs-save.json')
+import { registerMobHandlers } from './ipcHandlers'
 
 function createWindow(): void {
   // Create the browser window.
@@ -26,6 +23,10 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    // Ouvrir DevTools en mode développement pour debug
+    if (is.dev) {
+      mainWindow.webContents.openDevTools()
+    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -52,33 +53,8 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  // Handler pour sauvegarder les mobs
-  ipcMain.handle('save-mobs', (_event, mobsData: string) => {
-    try {
-      const savePath = getSavePath()
-      writeFileSync(savePath, mobsData, 'utf-8')
-      console.log('Mobs sauvegardés dans:', savePath)
-      return { success: true, path: savePath }
-    } catch (error) {
-      console.error('Erreur de sauvegarde:', error)
-      return { success: false, error: String(error) }
-    }
-  })
-
-  // Handler pour charger les mobs
-  ipcMain.handle('load-mobs', () => {
-    try {
-      const savePath = getSavePath()
-      if (!existsSync(savePath)) {
-        return { success: false, error: 'Aucune sauvegarde trouvée' }
-      }
-      const data = readFileSync(savePath, 'utf-8')
-      return { success: true, data }
-    } catch (error) {
-      console.error('Erreur de chargement:', error)
-      return { success: false, error: String(error) }
-    }
-  })
+  // Enregistrer les handlers IPC pour les mobs
+  registerMobHandlers()
 
   createWindow()
 })

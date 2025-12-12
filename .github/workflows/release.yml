@@ -1,0 +1,143 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Check if release exists
+        id: check_release
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete existing release if exists
+        if: steps.check_release.outputs.exists == 'true'
+        run: |
+          gh release delete "v${{ steps.version.outputs.version }}" --yes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          body: |
+            ## Tamagotchi v${{ steps.version.outputs.version }}
+
+            ### 📦 Téléchargements
+
+            | Plateforme | Fichier |
+            |------------|---------|
+            | Windows (Installateur) | `tamagotchi-${{ steps.version.outputs.version }}-setup.exe` |
+            | Windows (Portable) | `tamagotchi-${{ steps.version.outputs.version }}-portable.zip` |
+            | Linux (AppImage) | `tamagotchi-${{ steps.version.outputs.version }}.AppImage` |
+            | Linux (deb) | `tamagotchi_${{ steps.version.outputs.version }}_amd64.deb` |
+
+            ### 🚀 Installation
+
+            **Windows:** Téléchargez le fichier `-setup.exe` et exécutez-le.
+
+            **Linux:**
+            - AppImage: `chmod +x tamagotchi-*.AppImage && ./tamagotchi-*.AppImage`
+            - Debian/Ubuntu: `sudo dpkg -i tamagotchi_*_amd64.deb`
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-windows:
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Build Windows distributables
+        run: npx electron-builder --win --publish never
+
+      - name: Create portable zip
+        run: |
+          Compress-Archive -Path "dist\win-unpacked\*" -DestinationPath "dist\tamagotchi-${{ needs.create-release.outputs.version }}-portable.zip"
+
+      - name: Upload Windows assets to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.create-release.outputs.version }}
+          files: |
+            dist/*.exe
+            dist/*-portable.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Build Linux distributables
+        run: npx electron-builder --linux --publish never
+
+      - name: Upload Linux assets to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.create-release.outputs.version }}
+          files: |
+            dist/*.AppImage
+            dist/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
