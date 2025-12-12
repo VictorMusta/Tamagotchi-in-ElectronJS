@@ -1,9 +1,17 @@
-import { Mob, MobData, getSelectedMob, setSelectedMob, setOnRenameCallback, setOnMobClick, setIsActionModeActive } from './Mob'
+import {
+  MobRenderer,
+  MobData,
+  getSelectedMob,
+  setSelectedMob,
+  setOnRenameCallback,
+  setOnMobClick,
+  setIsActionModeActive
+} from './Mob'
 import { preloadSounds } from './SoundManager'
 import potatoImage from '../assets/Potato still.png'
 
-// Liste de tous les mobs
-let mobs: Mob[] = []
+// Map des renderers de mobs par ID
+const mobRenderers: Map<string, MobRenderer> = new Map()
 
 // Mode d'action actuel
 type ActionMode = 'none' | 'damage' | 'heal' | 'feed' | 'revive'
@@ -17,21 +25,6 @@ function isActionModeActive(): boolean {
 }
 
 /**
- * Génère un nom unique en ajoutant un numéro incrémental si nécessaire
- */
-function getUniqueName(baseName: string, excludeMob?: Mob): string {
-  let name = baseName
-  let counter = 2
-
-  while (mobs.some((m) => m !== excludeMob && m.nom === name)) {
-    name = `${baseName} ${counter}`
-    counter++
-  }
-
-  return name
-}
-
-/**
  * Définit le mode d'action actuel
  */
 function setActionMode(mode: ActionMode): void {
@@ -40,8 +33,18 @@ function setActionMode(mode: ActionMode): void {
   const body = document.body
 
   // Retirer toutes les classes de mode précédentes
-  body.classList.remove('action-mode-damage', 'action-mode-heal', 'action-mode-feed', 'action-mode-revive')
-  mobContainer?.classList.remove('action-mode-damage', 'action-mode-heal', 'action-mode-feed', 'action-mode-revive')
+  body.classList.remove(
+    'action-mode-damage',
+    'action-mode-heal',
+    'action-mode-feed',
+    'action-mode-revive'
+  )
+  mobContainer?.classList.remove(
+    'action-mode-damage',
+    'action-mode-heal',
+    'action-mode-feed',
+    'action-mode-revive'
+  )
 
   // Retirer la classe active de tous les boutons
   document.querySelectorAll('.action-btn').forEach((btn) => btn.classList.remove('active'))
@@ -57,32 +60,60 @@ function setActionMode(mode: ActionMode): void {
 }
 
 /**
- * Applique l'action actuelle sur un mob
+ * Applique l'action actuelle sur un mob via IPC
+ * Note: Les sons sont joués AVANT l'appel IPC pour éviter les problèmes d'autoplay policy
  */
-function applyActionToMob(mob: Mob): void {
+async function applyActionToMob(mobRenderer: MobRenderer): Promise<void> {
+  const id = mobRenderer.id
+
   switch (currentActionMode) {
-    case 'damage':
-      mob.takeDamage(20)
+    case 'damage': {
+      // Jouer le son immédiatement (avant l'appel async)
+      mobRenderer.playSoundEffect('punch')
+      const result = await window.api.damageMob(id, 20)
+      if (result.success && result.mob) {
+        mobRenderer.updateFromData(result.mob)
+        // Si le mob vient de mourir
+        if (result.error === 'died') {
+          setTimeout(() => mobRenderer.playSoundEffect('death'), 200)
+        }
+      }
       break
-    case 'heal':
-      mob.heal(20)
+    }
+    case 'heal': {
+      mobRenderer.playSoundEffect('heal')
+      const result = await window.api.healMob(id, 20)
+      if (result.success && result.mob) {
+        mobRenderer.updateFromData(result.mob)
+      }
       break
-    case 'feed':
-      mob.feed(20)
+    }
+    case 'feed': {
+      mobRenderer.playSoundEffect('feed')
+      const result = await window.api.feedMob(id, 20)
+      if (result.success && result.mob) {
+        mobRenderer.updateFromData(result.mob)
+      }
       break
-    case 'revive':
-      mob.revive()
+    }
+    case 'revive': {
+      mobRenderer.playSoundEffect('revive')
+      const result = await window.api.reviveMob(id)
+      if (result.success && result.mob) {
+        mobRenderer.updateFromData(result.mob)
+      }
       break
+    }
     default:
       // Pas de mode actif, juste sélectionner le mob
-      setSelectedMob(mob)
+      setSelectedMob(mobRenderer)
   }
 }
 
 function init(): void {
   window.addEventListener('DOMContentLoaded', async () => {
     doAThing()
-    preloadSounds()
+    await preloadSounds()
     setupRenameCallback()
     await initMobs()
     setupClickThrough()
@@ -93,16 +124,20 @@ function init(): void {
 }
 
 /**
- * Configure le callback pour la validation des noms uniques lors du renommage
+ * Configure le callback pour la validation des noms uniques lors du renommage via IPC
  */
 function setupRenameCallback(): void {
-  setOnRenameCallback((mob, newName) => {
-    return getUniqueName(newName, mob)
+  setOnRenameCallback(async (mobRenderer, newName) => {
+    const result = await window.api.renameMob(mobRenderer.id, newName)
+    if (result.success && result.mob) {
+      return result.mob.nom
+    }
+    return mobRenderer.nom // Garder l'ancien nom en cas d'erreur
   })
 
   // Configurer le callback pour les clics sur les mobs
-  setOnMobClick((mob) => {
-    applyActionToMob(mob)
+  setOnMobClick((mobRenderer) => {
+    applyActionToMob(mobRenderer)
   })
 
   // Configurer le callback pour vérifier si une action est active
@@ -127,59 +162,53 @@ async function initMobs(): Promise<void> {
 
   // Si aucune sauvegarde n'existe, créer un mob par défaut
   if (!loaded) {
-    const potato = new Mob('Potato', potatoImage, 100, 80, 20)
-    potato.render(mobContainer)
-    mobs.push(potato)
+    const result = await window.api.createMob('Potato', potatoImage)
+    if (result.success && result.mob) {
+      const renderer = new MobRenderer(result.mob)
+      renderer.render(mobContainer)
+      mobRenderers.set(result.mob.id, renderer)
 
-    // Sélectionner le premier mob par défaut
-    setSelectedMob(potato)
-
-    // Exemple: exposer le mob pour des tests dans la console
-    ;(window as unknown as { mob: Mob }).mob = potato
+      // Sélectionner le premier mob par défaut
+      setSelectedMob(renderer)
+    }
   }
 }
 
 async function loadMobsOnStartup(mobContainer: HTMLElement): Promise<boolean> {
   const result = await window.api.loadMobs()
-  if (!result.success || !result.data) {
+  if (!result.success || !result.mobs || result.mobs.length === 0) {
     console.log('Aucune sauvegarde trouvée, création des mobs par défaut')
     return false
   }
 
   try {
-    const mobsData: MobData[] = JSON.parse(result.data)
-    if (mobsData.length === 0) {
-      return false
-    }
-
-    // Créer les mobs à partir des données chargées
-    mobsData.forEach((data) => {
+    // Créer les renderers à partir des données chargées
+    result.mobs.forEach((data: MobData) => {
       // Utiliser l'image importée si c'est le même nom, sinon utiliser l'URL stockée
       const imageUrl = data.imageUrl.includes('Potato') ? potatoImage : data.imageUrl
-      const mob = Mob.fromJSON({ ...data, imageUrl })
-      mob.render(mobContainer)
-      mobs.push(mob)
+      const renderer = new MobRenderer({ ...data, imageUrl })
+      renderer.render(mobContainer)
+      mobRenderers.set(data.id, renderer)
     })
 
     // Sélectionner le premier mob
-    if (mobs.length > 0) {
-      setSelectedMob(mobs[0])
-      ;(window as unknown as { mob: Mob }).mob = mobs[0]
+    if (mobRenderers.size > 0) {
+      const firstRenderer = mobRenderers.values().next().value
+      if (firstRenderer) {
+        setSelectedMob(firstRenderer)
+      }
     }
 
-    console.log('Sauvegarde chargée automatiquement:', mobs.length, 'mob(s)')
+    console.log('Sauvegarde chargée automatiquement:', mobRenderers.size, 'mob(s)')
     return true
   } catch (error) {
-    console.error('Erreur de parsing au démarrage:', error)
+    console.error('Erreur au démarrage:', error)
     return false
   }
 }
 
 async function saveMobs(): Promise<void> {
-  const mobsData: MobData[] = mobs.map((mob) => mob.toJSON())
-  const jsonString = JSON.stringify(mobsData, null, 2)
-
-  const result = await window.api.saveMobs(jsonString)
+  const result = await window.api.saveMobs()
   if (result.success) {
     console.log('Mobs sauvegardés avec succès dans:', result.path)
     showNotification('Sauvegarde réussie !', 'success')
@@ -191,37 +220,39 @@ async function saveMobs(): Promise<void> {
 
 async function loadMobs(): Promise<void> {
   const result = await window.api.loadMobs()
-  if (!result.success || !result.data) {
+  if (!result.success || !result.mobs) {
     console.error('Erreur de chargement:', result.error)
     showNotification(result.error || 'Erreur de chargement', 'error')
     return
   }
 
   try {
-    const mobsData: MobData[] = JSON.parse(result.data)
     const mobContainer = document.getElementById('mob-container')
     if (!mobContainer) return
 
-    // Supprimer les mobs existants
-    mobs.forEach((mob) => mob.destroy())
-    mobs = []
+    // Supprimer les renderers existants
+    mobRenderers.forEach((renderer) => renderer.destroy())
+    mobRenderers.clear()
     setSelectedMob(null)
 
-    // Créer les nouveaux mobs à partir des données chargées
-    mobsData.forEach((data) => {
+    // Créer les nouveaux renderers à partir des données chargées
+    result.mobs.forEach((data: MobData) => {
       // Utiliser l'image importée si c'est le même nom, sinon utiliser l'URL stockée
       const imageUrl = data.imageUrl.includes('Potato') ? potatoImage : data.imageUrl
-      const mob = Mob.fromJSON({ ...data, imageUrl })
-      mob.render(mobContainer)
-      mobs.push(mob)
+      const renderer = new MobRenderer({ ...data, imageUrl })
+      renderer.render(mobContainer)
+      mobRenderers.set(data.id, renderer)
     })
 
     // Sélectionner le premier mob
-    if (mobs.length > 0) {
-      setSelectedMob(mobs[0])
+    if (mobRenderers.size > 0) {
+      const firstRenderer = mobRenderers.values().next().value
+      if (firstRenderer) {
+        setSelectedMob(firstRenderer)
+      }
     }
 
-    console.log('Mobs chargés avec succès:', mobs.length)
+    console.log('Mobs chargés avec succès:', mobRenderers.size)
     showNotification('Chargement réussi !', 'success')
   } catch (error) {
     console.error('Erreur de parsing:', error)
@@ -268,55 +299,64 @@ function setupSaveLoadButtons(): void {
 }
 
 /**
- * Ajoute un nouveau mob avec un nom unique
+ * Ajoute un nouveau mob via IPC
  */
-function addNewMob(): void {
+async function addNewMob(): Promise<void> {
   const mobContainer = document.getElementById('mob-container')
   if (!mobContainer) return
 
-  const uniqueName = getUniqueName('Nouveau Mob')
-  const newMob = new Mob(uniqueName, potatoImage, 100, 100, 0)
-  newMob.render(mobContainer)
-  mobs.push(newMob)
+  const result = await window.api.createMob('Nouveau Mob', potatoImage)
+  if (result.success && result.mob) {
+    const renderer = new MobRenderer(result.mob)
+    renderer.render(mobContainer)
+    mobRenderers.set(result.mob.id, renderer)
 
-  // Sélectionner le nouveau mob
-  setSelectedMob(newMob)
+    // Sélectionner le nouveau mob
+    setSelectedMob(renderer)
 
-  showNotification(`${uniqueName} créé !`, 'success')
+    showNotification(`${result.mob.nom} créé !`, 'success')
+  } else {
+    showNotification('Erreur lors de la création', 'error')
+  }
 }
 
 /**
- * Supprime le mob sélectionné (seulement s'il est mort)
+ * Supprime le mob sélectionné via IPC (seulement s'il est mort)
  */
-function deleteSelectedMob(): void {
-  const mob = getSelectedMob()
-  if (!mob) {
+async function deleteSelectedMob(): Promise<void> {
+  const mobRenderer = getSelectedMob()
+  if (!mobRenderer) {
     showNotification('Aucun mob sélectionné', 'error')
     return
   }
 
-  if (mob.status !== 'mort') {
+  if (mobRenderer.status !== 'mort') {
     showNotification('Le mob doit être mort pour être supprimé', 'error')
     return
   }
 
-  // Retirer le mob de la liste
-  const index = mobs.indexOf(mob)
-  if (index > -1) {
-    mobs.splice(index, 1)
-  }
+  const result = await window.api.deleteMob(mobRenderer.id)
+  if (result.success) {
+    // Retirer le renderer de la map
+    mobRenderers.delete(mobRenderer.id)
 
-  // Supprimer du DOM
-  mob.destroy()
+    // Supprimer du DOM
+    mobRenderer.destroy()
 
-  // Sélectionner un autre mob si disponible
-  if (mobs.length > 0) {
-    setSelectedMob(mobs[0])
+    // Sélectionner un autre mob si disponible
+    if (mobRenderers.size > 0) {
+      const firstRenderer = mobRenderers.values().next().value
+      if (firstRenderer) {
+        setSelectedMob(firstRenderer)
+      }
+    } else {
+      setSelectedMob(null)
+    }
+
+    showNotification('Mob supprimé', 'success')
   } else {
-    setSelectedMob(null)
+    showNotification(result.error || 'Erreur lors de la suppression', 'error')
   }
-
-  showNotification('Mob supprimé', 'success')
 }
 
 /**
