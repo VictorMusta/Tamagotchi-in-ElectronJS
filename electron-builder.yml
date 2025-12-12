@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: tamagotchi
+appId: com.electron.potato-rotato
+productName: 🤌potato_rotato🤌
 directories:
   buildResources: build
 files:
@@ -12,7 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: tamagotchi
+  executableName: potato_rotato
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
