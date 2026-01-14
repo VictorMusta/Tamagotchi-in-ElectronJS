@@ -310,17 +310,6 @@ export class MobRenderer {
     input.type = 'text'
     input.value = currentName
     input.className = 'mob-name-input'
-    input.style.cssText = `
-      font-size: inherit;
-      font-family: inherit;
-      width: 100%;
-      padding: 2px 4px;
-      border: 1px solid #4a9eff;
-      border-radius: 3px;
-      background: #2a2a2a;
-      color: inherit;
-      outline: none;
-    `
 
     const finishRenaming = async (): Promise<void> => {
       let newName = input.value.trim()

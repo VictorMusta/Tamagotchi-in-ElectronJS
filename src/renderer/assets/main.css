@@ -131,6 +131,7 @@ code {
   font-size: 14px;
   line-height: 14px;
   opacity: 0.8;
+
   &:last-child {
     border: none;
   }
@@ -149,6 +150,7 @@ code {
 }
 
 @media (max-width: 350px) {
+
   .tip,
   .actions {
     display: none;
@@ -321,21 +323,27 @@ code {
   0% {
     transform: translateY(0) scaleY(1) scaleX(1);
   }
+
   15% {
     transform: translateY(0) scaleY(0.85) scaleX(1.1);
   }
+
   30% {
     transform: translateY(calc(var(--jump-height, -40px))) scaleY(1.1) scaleX(0.95);
   }
+
   50% {
     transform: translateY(calc(var(--jump-height, -40px) * 1.1)) scaleY(1.05) scaleX(0.98);
   }
+
   70% {
     transform: translateY(calc(var(--jump-height, -40px) * 0.5)) scaleY(1) scaleX(1);
   }
+
   85% {
     transform: translateY(-5px) scaleY(0.95) scaleX(1.02);
   }
+
   100% {
     transform: translateY(0) scaleY(1) scaleX(1);
   }
@@ -464,6 +472,7 @@ code {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -536,3 +545,25 @@ code {
   filter: drop-shadow(0 0 10px #64b5f6) !important;
 }
 
+
+/* Notifications */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  z-index: 10000;
+  animation: slideIn 0.3s ease-out;
+  transition: opacity 0.3s;
+}
+
+.notification.success {
+  background: #4caf50;
+}
+
+.notification.error {
+  background: #f44336;
+}
