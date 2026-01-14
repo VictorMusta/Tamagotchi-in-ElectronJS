@@ -3,35 +3,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 
-export type MobStatus = 'vivant' | 'mort'
-
-export interface MobData {
-  id: string
-  nom: string
-  imageUrl: string
-  vie: number
-  energie: number
-  faim: number
-  status: MobStatus
-}
-
-export interface MobActionResult {
-  success: boolean
-  mob?: MobData
-  error?: string
-}
-
-export interface MobListResult {
-  success: boolean
-  mobs?: MobData[]
-  error?: string
-}
-
-export interface SaveLoadResult {
-  success: boolean
-  path?: string
-  error?: string
-}
+import { MobData, MobActionResult, MobListResult, SaveLoadResult, MobStatus } from '../shared/types'
 
 /**
  * Classe Mob - Contient toute la logique métier

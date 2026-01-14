@@ -1,12 +1,12 @@
 import {
   MobRenderer,
-  MobData,
   getSelectedMob,
   setSelectedMob,
   setOnRenameCallback,
   setOnMobClick,
   setIsActionModeActive
 } from './Mob'
+import { MobData } from '../../shared/types'
 import { preloadSounds } from './SoundManager'
 import potatoImage from '../assets/Potato still.png'
 

@@ -1,17 +1,6 @@
 import { playSound } from './SoundManager'
 
-export type MobStatus = 'vivant' | 'mort'
-
-// Interface pour les données des mobs (provenant du backend)
-export interface MobData {
-  id: string
-  nom: string
-  imageUrl: string
-  vie: number
-  energie: number
-  faim: number
-  status: MobStatus
-}
+import { MobData, MobStatus } from '../../shared/types'
 
 // Gestionnaire global pour le mob sélectionné
 let selectedMobRenderer: MobRenderer | null = null
