@@ -264,23 +264,10 @@ function showNotification(message: string, type: 'success' | 'error'): void {
   const notification = document.createElement('div')
   notification.className = `notification ${type}`
   notification.textContent = message
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 12px 20px;
-    border-radius: 8px;
-    color: white;
-    font-weight: bold;
-    z-index: 10000;
-    animation: slideIn 0.3s ease-out;
-    background: ${type === 'success' ? '#4caf50' : '#f44336'};
-  `
   document.body.appendChild(notification)
 
   setTimeout(() => {
     notification.style.opacity = '0'
-    notification.style.transition = 'opacity 0.3s'
     setTimeout(() => notification.remove(), 300)
   }, 2000)
 }
