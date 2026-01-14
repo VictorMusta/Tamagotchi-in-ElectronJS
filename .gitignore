@@ -90,3 +90,12 @@ typings/
 
 # Electron-Forge
 out/
+
+# Web build output
+dist-web/
+
+# Android build
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
