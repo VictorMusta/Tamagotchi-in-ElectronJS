@@ -58,16 +58,26 @@ jobs:
             |------------|---------|
             | Windows (Installateur) | `tamagotchi-${{ steps.version.outputs.version }}-setup.exe` |
             | Windows (Portable) | `tamagotchi-${{ steps.version.outputs.version }}-portable.zip` |
+            | macOS | `potato_rotato-${{ steps.version.outputs.version }}.dmg` |
             | Linux (AppImage) | `tamagotchi-${{ steps.version.outputs.version }}.AppImage` |
             | Linux (deb) | `tamagotchi_${{ steps.version.outputs.version }}_amd64.deb` |
+            | Android | `potato-rotato-${{ steps.version.outputs.version }}.apk` |
+            | Web (ZIP) | `potato-rotato-web-${{ steps.version.outputs.version }}.zip` |
 
             ### 🚀 Installation
 
             **Windows:** Téléchargez le fichier `-setup.exe` et exécutez-le.
 
+            **macOS:** Téléchargez le `.dmg`, ouvrez-le et glissez l'application dans Applications.
+            > Note: Comme l'application n'est pas signée, allez dans Préférences Système > Sécurité pour l'autoriser.
+
             **Linux:**
             - AppImage: `chmod +x tamagotchi-*.AppImage && ./tamagotchi-*.AppImage`
             - Debian/Ubuntu: `sudo dpkg -i tamagotchi_*_amd64.deb`
+
+            **Android:** Téléchargez le `.apk` et installez-le (activez "Sources inconnues" si nécessaire).
+
+            **Web:** Dézippez et ouvrez `index.html` dans un navigateur.
           draft: false
           prerelease: false
         env:
@@ -141,3 +151,116 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  build-mac:
+    needs: create-release
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Build Mac distributables
+        run: npx electron-builder --mac --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload Mac assets to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.create-release.outputs.version }}
+          files: |
+            dist/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-web:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web version
+        run: npm run build:web
+
+      - name: Create web zip
+        run: |
+          cd dist-web
+          zip -r ../potato-rotato-web-${{ needs.create-release.outputs.version }}.zip .
+
+      - name: Upload Web assets to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.create-release.outputs.version }}
+          files: |
+            potato-rotato-web-*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-android:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web version
+        run: npm run build:web
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Build Android APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Rename APK
+        run: |
+          mv android/app/build/outputs/apk/release/app-release-unsigned.apk potato-rotato-${{ needs.create-release.outputs.version }}.apk
+
+      - name: Upload Android APK to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.create-release.outputs.version }}
+          files: |
+            potato-rotato-*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

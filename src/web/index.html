@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Potato Rotato 🥔</title>
+    <meta name="description" content="Adoptez et prenez soin de votre patate virtuelle!" />
+    <link href="../renderer/assets/main.css" type="text/css" rel="stylesheet" />
+    <style>
+        /* Override transparent background for web */
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div id="mob-container"></div>
+
+        <!-- Panneau d'actions -->
+        <div id="action-panel">
+            <button class="action-btn" id="btn-add-mob" title="Ajouter un mob">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                </svg>
+            </button>
+            <button class="action-btn" id="btn-delete-mob" title="Supprimer le mob (mort uniquement)">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                </svg>
+            </button>
+            <div class="action-separator"></div>
+            <button class="action-btn" id="btn-damage" title="Attaquer">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 2C7.58 2 4 5.58 4 10c0 2.03.76 3.87 2 5.28V23h12v-7.72c1.24-1.41 2-3.25 2-5.28 0-4.42-3.58-8-8-8zm-2 18H8v-3h2v3zm4 0h-2v-3h2v3zm2 0h-2v-3h2v3zm.25-7.44l-.75.68V15H8.5v-1.76l-.75-.68A5.945 5.945 0 016 10c0-3.31 2.69-6 6-6s6 2.69 6 6c0 1.77-.77 3.36-2 4.44z" />
+                </svg>
+            </button>
+            <button class="action-btn" id="btn-heal" title="Soigner">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+            </button>
+            <button class="action-btn" id="btn-feed" title="Nourrir">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M2 16h20v2c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2v-2zm0-2c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2H2zm2.5-5C4.5 6 7 3 12 3s7.5 3 7.5 6H4.5zm3 1h9c.28 0 .5-.22.5-.5s-.22-.5-.5-.5h-9c-.28 0-.5.22-.5.5s.22.5.5.5z" />
+                </svg>
+            </button>
+            <button class="action-btn" id="btn-revive" title="Réanimer">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L6.5 11H9v6h6v-6h2.5L12 2zm0 2.84L15.26 9H14v6h-4V9H8.74L12 4.84zM5 19h14v2H5v-2z" />
+                    <path d="M4 9l-2-2v5h2V9zm18-2l-2 2v3h2V7z" />
+                </svg>
+            </button>
+            <div class="action-separator"></div>
+            <button class="action-btn save-btn" id="btn-save" title="Sauvegarder">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z" />
+                </svg>
+            </button>
+            <button class="action-btn load-btn" id="btn-load" title="Charger">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+</body>
+
+</html>
