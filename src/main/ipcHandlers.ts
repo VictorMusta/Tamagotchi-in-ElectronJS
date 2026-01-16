@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import { MobManager } from './MobService'
+import { BiomeService } from './BiomeService'
 
 /**
  * Enregistre tous les handlers IPC pour la gestion des mobs
@@ -45,6 +46,15 @@ export function registerMobHandlers(): void {
     return MobManager.renameMob(id, newName)
   })
 
+  // Mettre à jour le skin
+  ipcMain.handle('mob:updateSkin', (_event, id: string, type: 'hat' | 'bottom', value: string) => {
+    const mob = MobManager.getMobById(id)
+    if (!mob) return { success: false, error: 'Mob non trouvé' }
+
+    // On doit passer par MobManager pour modifier l'état réel (Map)
+    return MobManager.updateMobSkin(id, type, value)
+  })
+
   // Récupérer tous les mobs
   ipcMain.handle('mob:getAll', () => {
     const mobs = MobManager.getAllMobs()
@@ -60,6 +70,11 @@ export function registerMobHandlers(): void {
     return { success: true, mob }
   })
 
+  // Traiter résultat combat
+  ipcMain.handle('mob:processResult', (_event, winner: any, loser: any) => {
+    return MobManager.processCombatResult(winner, loser)
+  })
+
   // Sauvegarder les mobs
   ipcMain.handle('mob:save', () => {
     return MobManager.saveMobs()
@@ -68,5 +83,15 @@ export function registerMobHandlers(): void {
   // Charger les mobs
   ipcMain.handle('mob:load', () => {
     return MobManager.loadMobs()
+  })
+
+  // Sauvegarder le biome
+  ipcMain.handle('biome:save', (_event, data) => {
+    return BiomeService.saveBiome(data)
+  })
+
+  // Charger le biome
+  ipcMain.handle('biome:load', () => {
+    return BiomeService.loadBiome()
   })
 }

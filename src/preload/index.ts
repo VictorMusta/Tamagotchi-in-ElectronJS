@@ -11,14 +11,21 @@ const api = {
   feedMob: (id: string, amount: number) => ipcRenderer.invoke('mob:feed', id, amount),
   reviveMob: (id: string) => ipcRenderer.invoke('mob:revive', id),
   renameMob: (id: string, newName: string) => ipcRenderer.invoke('mob:rename', id, newName),
+  updateMobSkin: (id: string, type: 'hat' | 'bottom', value: string) => ipcRenderer.invoke('mob:updateSkin', id, type, value),
 
   // Récupération des mobs
   getAllMobs: () => ipcRenderer.invoke('mob:getAll'),
   getMobById: (id: string) => ipcRenderer.invoke('mob:getById', id),
+  processCombatResult: (winner: any, loser: any) => ipcRenderer.invoke('mob:processResult', winner, loser),
 
   // Sauvegarde et chargement
   saveMobs: () => ipcRenderer.invoke('mob:save'),
-  loadMobs: () => ipcRenderer.invoke('mob:load')
+  loadMobs: () => ipcRenderer.invoke('mob:load'),
+  setIgnoreMouseEvents: (ignore: boolean) => ipcRenderer.send('window:set-ignore-mouse-events', ignore),
+  saveBiome: (data: any) => ipcRenderer.invoke('biome:save', data),
+  loadBiome: () => ipcRenderer.invoke('biome:load'),
+  minimizeWindow: () => ipcRenderer.send('window:minimize'),
+  closeWindow: () => ipcRenderer.send('window:close')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
