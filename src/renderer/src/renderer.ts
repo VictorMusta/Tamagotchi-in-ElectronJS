@@ -3,6 +3,7 @@ import { ProfileRenderer } from './ProfileRenderer'
 import { CombatUI } from './combat/CombatUI'
 import { MobData } from '../../shared/types'
 import { preloadSounds } from './SoundManager'
+import { generateRandomName } from './utils/NameGenerator'
 import {
   MobRenderer,
   getSelectedMob,
@@ -27,7 +28,7 @@ const profileRenderer = new ProfileRenderer()
 const combatUI = new CombatUI()
 
 // Mode d'action actuel
-type ActionMode = 'none' | 'damage' | 'heal' | 'feed' | 'revive'
+type ActionMode = 'none' | 'damage' | 'heal' | 'revive'
 let currentActionMode: ActionMode = 'none'
 
 /**
@@ -49,13 +50,11 @@ function setActionMode(mode: ActionMode): void {
   body.classList.remove(
     'action-mode-damage',
     'action-mode-heal',
-    'action-mode-feed',
     'action-mode-revive'
   )
   mobContainer?.classList.remove(
     'action-mode-damage',
     'action-mode-heal',
-    'action-mode-feed',
     'action-mode-revive'
   )
 
@@ -101,14 +100,7 @@ async function applyActionToMob(mobRenderer: MobRenderer): Promise<void> {
       }
       break
     }
-    case 'feed': {
-      const result = await window.api.feedMob(id, 20)
-      if (result.success && result.mob) {
-        if (result.changed) mobRenderer.playSoundEffect('feed')
-        mobRenderer.updateFromData(result.mob)
-      }
-      break
-    }
+
     case 'revive': {
       const result = await window.api.reviveMob(id)
       if (result.success && result.mob) {
@@ -178,9 +170,10 @@ function setupRenameCallback(): void {
     if (result.success && result.mob) {
       profileRenderer.render(result.mob, () => {
         // Optionnel: refresh si besoin à la fermeture
-      }, (newName) => {
-        console.log('[Renderer] Mob renamed to:', newName)
-        loadMobs() // Rafraîchir l'affichage principal
+      }, (mobId, updatedMob) => {
+        console.log('[Renderer] Mob renamed:', mobId, updatedMob.nom)
+        // Update the mobRenderer that opened this profile
+        mobRenderer.updateFromData(updatedMob)
       })
     }
   })
@@ -365,7 +358,8 @@ async function addNewMob(): Promise<void> {
   const mobContainer = document.getElementById('mob-container')
   if (!mobContainer) return
 
-  const result = await window.api.createMob('Nouveau Mob', potatoImage)
+  const randomName = generateRandomName()
+  const result = await window.api.createMob(randomName, potatoImage)
   if (result.success && result.mob) {
     const renderer = new MobRenderer(result.mob)
     renderer.render(mobContainer)
@@ -452,7 +446,6 @@ function setupWindowControls(): void {
 function setupActionButtons(): void {
   const btnDamage = document.getElementById('btn-damage')
   const btnHeal = document.getElementById('btn-heal')
-  const btnFeed = document.getElementById('btn-feed')
   const btnRevive = document.getElementById('btn-revive')
 
   // Fonction pour toggle un mode d'action
@@ -472,11 +465,6 @@ function setupActionButtons(): void {
   // Bouton Soigner
   btnHeal?.addEventListener('click', () => {
     toggleActionMode('heal')
-  })
-
-  // Bouton Nourrir
-  btnFeed?.addEventListener('click', () => {
-    toggleActionMode('feed')
   })
 
   // Bouton Réanimer

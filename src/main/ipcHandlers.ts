@@ -31,10 +31,7 @@ export function registerMobHandlers(): void {
     return MobManager.healMob(id, amount)
   })
 
-  // Nourrir
-  ipcMain.handle('mob:feed', (_event, id: string, amount: number) => {
-    return MobManager.feedMob(id, amount)
-  })
+
 
   // Réanimer
   ipcMain.handle('mob:revive', (_event, id: string) => {
@@ -83,6 +80,16 @@ export function registerMobHandlers(): void {
   // Charger les mobs
   ipcMain.handle('mob:load', () => {
     return MobManager.loadMobs()
+  })
+
+  // Obtenir les choix d'amélioration
+  ipcMain.handle('mob:getUpgradeChoices', (_event, id: string) => {
+    return MobManager.getMobUpgradeChoices(id)
+  })
+
+  // Appliquer un choix d'amélioration
+  ipcMain.handle('mob:applyUpgrade', (_event, id: string, choice: any) => {
+    return MobManager.applyMobUpgrade(id, choice)
   })
 
   // Sauvegarder le biome

@@ -1,6 +1,6 @@
 // Gestionnaire de sons pour le jeu - utilise Web Audio API pour meilleure compatibilité
 
-export type SoundType = 'punch' | 'feed' | 'heal' | 'death' | 'revive'
+export type SoundType = 'punch' | 'heal' | 'death' | 'revive'
 
 // AudioContext partagé
 let audioContext: AudioContext | null = null
@@ -14,7 +14,7 @@ let globalVolume = 0.5
 // Mapping des types de sons vers les fichiers
 const soundFiles: Record<SoundType, string> = {
   punch: new URL('../assets/sounds/placeholder_punch.mp3', import.meta.url).href,
-  feed: new URL('../assets/sounds/placeholder_feed.mp3', import.meta.url).href,
+
   heal: new URL('../assets/sounds/placeholder_heal.mp3', import.meta.url).href,
   death: new URL('../assets/sounds/placeholder_death.mp3', import.meta.url).href,
   revive: new URL('../assets/sounds/placeholder_revive.mp3', import.meta.url).href

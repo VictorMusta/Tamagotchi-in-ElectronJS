@@ -306,9 +306,6 @@ body {
   background: linear-gradient(90deg, #ff9800, #ffeb3b);
 }
 
-.mob-stat-faim .mob-stat-fill {
-  background: linear-gradient(90deg, #8bc34a, #ff5722);
-}
 
 /* Action Panel */
 #action-panel {
@@ -376,9 +373,7 @@ body {
   background: linear-gradient(135deg, #ec407a, #c2185b);
 }
 
-#btn-feed {
-  background: linear-gradient(135deg, #ff9800, #e65100);
-}
+
 
 #btn-revive {
   background: linear-gradient(135deg, #64b5f6, #1976d2);
@@ -415,10 +410,7 @@ body {
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23ec407a'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E"), pointer;
 }
 
-.action-mode-feed,
-.action-mode-feed .mob {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23ff9800'%3E%3Cpath d='M2 16h20v2c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2v-2zm0-2c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2H2zm2.5-5C4.5 6 7 3 12 3s7.5 3 7.5 6H4.5zm3 1h9c.28 0 .5-.22.5-.5s-.22-.5-.5-.5h-9c-.28 0-.5.22-.5.5s.22.5.5.5z'/%3E%3C/svg%3E"), pointer;
-}
+
 
 .action-mode-revive,
 .action-mode-revive .mob {
@@ -1224,4 +1216,181 @@ body {
   color: white;
   font-family: monospace;
   font-weight: bold;
+}
+
+/* Victory and Level-Up Overlays */
+.victory-overlay,
+.levelup-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background: linear-gradient(135deg, rgba(0, 20, 40, 0.98), rgba(10, 30, 60, 0.98));
+  border: 2px solid rgba(100, 200, 255, 0.3);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translate(-50%, -60%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
+.victory-content,
+.levelup-content {
+  text-align: center;
+  min-width: 300px;
+}
+
+.victory-title {
+  font-size: 32px;
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  margin: 0 0 15px 0;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.victor-name {
+  font-size: 24px;
+  color: white;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.combat-results {
+  margin: 20px 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.combat-results div {
+  margin: 5px 0;
+}
+
+.continue-btn {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: all 0.2s;
+}
+
+.continue-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.levelup-title {
+  font-size: 24px;
+  color: #64b5f6;
+  margin: 0 0 10px 0;
+}
+
+.levelup-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 20px 0;
+}
+
+.upgrade-choices {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.upgrade-card {
+  background: linear-gradient(135deg, rgba(50, 50, 80, 0.8), rgba(40, 40, 60, 0.8));
+  border: 2px solid rgba(100, 150, 255, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 120px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.upgrade-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(100, 200, 255, 0.8);
+  box-shadow: 0 8px 20px rgba(100, 150, 255, 0.3);
+}
+
+.upgrade-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.upgrade-label {
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 5px;
+}
+
+.upgrade-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 5px;
+}
+
+/* Combat Stats Display */
+.combat-stats {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 6px 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.combat-stats .stat {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* Dodge Jump Animation */
+@keyframes dodgeJump {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-30px);
+  }
+}
+
+.dodging {
+  animation: dodgeJump 0.5s ease-out;
 }

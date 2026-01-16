@@ -110,6 +110,10 @@ export class CombatUI {
         const f1MaxHP = 100 + ((f1.stats?.vitalite || 0) * 5)
         const f2MaxHP = 100 + ((f2.stats?.vitalite || 0) * 5)
 
+        // Calculate initial HP percentages
+        const f1HpPercent = (f1.vie / f1MaxHP) * 100
+        const f2HpPercent = (f2.vie / f2MaxHP) * 100
+
         this.combatOverlay = document.createElement('div')
         this.combatOverlay.id = 'combat-scene-overlay'
         this.combatOverlay.className = 'overlay active combat-scene'
@@ -120,8 +124,14 @@ export class CombatUI {
             <div class="hud">
                 <div class="name">${f1.nom}</div>
                 <div class="hp-bar">
-                    <div class="hp-fill" id="hp-${f1.id}" style="width: 100%"></div>
+                    <div class="hp-fill" id="hp-${f1.id}" style="width: ${f1HpPercent}%"></div>
                     <div class="hp-text" id="hp-text-${f1.id}">${f1.vie}/${f1MaxHP}</div>
+                </div>
+                <div class="combat-stats">
+                    <span class="stat">💪 ${f1.stats.force}</span>
+                    <span class="stat">❤️ ${f1.stats.vitalite}</span>
+                    <span class="stat">⚡ ${f1.stats.vitesse}</span>
+                    <span class="stat">🎯 ${f1.stats.agilite}</span>
                 </div>
                 <div class="atb-bar"><div class="atb-fill" id="atb-${f1.id}" style="width: 0%"></div></div>
             </div>
@@ -141,8 +151,14 @@ export class CombatUI {
             <div class="hud">
                 <div class="name">${f2.nom}</div>
                 <div class="hp-bar">
-                    <div class="hp-fill" id="hp-${f2.id}" style="width: 100%"></div>
+                    <div class="hp-fill" id="hp-${f2.id}" style="width: ${f2HpPercent}%"></div>
                     <div class="hp-text" id="hp-text-${f2.id}">${f2.vie}/${f2MaxHP}</div>
+                </div>
+                <div class="combat-stats">
+                    <span class="stat">💪 ${f2.stats.force}</span>
+                    <span class="stat">❤️ ${f2.stats.vitalite}</span>
+                    <span class="stat">⚡ ${f2.stats.vitesse}</span>
+                    <span class="stat">🎯 ${f2.stats.agilite}</span>
                 </div>
                 <div class="atb-bar"><div class="atb-fill" id="atb-${f2.id}" style="width: 0%"></div></div>
             </div>
@@ -198,11 +214,8 @@ export class CombatUI {
         })
 
         engine.start().then(({ winner, loser }) => {
-            setTimeout(() => {
-                alert(`VAINQUEUR : ${winner.nom} !`)
-                this.destroyCombat()
-                onFinish(winner, loser)
-            }, 2000)
+            // Don't auto-close, show victory screen instead
+            this.showVictoryScreen(winner, loser, onFinish)
         })
     }
 
@@ -219,6 +232,12 @@ export class CombatUI {
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
                 break
             case 'dodge':
+                // Add dodge animation to the mob image only, not the HUD
+                const dodgingMobWrapper = document.querySelector(`#fighter-${event.targetId} .mob-wrapper`) as HTMLElement
+                if (dodgingMobWrapper) {
+                    dodgingMobWrapper.classList.add('dodging')
+                    setTimeout(() => dodgingMobWrapper.classList.remove('dodging'), 500)
+                }
                 this.showPopup(event.targetId, 'ESQUIVE !', 'dodge')
                 // Animer l'attaquant même si ça rate (pour la lisibilité)
                 const dodgerAttacker = document.getElementById(`fighter-${event.attackerId}`)
@@ -276,15 +295,16 @@ export class CombatUI {
     }
 
     private animateAttack(attackerId: string, targetId: string, damage: number, crit: boolean): void {
-        const attacker = document.getElementById(`fighter-${attackerId}`)
-        const target = document.getElementById(`fighter-${targetId}`)
+        // Apply animations to mob-wrapper only, not the entire fighter container
+        const attackerWrapper = document.querySelector(`#fighter-${attackerId} .mob-wrapper`) as HTMLElement
+        const targetWrapper = document.querySelector(`#fighter-${targetId} .mob-wrapper`) as HTMLElement
 
-        if (attacker && target) {
-            attacker.classList.add('attacking')
-            setTimeout(() => attacker.classList.remove('attacking'), 300)
+        if (attackerWrapper && targetWrapper) {
+            attackerWrapper.classList.add('attacking')
+            setTimeout(() => attackerWrapper.classList.remove('attacking'), 300)
 
-            target.classList.add('hit')
-            setTimeout(() => target.classList.remove('hit'), 300)
+            targetWrapper.classList.add('hit')
+            setTimeout(() => targetWrapper.classList.remove('hit'), 300)
 
             this.showPopup(targetId, `-${damage}${crit ? ' CRIT!' : ''}`, crit ? 'crit' : 'damage')
         }
@@ -314,5 +334,92 @@ export class CombatUI {
             this.combatOverlay.remove()
             this.combatOverlay = null
         }
+    }
+
+    private async showVictoryScreen(winner: any, loser: any, onFinish: (winner: any, loser: any) => void): Promise<void> {
+        const victoryOverlay = document.createElement('div')
+        victoryOverlay.className = 'victory-overlay'
+        victoryOverlay.innerHTML = `
+            <div class="victory-content">
+                <h1 class="victory-title">VICTOIRE!</h1>
+                <div class="victor-name">${winner.nom}</div>
+                <div class="combat-results">
+                    <div>🏆 Vainqueur: ${winner.nom}</div>
+                    <div>💀 Vaincu: ${loser.nom}</div>
+                </div>
+                <button class="continue-btn" id="continue-combat-btn">Continuer →</button>
+            </div>
+        `
+        this.combatOverlay?.appendChild(victoryOverlay)
+
+        const continueBtn = document.getElementById('continue-combat-btn')
+        await new Promise<void>(resolve => {
+            continueBtn?.addEventListener('click', () => {
+                victoryOverlay.remove()
+                resolve()
+            })
+        })
+
+        // Check for level-ups
+        await this.handleLevelUps([winner, loser])
+
+        this.destroyCombat()
+        onFinish(winner, loser)
+    }
+
+    private async handleLevelUps(mobs: any[]): Promise<void> {
+        for (const mob of mobs) {
+            const mobData = await window.api.getMobById(mob.id)
+            if (!mobData.success || !mobData.mob) continue
+
+            const freshMob = mobData.mob
+            if (freshMob.statPoints > 0) {
+                await this.showLevelUpChoices(freshMob)
+            }
+        }
+    }
+
+    private async showLevelUpChoices(mob: any): Promise<void> {
+        const choicesResult = await window.api.getUpgradeChoices(mob.id)
+        if (!choicesResult.success || !choicesResult.choices) return
+
+        const levelUpOverlay = document.createElement('div')
+        levelUpOverlay.className = 'levelup-overlay'
+        levelUpOverlay.innerHTML = `
+            <div class="levelup-content">
+                <h2 class="levelup-title">${mob.nom} - Niveau ${mob.level}!</h2>
+                <p class="levelup-subtitle">Choisissez une amélioration:</p>
+                <div class="upgrade-choices" id="upgrade-choices"></div>
+            </div>
+        `
+        this.combatOverlay?.appendChild(levelUpOverlay)
+
+        const choicesContainer = levelUpOverlay.querySelector('#upgrade-choices') as HTMLElement
+
+        const choicePromise = new Promise<any>(resolve => {
+            choicesResult.choices?.forEach(choice => {
+                const card = document.createElement('div')
+                card.className = 'upgrade-card'
+                const descText = choice.type === 'trait' ? choice.description || '' : ''
+                card.innerHTML = `
+                    <div class="upgrade-icon">${this.getUpgradeIcon(choice)}</div>
+                    <div class="upgrade-label">${choice.label}</div>
+                    ${descText ? `<div class="upgrade-desc">${descText}</div>` : ''}
+                `
+                card.addEventListener('click', () => resolve(choice))
+                choicesContainer.appendChild(card)
+            })
+        })
+
+        const selectedChoice = await choicePromise
+        await window.api.applyUpgrade(mob.id, selectedChoice)
+        levelUpOverlay.remove()
+    }
+
+    private getUpgradeIcon(choice: any): string {
+        if (choice.type === 'stat') return '📈'
+        if (choice.type === 'weapon') return '⚔️'
+        if (choice.type === 'trait') return '✨'
+        return '🎁'
     }
 }
