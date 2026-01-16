@@ -13,15 +13,27 @@ export interface PlatformAPI {
 
     reviveMob(id: string): Promise<MobActionResult>
     renameMob(id: string, newName: string): Promise<MobActionResult>
+    updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): Promise<MobActionResult>
 
     // Récupération des mobs
     getAllMobs(): Promise<{ success: boolean; mobs: MobData[] }>
     getMobById(id: string): Promise<MobActionResult>
+
+    // Combat
+    processCombatResult(winner: MobData, loser: MobData): Promise<{ winner: MobData, reward?: string }>
+    getMobUpgradeChoices(id: string): Promise<{ success: boolean; choices: any[]; error?: string }>
+    applyMobUpgrade(id: string, choice: any): Promise<MobActionResult>
+
+    // Biome
+    saveBiome(data: any[]): Promise<SaveLoadResult>
+    loadBiome(): Promise<{ success: boolean; data?: any[]; error?: string }>
 
     // Sauvegarde et chargement
     saveMobs(): Promise<SaveLoadResult>
     loadMobs(): Promise<MobListResult>
 
     // Electron-specific (optional)
+    minimizeWindow?(): void
+    closeWindow?(): void
     setIgnoreMouseEvents?(ignore: boolean): void
 }
