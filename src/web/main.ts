@@ -4,24 +4,30 @@ import {
     setSelectedMob,
     setOnRenameCallback,
     setOnMobClick,
-    setIsActionModeActive
+    setIsActionModeActive,
+    setOnProfileOpen
 } from '../renderer/src/Mob'
 import { MobData } from '../shared/types'
 import { preloadSounds } from '../renderer/src/SoundManager'
 import { WebPlatformAPI } from './WebPlatformAPI'
 import { BiomeRenderer } from '../renderer/src/BiomeRenderer'
+import { ProfileRenderer } from '../renderer/src/ProfileRenderer'
 import { CombatUI } from '../renderer/src/combat/CombatUI'
 import { generateRandomName } from '../renderer/src/utils/NameGenerator'
 import potatoImage from '../renderer/assets/Potato still.png'
 
 // Utiliser l'API web
 const api = new WebPlatformAPI()
+    ; (window as any).api = api
 
 // Map des renderers de mobs par ID
 const mobRenderers: Map<string, MobRenderer> = new Map()
 
 // Initialisation du biome
 const biomeRenderer = new BiomeRenderer('biome-container')
+
+// Initialisation du renderer de profil
+const profileRenderer = new ProfileRenderer()
 
 // Initialisation du système de combat (UI)
 const combatUI = new CombatUI()
@@ -124,6 +130,18 @@ function setupRenameCallback(): void {
 
     setIsActionModeActive(() => {
         return isActionModeActive()
+    })
+
+    setOnProfileOpen(async (mobRenderer) => {
+        const result = await api.getMobById(mobRenderer.id)
+        if (result.success && result.mob) {
+            profileRenderer.render(result.mob, () => {
+                // Done
+            }, (mobId, updatedMob) => {
+                console.log('[Web] Mob renamed:', mobId, updatedMob.nom)
+                mobRenderer.updateFromData(updatedMob)
+            })
+        }
     })
 }
 
@@ -345,12 +363,19 @@ function setupActionButtons(): void {
     const btnHeal = document.getElementById('btn-heal')
     const btnRevive = document.getElementById('btn-revive')
     const btnCombat = document.getElementById('btn-combat')
+    const btnToggle = document.getElementById('btn-toggle-menu')
+    const actionMenu = document.getElementById('action-menu')
+
+    btnToggle?.addEventListener('click', () => {
+        actionMenu?.classList.toggle('hidden')
+    })
 
     const toggleActionMode = (mode: ActionMode): void => {
         if (currentActionMode === mode) {
             setActionMode('none')
         } else {
             setActionMode(mode)
+            actionMenu?.classList.add('hidden')
         }
     }
 

@@ -16,6 +16,7 @@ export interface CombatStats {
     wins: number
     losses: number
     winStreak: number
+    tournamentWins: number
 }
 
 export interface MobData {
@@ -78,3 +79,46 @@ export interface ApplyUpgradeResult {
     error?: string
 }
 
+
+// Tournament system types
+export interface TournamentParticipant {
+    id: string
+    nom: string
+    imageUrl: string
+    stats: MobStats
+    level: number
+    isPlayer: boolean
+}
+
+export interface TournamentMatch {
+    id: string
+    participant1?: TournamentParticipant
+    participant2?: TournamentParticipant
+    winnerId?: string
+    isCompleted: boolean
+}
+
+export interface TournamentRound {
+    matches: TournamentMatch[]
+}
+
+export interface TournamentData {
+    id: string
+    status: 'active' | 'completed'
+    rounds: TournamentRound[] // [0] = Quarts, [1] = Semis, [2] = Final
+    winnerId?: string
+    currentRoundIndex: number
+    currentMatchIndex: number
+}
+
+export interface TournamentResult {
+    success: boolean
+    tournament?: TournamentData
+    error?: string
+}
+
+export interface TournamentHistory {
+    success: boolean
+    tournaments?: TournamentData[]
+    error?: string
+}

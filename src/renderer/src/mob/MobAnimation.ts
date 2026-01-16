@@ -20,10 +20,9 @@ export class MobAnimation {
         const color = colors[sound] || '#ffffff'
         const img = this.element.querySelector('.mob-image') as HTMLElement
         if (img) {
-            const originalFilter = img.style.filter
             img.style.filter = `drop-shadow(0 0 20px ${color}) brightness(1.3)`
             setTimeout(() => {
-                img.style.filter = originalFilter
+                img.style.filter = ''
             }, 200)
         }
     }

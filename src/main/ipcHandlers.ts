@@ -6,6 +6,8 @@ import { BiomeService } from './BiomeService'
  * Enregistre tous les handlers IPC pour la gestion des mobs
  */
 export function registerMobHandlers(): void {
+  console.log('[IPC] Registering Mob handlers...')
+
   // Créer un nouveau mob
   ipcMain.handle('mob:create', (_event, nom: string, imageUrl: string) => {
     const mob = MobManager.createMob(nom, imageUrl)
@@ -21,22 +23,8 @@ export function registerMobHandlers(): void {
     return { success: true }
   })
 
-  // Infliger des dégâts
-  ipcMain.handle('mob:damage', (_event, id: string, amount: number) => {
-    return MobManager.damageMob(id, amount)
-  })
-
-  // Soigner
-  ipcMain.handle('mob:heal', (_event, id: string, amount: number) => {
-    return MobManager.healMob(id, amount)
-  })
-
-
-
-  // Réanimer
-  ipcMain.handle('mob:revive', (_event, id: string) => {
-    return MobManager.reviveMob(id)
-  })
+  // Réanimer (removed from UI but kept for backend if needed? No, user said "supprime les modes")
+  // So let's delete them.
 
   // Renommer
   ipcMain.handle('mob:rename', (_event, id: string, newName: string) => {
@@ -90,6 +78,28 @@ export function registerMobHandlers(): void {
   // Appliquer un choix d'amélioration
   ipcMain.handle('mob:applyUpgrade', (_event, id: string, choice: any) => {
     return MobManager.applyMobUpgrade(id, choice)
+  })
+
+  ipcMain.handle('mob:processTournamentWin', (_event, id: string) => {
+    return MobManager.processTournamentWin(id)
+  })
+
+  // Tournoi
+  ipcMain.handle('mob:getTournament', () => {
+    return MobManager.getTournament()
+  })
+
+  ipcMain.handle('mob:saveTournament', (_event, data) => {
+    return MobManager.saveTournament(data)
+  })
+
+  ipcMain.handle('mob:resetTournament', () => {
+    return MobManager.resetTournament()
+  })
+
+  ipcMain.handle('mob:getTournamentHistory', () => {
+    console.log('[IPC] Handling mob:getTournamentHistory')
+    return MobManager.getTournamentHistory()
   })
 
   // Sauvegarder le biome

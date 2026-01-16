@@ -1,4 +1,4 @@
-import { MobData, MobActionResult, MobListResult, SaveLoadResult } from './types'
+import { MobData, MobActionResult, MobListResult, SaveLoadResult, TournamentResult, TournamentData, TournamentHistory } from './types'
 
 /**
  * Interface platforme-agnostique pour les opérations sur les mobs.
@@ -8,10 +8,7 @@ export interface PlatformAPI {
     // Actions sur les mobs
     createMob(nom: string, imageUrl: string): Promise<MobActionResult>
     deleteMob(id: string): Promise<{ success: boolean; error?: string }>
-    damageMob(id: string, amount: number): Promise<MobActionResult>
-    healMob(id: string, amount: number): Promise<MobActionResult>
 
-    reviveMob(id: string): Promise<MobActionResult>
     renameMob(id: string, newName: string): Promise<MobActionResult>
     updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): Promise<MobActionResult>
 
@@ -20,9 +17,16 @@ export interface PlatformAPI {
     getMobById(id: string): Promise<MobActionResult>
 
     // Combat
-    processCombatResult(winner: MobData, loser: MobData): Promise<{ winner: MobData, reward?: string }>
+    processCombatResult(winner: MobData, loser: MobData): Promise<{ winner: MobData, loser: MobData, reward?: string }>
     getMobUpgradeChoices(id: string): Promise<{ success: boolean; choices: any[]; error?: string }>
     applyMobUpgrade(id: string, choice: any): Promise<MobActionResult>
+    processTournamentWin(id: string): Promise<MobActionResult>
+
+    // Tournoi
+    getTournament(): Promise<TournamentResult>
+    saveTournament(data: TournamentData): Promise<SaveLoadResult>
+    resetTournament(): Promise<SaveLoadResult>
+    getTournamentHistory(): Promise<TournamentHistory>
 
     // Biome
     saveBiome(data: any[]): Promise<SaveLoadResult>

@@ -1,5 +1,5 @@
 import { PlatformAPI } from '../shared/PlatformAPI'
-import { MobActionResult, MobListResult, SaveLoadResult, MobData } from '../shared/types'
+import { MobData, MobActionResult, MobListResult, SaveLoadResult, TournamentResult, TournamentData, TournamentHistory } from '../shared/types'
 import { WebMobManager } from './WebMobManager'
 
 /**
@@ -20,26 +20,12 @@ export class WebPlatformAPI implements PlatformAPI {
         return { success: true }
     }
 
-    async damageMob(id: string, amount: number): Promise<MobActionResult> {
-        return WebMobManager.damageMob(id, amount)
-    }
-
-    async healMob(id: string, amount: number): Promise<MobActionResult> {
-        return WebMobManager.healMob(id, amount)
-    }
-
-
-    async reviveMob(id: string): Promise<MobActionResult> {
-        return WebMobManager.reviveMob(id)
-    }
-
     async renameMob(id: string, newName: string): Promise<MobActionResult> {
         return WebMobManager.renameMob(id, newName)
     }
 
     async updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): Promise<MobActionResult> {
-        // Not fully implemented in web yet, but following interface
-        return { success: false, error: 'Non implémenté sur le web' }
+        return WebMobManager.updateMobSkin(id, type, value)
     }
 
     async getAllMobs(): Promise<{ success: boolean; mobs: MobData[] }> {
@@ -55,16 +41,36 @@ export class WebPlatformAPI implements PlatformAPI {
         return { success: true, mob }
     }
 
-    async processCombatResult(winner: MobData, loser: MobData): Promise<{ winner: MobData, reward?: string }> {
+    async processCombatResult(winner: MobData, loser: MobData): Promise<{ winner: MobData, loser: MobData, reward?: string }> {
         return WebMobManager.processCombatResult(winner, loser)
     }
 
-    async getMobUpgradeChoices(_id: string): Promise<{ success: boolean; choices: any[]; error?: string }> {
-        return { success: false, choices: [], error: 'Non implémenté sur le web' }
+    async getMobUpgradeChoices(id: string): Promise<{ success: boolean; choices: any[]; error?: string }> {
+        return WebMobManager.getMobUpgradeChoices(id)
     }
 
-    async applyMobUpgrade(_id: string, _choice: any): Promise<MobActionResult> {
-        return { success: false, error: 'Non implémenté sur le web' }
+    async applyMobUpgrade(id: string, choice: any): Promise<MobActionResult> {
+        return WebMobManager.applyMobUpgrade(id, choice)
+    }
+
+    async processTournamentWin(id: string): Promise<MobActionResult> {
+        return WebMobManager.processTournamentWin(id)
+    }
+
+    async getTournament(): Promise<TournamentResult> {
+        return WebMobManager.getTournament()
+    }
+
+    async saveTournament(data: TournamentData): Promise<SaveLoadResult> {
+        return WebMobManager.saveTournament(data)
+    }
+
+    async resetTournament(): Promise<SaveLoadResult> {
+        return WebMobManager.resetTournament()
+    }
+
+    async getTournamentHistory(): Promise<TournamentHistory> {
+        return WebMobManager.getTournamentHistory()
     }
 
     async saveBiome(data: any[]): Promise<SaveLoadResult> {

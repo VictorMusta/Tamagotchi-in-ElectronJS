@@ -7,10 +7,6 @@ const api = {
   // Actions sur les mobs
   createMob: (nom: string, imageUrl: string) => ipcRenderer.invoke('mob:create', nom, imageUrl),
   deleteMob: (id: string) => ipcRenderer.invoke('mob:delete', id),
-  damageMob: (id: string, amount: number) => ipcRenderer.invoke('mob:damage', id, amount),
-  healMob: (id: string, amount: number) => ipcRenderer.invoke('mob:heal', id, amount),
-
-  reviveMob: (id: string) => ipcRenderer.invoke('mob:revive', id),
   renameMob: (id: string, newName: string) => ipcRenderer.invoke('mob:rename', id, newName),
   updateMobSkin: (id: string, type: 'hat' | 'bottom', value: string) => ipcRenderer.invoke('mob:updateSkin', id, type, value),
 
@@ -23,8 +19,13 @@ const api = {
   saveMobs: () => ipcRenderer.invoke('mob:save'),
   loadMobs: (): Promise<MobListResult> => ipcRenderer.invoke('mob:load'),
 
-  getUpgradeChoices: (id: string): Promise<UpgradeChoicesResult> => ipcRenderer.invoke('mob:getUpgradeChoices', id),
-  applyUpgrade: (id: string, choice: UpgradeChoice): Promise<ApplyUpgradeResult> => ipcRenderer.invoke('mob:applyUpgrade', id, choice),
+  getMobUpgradeChoices: (id: string): Promise<UpgradeChoicesResult> => ipcRenderer.invoke('mob:getUpgradeChoices', id),
+  applyMobUpgrade: (id: string, choice: UpgradeChoice): Promise<ApplyUpgradeResult> => ipcRenderer.invoke('mob:applyUpgrade', id, choice),
+  processTournamentWin: (id: string) => ipcRenderer.invoke('mob:processTournamentWin', id),
+  getTournament: () => ipcRenderer.invoke('mob:getTournament'),
+  saveTournament: (data: any) => ipcRenderer.invoke('mob:saveTournament', data),
+  resetTournament: () => ipcRenderer.invoke('mob:resetTournament'),
+  getTournamentHistory: () => ipcRenderer.invoke('mob:getTournamentHistory'),
   setIgnoreMouseEvents: (ignore: boolean) => ipcRenderer.send('window:set-ignore-mouse-events', ignore),
   saveBiome: (data: any) => ipcRenderer.invoke('biome:save', data),
   loadBiome: () => ipcRenderer.invoke('biome:load'),

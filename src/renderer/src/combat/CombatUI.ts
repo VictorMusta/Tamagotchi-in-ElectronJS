@@ -232,31 +232,32 @@ export class CombatUI {
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
                 break
             case 'dodge':
-                // Add dodge animation to the mob image only, not the HUD
+                // Dash animation for the attacker even if it's dodged
+                const dodgeAttacker = document.getElementById(`fighter-${event.attackerId}`)
+                const dodgeTarget = document.querySelector(`#fighter-${event.targetId} .mob-wrapper`) as HTMLElement
+                if (dodgeAttacker && dodgeTarget) {
+                    this.performDash(dodgeAttacker, dodgeTarget)
+                }
+
+                // Dodging animation for the target
                 const dodgingMobWrapper = document.querySelector(`#fighter-${event.targetId} .mob-wrapper`) as HTMLElement
                 if (dodgingMobWrapper) {
                     dodgingMobWrapper.classList.add('dodging')
                     setTimeout(() => dodgingMobWrapper.classList.remove('dodging'), 500)
                 }
                 this.showPopup(event.targetId, 'ESQUIVE !', 'dodge')
-                // Animer l'attaquant même si ça rate (pour la lisibilité)
-                const dodgerAttacker = document.getElementById(`fighter-${event.attackerId}`)
-                if (dodgerAttacker) {
-                    dodgerAttacker.classList.add('attacking')
-                    setTimeout(() => dodgerAttacker.classList.remove('attacking'), 300)
-                }
                 break
             case 'maggot_attack':
+                const attackerContainer = document.getElementById(`fighter-${event.attackerId}`)
+                const targetWrapper = document.querySelector(`#fighter-${event.targetId} .mob-wrapper`) as HTMLElement
+                const maggotEl = attackerContainer?.querySelector('.maggot-companion') as HTMLElement
+
+                if (maggotEl && targetWrapper) {
+                    this.performDash(maggotEl, targetWrapper)
+                }
+
                 this.showPopup(event.targetId, `🪱 -${event.damage}`, 'maggot')
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
-
-                // Animation de l'asticot
-                const attackerEl = document.getElementById(`fighter-${event.attackerId}`)
-                const maggotEl = attackerEl?.querySelector('.maggot-companion')
-                if (maggotEl) {
-                    maggotEl.classList.add('attacking')
-                    setTimeout(() => maggotEl.classList.remove('attacking'), 500)
-                }
                 break
             case 'log':
                 const combatLog = document.getElementById('combat-log')
@@ -295,19 +296,43 @@ export class CombatUI {
     }
 
     private animateAttack(attackerId: string, targetId: string, damage: number, crit: boolean): void {
-        // Apply animations to mob-wrapper only, not the entire fighter container
-        const attackerWrapper = document.querySelector(`#fighter-${attackerId} .mob-wrapper`) as HTMLElement
-        const targetWrapper = document.querySelector(`#fighter-${targetId} .mob-wrapper`) as HTMLElement
+        const attackerContainer = document.getElementById(`fighter-${attackerId}`)
+        const targetContainer = document.getElementById(`fighter-${targetId}`)
+        const attackerWrapper = attackerContainer?.querySelector('.mob-wrapper') as HTMLElement
+        const targetWrapper = targetContainer?.querySelector('.mob-wrapper') as HTMLElement
 
-        if (attackerWrapper && targetWrapper) {
-            attackerWrapper.classList.add('attacking')
-            setTimeout(() => attackerWrapper.classList.remove('attacking'), 300)
+        if (attackerContainer && targetContainer && attackerWrapper && targetWrapper) {
+            this.performDash(attackerContainer, targetWrapper)
 
             targetWrapper.classList.add('hit')
             setTimeout(() => targetWrapper.classList.remove('hit'), 300)
 
             this.showPopup(targetId, `-${damage}${crit ? ' CRIT!' : ''}`, crit ? 'crit' : 'damage')
         }
+    }
+
+    /**
+     * Centralized dash animation logic
+     */
+    private performDash(attacker: HTMLElement, target: HTMLElement): void {
+        // Calculate distance for responsive dash
+        const attackerRect = attacker.getBoundingClientRect()
+        const targetRect = target.getBoundingClientRect()
+
+        const deltaX = targetRect.left - attackerRect.left
+        const deltaY = targetRect.top - attackerRect.top
+
+        // Set CSS variables for the animation
+        attacker.style.setProperty('--dash-x', `${deltaX}px`)
+        attacker.style.setProperty('--dash-y', `${deltaY}px`)
+
+        attacker.classList.remove('dash-attacking')
+        void attacker.offsetWidth // Force reflow
+        attacker.classList.add('dash-attacking')
+
+        setTimeout(() => {
+            attacker.classList.remove('dash-attacking')
+        }, 700)
     }
 
     private showPopup(targetId: string, text: string, type: string): void {
@@ -361,7 +386,11 @@ export class CombatUI {
         })
 
         // Check for level-ups
-        await this.handleLevelUps([winner, loser])
+        try {
+            await this.handleLevelUps([winner, loser])
+        } catch (e) {
+            console.error('[CombatUI] Error during level-ups:', e)
+        }
 
         this.destroyCombat()
         onFinish(winner, loser)
@@ -380,40 +409,47 @@ export class CombatUI {
     }
 
     private async showLevelUpChoices(mob: any): Promise<void> {
-        const choicesResult = await window.api.getUpgradeChoices(mob.id)
-        if (!choicesResult.success || !choicesResult.choices) return
+        try {
+            const choicesResult = await window.api.getMobUpgradeChoices(mob.id)
+            if (!choicesResult.success || !choicesResult.choices || choicesResult.choices.length === 0) {
+                console.log('[CombatUI] No upgrade choices available for', mob.nom)
+                return
+            }
 
-        const levelUpOverlay = document.createElement('div')
-        levelUpOverlay.className = 'levelup-overlay'
-        levelUpOverlay.innerHTML = `
-            <div class="levelup-content">
-                <h2 class="levelup-title">${mob.nom} - Niveau ${mob.level}!</h2>
-                <p class="levelup-subtitle">Choisissez une amélioration:</p>
-                <div class="upgrade-choices" id="upgrade-choices"></div>
-            </div>
-        `
-        this.combatOverlay?.appendChild(levelUpOverlay)
+            const levelUpOverlay = document.createElement('div')
+            levelUpOverlay.className = 'levelup-overlay'
+            levelUpOverlay.innerHTML = `
+                <div class="levelup-content">
+                    <h2 class="levelup-title">${mob.nom} - Niveau ${mob.level}!</h2>
+                    <p class="levelup-subtitle">Choisissez une amélioration:</p>
+                    <div class="upgrade-choices" id="upgrade-choices"></div>
+                </div>
+            `
+            this.combatOverlay?.appendChild(levelUpOverlay)
 
-        const choicesContainer = levelUpOverlay.querySelector('#upgrade-choices') as HTMLElement
+            const choicesContainer = levelUpOverlay.querySelector('#upgrade-choices') as HTMLElement
 
-        const choicePromise = new Promise<any>(resolve => {
-            choicesResult.choices?.forEach(choice => {
-                const card = document.createElement('div')
-                card.className = 'upgrade-card'
-                const descText = choice.type === 'trait' ? choice.description || '' : ''
-                card.innerHTML = `
-                    <div class="upgrade-icon">${this.getUpgradeIcon(choice)}</div>
-                    <div class="upgrade-label">${choice.label}</div>
-                    ${descText ? `<div class="upgrade-desc">${descText}</div>` : ''}
-                `
-                card.addEventListener('click', () => resolve(choice))
-                choicesContainer.appendChild(card)
+            const choicePromise = new Promise<any>(resolve => {
+                choicesResult.choices?.forEach(choice => {
+                    const card = document.createElement('div')
+                    card.className = 'upgrade-card'
+                    const descText = choice.type === 'trait' ? choice.description || '' : ''
+                    card.innerHTML = `
+                        <div class="upgrade-icon">${this.getUpgradeIcon(choice)}</div>
+                        <div class="upgrade-label">${choice.label}</div>
+                        ${descText ? `<div class="upgrade-desc">${descText}</div>` : ''}
+                    `
+                    card.addEventListener('click', () => resolve(choice))
+                    choicesContainer.appendChild(card)
+                })
             })
-        })
 
-        const selectedChoice = await choicePromise
-        await window.api.applyUpgrade(mob.id, selectedChoice)
-        levelUpOverlay.remove()
+            const selectedChoice = await choicePromise
+            await window.api.applyMobUpgrade(mob.id, selectedChoice)
+            levelUpOverlay.remove()
+        } catch (error) {
+            console.error('[CombatUI] Error in showLevelUpChoices:', error)
+        }
     }
 
     private getUpgradeIcon(choice: any): string {

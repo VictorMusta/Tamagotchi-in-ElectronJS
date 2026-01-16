@@ -19,10 +19,9 @@ export class MobDisplay {
       <div class="mob-tooltip">
         <div class="mob-info">
           <div class="mob-identity">
-              <span class="mob-level-badge">Lvl ${this.data.level || 1}</span>
+              <span class="mob-level-badge">Level ${this.data.level || 1}</span>
               <span class="mob-name" title="Double-cliquez pour renommer">${this.data.nom}</span>
           </div>
-          <span class="mob-status ${this.data.status}">${this.data.status}</span>
         </div>
         
         <div class="mob-xp-container">
@@ -81,11 +80,7 @@ export class MobDisplay {
     this.data = data
     if (!this.element) return
 
-    const img = this.element.querySelector('.mob-image') as HTMLImageElement
-    if (img) {
-      img.style.filter = data.status === 'mort' ? 'grayscale(100%)' : 'none'
-      img.style.opacity = data.status === 'mort' ? '0.5' : '1'
-    }
+    this.element.classList.toggle('dead', data.status === 'mort')
 
     const vieBar = this.element.querySelector('.mob-stat-vie .mob-stat-fill') as HTMLElement
     const energieBar = this.element.querySelector('.mob-stat-energie .mob-stat-fill') as HTMLElement
@@ -93,11 +88,6 @@ export class MobDisplay {
     if (vieBar) vieBar.style.width = `${data.vie}%`
     if (energieBar) energieBar.style.width = `${data.energie}%`
 
-    const statusEl = this.element.querySelector('.mob-status') as HTMLElement
-    if (statusEl) {
-      statusEl.textContent = data.status
-      statusEl.className = `mob-status ${data.status}`
-    }
 
     const nameEl = this.element.querySelector('.mob-name') as HTMLElement
     if (nameEl) {
@@ -123,11 +113,22 @@ export class MobDisplay {
     if (valSpd) valSpd.textContent = String(data.stats?.vitesse || 0)
 
     // Update Level & XP
-    const levelBadge = this.element.querySelector('.mob-level-badge')
+    const levelBadge = this.element.querySelector('.mob-level-badge') as HTMLElement
     const xpFill = this.element.querySelector('.mob-xp-fill') as HTMLElement
     const xpText = this.element.querySelector('.mob-xp-text')
 
-    if (levelBadge) levelBadge.textContent = `Lvl ${data.level || 1}`
+    if (levelBadge) {
+      const lvl = data.level || 1
+      levelBadge.textContent = `Level ${lvl}`
+
+      // Clear previous level classes
+      levelBadge.classList.remove('lvl-1', 'lvl-2-3', 'lvl-4plus')
+
+      // Apply new color class
+      if (lvl === 1) levelBadge.classList.add('lvl-1')
+      else if (lvl <= 3) levelBadge.classList.add('lvl-2-3')
+      else levelBadge.classList.add('lvl-4plus')
+    }
     if (xpFill) xpFill.style.width = `${this.calculateXpPercentage()}%`
     if (xpText) xpText.textContent = `XP ${data.experience || 0} / ${this.calculateNextLevelXp()}`
 
