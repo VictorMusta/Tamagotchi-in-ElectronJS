@@ -60,7 +60,6 @@ export class MobRenderer {
   imageUrl: string
   vie: number
   energie: number
-  faim: number
   status: MobStatus
   // Nouvelles propriétés pour le combat et la customisation
   stats: MobStats
@@ -83,7 +82,7 @@ export class MobRenderer {
     this.imageUrl = data.imageUrl
     this.vie = data.vie
     this.energie = data.energie
-    this.faim = data.faim
+
     this.status = data.status
     this.stats = data.stats
     this.level = data.level
@@ -102,7 +101,7 @@ export class MobRenderer {
     this.nom = data.nom
     this.vie = data.vie
     this.energie = data.energie
-    this.faim = data.faim
+
     this.status = data.status
     this.stats = data.stats
     this.level = data.level
@@ -126,7 +125,7 @@ export class MobRenderer {
     }
   }
 
-  playSoundEffect(sound: 'punch' | 'death' | 'heal' | 'feed' | 'revive'): void {
+  playSoundEffect(sound: 'punch' | 'death' | 'heal' | 'revive'): void {
     this.animation?.playSoundEffect(sound)
   }
 

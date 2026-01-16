@@ -42,10 +42,6 @@ export class MobDisplay {
                     <span class="mob-stat-label">Énergie</span>
                     <div class="mob-stat-bar"><div class="mob-stat-fill" style="width: ${this.data.energie}%"></div></div>
                 </div>
-                <div class="mob-stat mob-stat-faim">
-                    <span class="mob-stat-label">Faim</span>
-                    <div class="mob-stat-bar"><div class="mob-stat-fill" style="width: ${this.data.faim}%"></div></div>
-                </div>
             </div>
             
             <div class="mob-attributes-column">
@@ -93,11 +89,9 @@ export class MobDisplay {
 
     const vieBar = this.element.querySelector('.mob-stat-vie .mob-stat-fill') as HTMLElement
     const energieBar = this.element.querySelector('.mob-stat-energie .mob-stat-fill') as HTMLElement
-    const faimBar = this.element.querySelector('.mob-stat-faim .mob-stat-fill') as HTMLElement
 
     if (vieBar) vieBar.style.width = `${data.vie}%`
     if (energieBar) energieBar.style.width = `${data.energie}%`
-    if (faimBar) faimBar.style.width = `${data.faim}%`
 
     const statusEl = this.element.querySelector('.mob-status') as HTMLElement
     if (statusEl) {

@@ -23,7 +23,6 @@ export class Mob {
   imageUrl: string
   vie: number
   energie: number
-  faim: number
   status: MobStatus
   // Nouvelles propriétés pour le combat et la customisation
   stats: MobStats
@@ -39,7 +38,6 @@ export class Mob {
     imageUrl: string,
     vie: number = 100,
     energie: number = 100,
-    faim: number = 0,
     id?: string,
     stats?: MobStats,
     traits?: string[],
@@ -54,7 +52,6 @@ export class Mob {
     this.imageUrl = imageUrl
     this.vie = vie
     this.energie = energie
-    this.faim = faim
     this.status = vie > 0 ? 'vivant' : 'mort'
     this.level = level
     this.experience = experience
@@ -169,15 +166,7 @@ export class Mob {
     return true
   }
 
-  /**
-   * Nourrit le mob (diminue la faim)
-   * @returns true si la nourriture a été appliquée
-   */
-  feed(amount: number): boolean {
-    if (this.status === 'mort') return false
-    this.faim = Math.max(0, this.faim - amount)
-    return true
-  }
+
 
   /**
    * Réanime le mob
@@ -187,7 +176,6 @@ export class Mob {
     if (this.status === 'vivant') return false
     this.vie = Math.floor(this.getMaxHP() / 2) // 50% HP
     this.energie = 50
-    this.faim = 50
     this.updateStatus()
     return true
   }
@@ -206,12 +194,7 @@ export class Mob {
     this.energie = Math.max(0, Math.min(100, amount))
   }
 
-  /**
-   * Modifie la faim du mob
-   */
-  setFaim(amount: number): void {
-    this.faim = Math.max(0, Math.min(100, amount))
-  }
+
 
   /**
    * Modifie le skin du mob
@@ -254,6 +237,77 @@ export class Mob {
   }
 
   /**
+   * Génère 3 choix d'amélioration aléatoires pour un level up
+   */
+  generateUpgradeChoices(): any[] {
+    const choices: any[] = []
+
+    // Choix 1: Stat aléatoire
+    const stats: Array<keyof MobStats> = ['force', 'vitalite', 'vitesse', 'agilite']
+    const randomStat = stats[Math.floor(Math.random() * stats.length)]
+    const statAmount = 2 + Math.floor(Math.random() * 2) // 2 ou 3
+    const statLabels = { force: 'FOR', vitalite: 'VIT', vitesse: 'SPD', agilite: 'AGI' }
+    choices.push({
+      type: 'stat',
+      stat: randomStat,
+      amount: statAmount,
+      label: `+${statAmount} ${statLabels[randomStat]}`
+    })
+
+    // Choix 2: Arme
+    const weapons = ['Épée Rouillée', 'Bâton Noueux', 'Hache Ébréchée', 'Marteau Lourd', 'Dague Acérée']
+    const randomWeapon = weapons[Math.floor(Math.random() * weapons.length)]
+    choices.push({
+      type: 'weapon',
+      name: randomWeapon,
+      label: randomWeapon
+    })
+
+    // Choix 3: Trait (si pas déjà possédé)
+    const availableTraits = POSSIBLE_TRAITS.filter(t => !this.traits.includes(t))
+    if (availableTraits.length > 0) {
+      const randomTrait = availableTraits[Math.floor(Math.random() * availableTraits.length)]
+      choices.push({
+        type: 'trait',
+        name: randomTrait,
+        label: randomTrait,
+        description: `Nouveau trait: ${randomTrait}`
+      })
+    } else {
+      // Si tous les traits sont déjà acquis, donner un autre choix de stat
+      const altStat = stats[Math.floor(Math.random() * stats.length)]
+      const altAmount = 2 + Math.floor(Math.random() * 2)
+      const altLabels = { force: 'FOR', vitalite: 'VIT', vitesse: 'SPD', agilite: 'AGI' }
+      choices.push({
+        type: 'stat',
+        stat: altStat,
+        amount: altAmount,
+        label: `+${altAmount} ${altLabels[altStat]}`
+      })
+    }
+
+    return choices
+  }
+
+  /**
+   * Applique un choix d'amélioration au mob
+   */
+  applyChoice(choice: any): void {
+    if (choice.type === 'stat') {
+      this.upgradeStat(choice.stat, choice.amount)
+      this.statPoints-- // Consommer un point de stat
+    } else if (choice.type === 'weapon') {
+      // Pour l'instant, juste logger (pas de système d'armes complet)
+      console.log(`[Mob] ${this.nom} a obtenu: ${choice.name}`)
+    } else if (choice.type === 'trait') {
+      if (!this.traits.includes(choice.name)) {
+        this.traits.push(choice.name)
+        this.statPoints--
+      }
+    }
+  }
+
+  /**
    * Sérialise le mob en objet JSON
    */
   toJSON(): MobData {
@@ -263,7 +317,6 @@ export class Mob {
       imageUrl: this.imageUrl,
       vie: this.vie,
       energie: this.energie,
-      faim: this.faim,
       status: this.status,
       stats: this.stats,
       level: this.level,
@@ -284,7 +337,6 @@ export class Mob {
       data.imageUrl,
       data.vie,
       data.energie,
-      data.faim,
       data.id,
       // Utilisation explicite de undefined pour déclencher les valeurs par défaut du constructeur
       data.stats || undefined,
@@ -381,20 +433,7 @@ class MobManagerClass {
     return { success: true, mob: mob.toJSON(), changed: true }
   }
 
-  /**
-   * Nourrit un mob
-   */
-  feedMob(id: string, amount: number): MobActionResult {
-    const mob = this.mobs.get(id)
-    if (!mob) {
-      return { success: false, error: 'Mob non trouvé' }
-    }
-    const fed = mob.feed(amount)
-    if (!fed) {
-      return { success: false, error: 'Le mob est mort', mob: mob.toJSON(), changed: false }
-    }
-    return { success: true, mob: mob.toJSON(), changed: true }
-  }
+
 
   /**
    * Réanime un mob
@@ -551,6 +590,36 @@ class MobManagerClass {
       winner: winner ? winner.toJSON() : winnerData,
       reward
     }
+  }
+
+  /**
+   * Génère 3 choix d'amélioration pour un mob
+   */
+  getMobUpgradeChoices(id: string): any {
+    const mob = this.mobs.get(id)
+    if (!mob) {
+      return { success: false, error: 'Mob non trouvé' }
+    }
+    if (mob.statPoints <= 0) {
+      return { success: false, error: 'Aucun point de stat disponible' }
+    }
+    const choices = mob.generateUpgradeChoices()
+    return { success: true, choices }
+  }
+
+  /**
+   * Applique un choix d'amélioration à un mob
+   */
+  applyMobUpgrade(id: string, choice: any): any {
+    const mob = this.mobs.get(id)
+    if (!mob) {
+      return { success: false, error: 'Mob non trouvé' }
+    }
+    if (mob.statPoints <= 0) {
+      return { success: false, error: 'Aucun point de stat disponible' }
+    }
+    mob.applyChoice(choice)
+    return { success: true, mob: mob.toJSON() }
   }
 }
 

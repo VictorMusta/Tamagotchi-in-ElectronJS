@@ -6,7 +6,10 @@ import {
   MobActionResult,
   MobListResult,
   MobCreateResult,
-  SaveLoadResult
+  SaveLoadResult,
+  UpgradeChoicesResult,
+  UpgradeChoice,
+  ApplyUpgradeResult
 } from '../shared/types'
 
 interface CustomAPI {
@@ -15,7 +18,7 @@ interface CustomAPI {
   deleteMob: (id: string) => Promise<{ success: boolean; error?: string }>
   damageMob: (id: string, amount: number) => Promise<MobActionResult>
   healMob: (id: string, amount: number) => Promise<MobActionResult>
-  feedMob: (id: string, amount: number) => Promise<MobActionResult>
+
   reviveMob: (id: string) => Promise<MobActionResult>
   renameMob: (id: string, newName: string) => Promise<MobActionResult>
   updateMobSkin: (id: string, type: 'hat' | 'bottom', value: string) => Promise<MobActionResult>
@@ -28,6 +31,9 @@ interface CustomAPI {
   // Sauvegarde et chargement
   saveMobs: () => Promise<SaveLoadResult>
   loadMobs: () => Promise<MobListResult>
+
+  getUpgradeChoices: (id: string) => Promise<UpgradeChoicesResult>
+  applyUpgrade: (id: string, choice: UpgradeChoice) => Promise<ApplyUpgradeResult>
 
   // Utilitaires
   setIgnoreMouseEvents?: (ignore: boolean) => void

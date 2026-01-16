@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type { MobListResult, UpgradeChoicesResult, UpgradeChoice, ApplyUpgradeResult } from '../shared/types'
 
 // Custom APIs for renderer
 const api = {
@@ -8,7 +9,7 @@ const api = {
   deleteMob: (id: string) => ipcRenderer.invoke('mob:delete', id),
   damageMob: (id: string, amount: number) => ipcRenderer.invoke('mob:damage', id, amount),
   healMob: (id: string, amount: number) => ipcRenderer.invoke('mob:heal', id, amount),
-  feedMob: (id: string, amount: number) => ipcRenderer.invoke('mob:feed', id, amount),
+
   reviveMob: (id: string) => ipcRenderer.invoke('mob:revive', id),
   renameMob: (id: string, newName: string) => ipcRenderer.invoke('mob:rename', id, newName),
   updateMobSkin: (id: string, type: 'hat' | 'bottom', value: string) => ipcRenderer.invoke('mob:updateSkin', id, type, value),
@@ -20,7 +21,10 @@ const api = {
 
   // Sauvegarde et chargement
   saveMobs: () => ipcRenderer.invoke('mob:save'),
-  loadMobs: () => ipcRenderer.invoke('mob:load'),
+  loadMobs: (): Promise<MobListResult> => ipcRenderer.invoke('mob:load'),
+
+  getUpgradeChoices: (id: string): Promise<UpgradeChoicesResult> => ipcRenderer.invoke('mob:getUpgradeChoices', id),
+  applyUpgrade: (id: string, choice: UpgradeChoice): Promise<ApplyUpgradeResult> => ipcRenderer.invoke('mob:applyUpgrade', id, choice),
   setIgnoreMouseEvents: (ignore: boolean) => ipcRenderer.send('window:set-ignore-mouse-events', ignore),
   saveBiome: (data: any) => ipcRenderer.invoke('biome:save', data),
   loadBiome: () => ipcRenderer.invoke('biome:load'),

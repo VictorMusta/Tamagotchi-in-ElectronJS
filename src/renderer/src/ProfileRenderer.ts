@@ -9,7 +9,7 @@ export class ProfileRenderer {
   /**
    * Affiche l'overlay de profil pour un mob donné
    */
-  render(mob: MobData, onClose: () => void, onRename?: (newName: string) => void): void {
+  render(mob: MobData, onClose: () => void, onRename?: (mobId: string, mob: MobData) => void): void {
     // Supprimer l'ancien overlay si existant
     this.destroy()
 
@@ -183,7 +183,7 @@ export class ProfileRenderer {
           const result = await window.api.renameMob(mob.id, newName)
           if (result.success && result.mob) {
             this.render(result.mob, onClose, onRename)
-            if (onRename) onRename(result.mob.nom)
+            if (onRename) onRename(result.mob.id, result.mob)
           } else {
             alert(result.error || 'Erreur lors du renommage')
             this.render(mob, onClose, onRename)

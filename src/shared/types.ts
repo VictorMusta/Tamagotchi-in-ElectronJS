@@ -24,7 +24,6 @@ export interface MobData {
     imageUrl: string
     vie: number
     energie: number
-    faim: number
     status: MobStatus
     // Nouvelles propriétés pour le combat et la customisation
     stats: MobStats
@@ -60,3 +59,22 @@ export interface SaveLoadResult {
     path?: string
     error?: string
 }
+
+// Upgrade system types
+export type UpgradeChoice =
+    | { type: 'stat'; stat: keyof MobStats; amount: number; label: string }
+    | { type: 'weapon'; name: string; label: string }
+    | { type: 'trait'; name: string; label: string; description: string }
+
+export interface UpgradeChoicesResult {
+    success: boolean
+    choices?: UpgradeChoice[]
+    error?: string
+}
+
+export interface ApplyUpgradeResult {
+    success: boolean
+    mob?: MobData
+    error?: string
+}
+

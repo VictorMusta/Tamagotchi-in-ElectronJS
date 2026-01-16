@@ -10,7 +10,7 @@ export interface PlatformAPI {
     deleteMob(id: string): Promise<{ success: boolean; error?: string }>
     damageMob(id: string, amount: number): Promise<MobActionResult>
     healMob(id: string, amount: number): Promise<MobActionResult>
-    feedMob(id: string, amount: number): Promise<MobActionResult>
+
     reviveMob(id: string): Promise<MobActionResult>
     renameMob(id: string, newName: string): Promise<MobActionResult>
 
