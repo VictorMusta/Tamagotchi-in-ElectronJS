@@ -1,7 +1,9 @@
-import { MobData, MobActionResult, MobListResult, SaveLoadResult, MobStatus, MobStats, MobSkin, CombatStats } from '../shared/types'
+import { MobData, MobActionResult, MobListResult, SaveLoadResult, MobStatus, MobStats, MobSkin, CombatStats, TournamentResult, TournamentData, TournamentHistory } from '../shared/types'
 
 const STORAGE_KEY = 'tamagotchi_mobs_save'
 const BIOME_STORAGE_KEY = 'tamagotchi_biome_save'
+const TOURNAMENT_STORAGE_KEY = 'tamagotchi_tournament_save'
+const TOURNAMENT_HISTORY_KEY = 'tamagotchi_tournament_history'
 
 const POSSIBLE_TRAITS = [
     'Sprint Final',
@@ -71,12 +73,15 @@ export class Mob {
             if (diff > 0) this.stats.force += diff
         }
 
-        const maxHP = 100 + (this.stats.vitalite * 5)
-        if (!id) this.vie = maxHP
+        // Always full health in Hub
+        this.vie = this.getMaxHP()
+        this.energie = 100
+        this.updateStatus()
 
         this.traits = traits || this.generateRandomTraits()
         this.skin = skin || { hat: 'none', bottom: 'none' }
-        this.combatProgress = combatProgress || { wins: 0, losses: 0, winStreak: 0 }
+        this.combatProgress = combatProgress || { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 }
+        if (typeof this.combatProgress.tournamentWins !== 'number') this.combatProgress.tournamentWins = 0
     }
 
     private generateRandomTraits(): string[] {
@@ -126,7 +131,7 @@ export class Mob {
     gainExperience(amount: number): boolean {
         if (this.status === 'mort') return false
         this.experience += amount
-        const xpNeeded = Math.floor(100 * Math.pow(1.5, this.level - 1))
+        const xpNeeded = this.targetXpForNextLevel()
         if (this.experience >= xpNeeded) {
             this.experience -= xpNeeded
             this.level++
@@ -134,6 +139,80 @@ export class Mob {
             return true
         }
         return false
+    }
+
+    targetXpForNextLevel(): number {
+        return Math.floor(100 * Math.pow(1.5, this.level - 1))
+    }
+
+    upgradeStat(statName: keyof MobStats, amount: number): void {
+        this.stats[statName] += amount
+        if (statName === 'vitalite') {
+            this.vie += (amount * 5)
+        }
+    }
+
+    generateUpgradeChoices(): any[] {
+        const choices: any[] = []
+        const stats: Array<keyof MobStats> = ['force', 'vitalite', 'vitesse', 'agilite']
+        const randomStat = stats[Math.floor(Math.random() * stats.length)]
+        const statAmount = 2 + Math.floor(Math.random() * 2)
+        const statLabels = { force: 'FOR', vitalite: 'VIT', vitesse: 'SPD', agilite: 'AGI' }
+
+        choices.push({
+            type: 'stat',
+            stat: randomStat,
+            amount: statAmount,
+            label: `+${statAmount} ${statLabels[randomStat]}`
+        })
+
+        const weapons = ['Épée Rouillée', 'Bâton Noueux', 'Hache Ébréchée', 'Marteau Lourd', 'Dague Acérée']
+        const randomWeapon = weapons[Math.floor(Math.random() * weapons.length)]
+        choices.push({
+            type: 'weapon',
+            name: randomWeapon,
+            label: randomWeapon
+        })
+
+        const availableTraits = POSSIBLE_TRAITS.filter(t => !this.traits.includes(t))
+        if (availableTraits.length > 0) {
+            const randomTrait = availableTraits[Math.floor(Math.random() * availableTraits.length)]
+            choices.push({
+                type: 'trait',
+                name: randomTrait,
+                label: randomTrait,
+                description: `Nouveau trait: ${randomTrait}`
+            })
+        } else {
+            const altStat = stats[Math.floor(Math.random() * stats.length)]
+            const altAmount = 2 + Math.floor(Math.random() * 2)
+            choices.push({
+                type: 'stat',
+                stat: altStat,
+                amount: altAmount,
+                label: `+${altAmount} ${statLabels[altStat]}`
+            })
+        }
+
+        return choices
+    }
+
+    applyChoice(choice: any): void {
+        if (choice.type === 'stat') {
+            this.upgradeStat(choice.stat, choice.amount)
+            this.statPoints--
+        } else if (choice.type === 'weapon') {
+            console.log(`[WebMob] ${this.nom} a obtenu: ${choice.name}`)
+        } else if (choice.type === 'trait') {
+            if (!this.traits.includes(choice.name)) {
+                this.traits.push(choice.name)
+                this.statPoints--
+            }
+        }
+    }
+
+    setSkin(type: 'hat' | 'bottom', value: string): void {
+        this.skin[type] = value
     }
 
     toJSON(): MobData {
@@ -177,7 +256,7 @@ class WebMobManagerClass {
 
     deleteMob(id: string): boolean {
         const mob = this.mobs.get(id)
-        if (!mob || mob.status !== 'mort') return false
+        if (!mob) return false
         return this.mobs.delete(id)
     }
 
@@ -189,28 +268,6 @@ class WebMobManagerClass {
         return Array.from(this.mobs.values()).map(m => m.toJSON())
     }
 
-    damageMob(id: string, amount: number): MobActionResult {
-        const mob = this.mobs.get(id)
-        if (!mob) return { success: false, error: 'Mob non trouvé' }
-        const justDied = mob.takeDamage(amount)
-        if (!justDied) mob.gainExperience(5)
-        return { success: true, mob: mob.toJSON(), error: justDied ? 'died' : undefined }
-    }
-
-    healMob(id: string, amount: number): MobActionResult {
-        const mob = this.mobs.get(id)
-        if (!mob) return { success: false, error: 'Mob non trouvé' }
-        const healed = mob.heal(amount)
-        return { success: healed, mob: mob.toJSON(), changed: healed }
-    }
-
-    reviveMob(id: string): MobActionResult {
-        const mob = this.mobs.get(id)
-        if (!mob) return { success: false, error: 'Mob non trouvé' }
-        const revived = mob.revive()
-        return { success: revived, mob: mob.toJSON(), changed: revived }
-    }
-
     renameMob(id: string, newName: string): MobActionResult {
         const mob = this.mobs.get(id)
         if (!mob) return { success: false, error: 'Mob non trouvé' }
@@ -218,28 +275,121 @@ class WebMobManagerClass {
         return { success: true, mob: mob.toJSON() }
     }
 
-    processCombatResult(winnerData: MobData, loserData: MobData): { winner: MobData, reward?: string } {
+    processCombatResult(winnerData: MobData, loserData: MobData): { winner: MobData, loser: MobData, reward?: string } {
+        console.log(`[WebMobManager] processCombatResult: Winner=${winnerData.id}, Loser=${loserData.id}`)
         const winner = this.mobs.get(winnerData.id)
         const loser = this.mobs.get(loserData.id)
+
         if (loser) {
-            loser.vie = loserData.vie
-            loser.energie = loserData.energie
+            console.log(`[WebMobManager] Healing loser: ${loser.id}`)
+            loser.vie = loser.getMaxHP()
+            loser.energie = 100
             loser.updateStatus()
         }
+
         let reward: string | undefined
         if (winner) {
-            winner.vie = winnerData.vie
-            winner.energie = winnerData.energie
+            console.log(`[WebMobManager] Healing winner: ${winner.id}`)
+            winner.vie = winner.getMaxHP()
+            winner.energie = 100
             winner.updateStatus()
+
             winner.combatProgress.wins++
             winner.combatProgress.winStreak++
-            winner.gainExperience(50)
+
             if (winner.combatProgress.winStreak >= 5) {
                 reward = 'Fiole de Réanimation'
                 winner.combatProgress.winStreak = 0
             }
         }
-        return { winner: winner?.toJSON() || winnerData, reward }
+
+        return {
+            winner: winner ? winner.toJSON() : { ...winnerData, vie: 100 + (winnerData.stats.vitalite * 5), status: 'vivant' },
+            loser: loser ? loser.toJSON() : { ...loserData, vie: 100 + (loserData.stats.vitalite * 5), status: 'vivant' },
+            reward
+        }
+    }
+
+    getMobUpgradeChoices(id: string): { success: boolean, choices: any[], error?: string } {
+        const mob = this.mobs.get(id)
+        if (!mob) return { success: false, choices: [], error: 'Mob non trouvé' }
+        if (mob.statPoints <= 0) return { success: false, choices: [], error: 'Aucun point disponible' }
+        return { success: true, choices: mob.generateUpgradeChoices() }
+    }
+
+    applyMobUpgrade(id: string, choice: any): MobActionResult {
+        const mob = this.mobs.get(id)
+        if (!mob) return { success: false, error: 'Mob non trouvé' }
+        if (mob.statPoints <= 0) return { success: false, error: 'Aucun point disponible' }
+        mob.applyChoice(choice)
+        this.saveMobs() // PERSISTENCE
+        return { success: true, mob: mob.toJSON() }
+    }
+
+    updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): MobActionResult {
+        const mob = this.mobs.get(id)
+        if (!mob) return { success: false, error: 'Mob non trouvé' }
+        mob.setSkin(type, value)
+        this.saveMobs() // PERSISTENCE
+        return { success: true, mob: mob.toJSON() }
+    }
+
+    processTournamentWin(id: string): MobActionResult {
+        const mob = this.mobs.get(id)
+        if (!mob) return { success: false, error: 'Mob non trouvé' }
+
+        mob.combatProgress.tournamentWins++
+        mob.gainExperience(500)
+        this.saveMobs()
+        return { success: true, mob: mob.toJSON() }
+    }
+
+    getTournament(): TournamentResult {
+        try {
+            const data = localStorage.getItem(TOURNAMENT_STORAGE_KEY)
+            if (!data) return { success: true }
+            return { success: true, tournament: JSON.parse(data) }
+        } catch (e) { return { success: false, error: String(e) } }
+    }
+
+    getTournamentHistory(): TournamentHistory {
+        try {
+            const data = localStorage.getItem(TOURNAMENT_HISTORY_KEY)
+            if (!data) return { success: true, tournaments: [] }
+            return { success: true, tournaments: JSON.parse(data) }
+        } catch (e) { return { success: false, error: String(e) } }
+    }
+
+    saveTournament(data: TournamentData): SaveLoadResult {
+        try {
+            localStorage.setItem(TOURNAMENT_STORAGE_KEY, JSON.stringify(data))
+
+            // Archivage si fini
+            if (data.status === 'completed') {
+                this.archiveTournament(data)
+            }
+
+            return { success: true, path: 'localStorage/tournament' }
+        } catch (e) { return { success: false, error: String(e) } }
+    }
+
+    private archiveTournament(tournament: TournamentData): void {
+        try {
+            const data = localStorage.getItem(TOURNAMENT_HISTORY_KEY)
+            let history: TournamentData[] = data ? JSON.parse(data) : []
+
+            if (!history.find(t => t.id === tournament.id)) {
+                history.push(tournament)
+                localStorage.setItem(TOURNAMENT_HISTORY_KEY, JSON.stringify(history))
+            }
+        } catch (e) { console.error('Erreur archivage tournoi web:', e) }
+    }
+
+    resetTournament(): SaveLoadResult {
+        try {
+            localStorage.removeItem(TOURNAMENT_STORAGE_KEY)
+            return { success: true }
+        } catch (e) { return { success: false, error: String(e) } }
     }
 
     private getUniqueName(baseName: string, excludeId?: string): string {

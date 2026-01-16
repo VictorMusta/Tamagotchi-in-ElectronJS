@@ -11,6 +11,7 @@ function createWindow(): void {
     show: false,
     frame: false,
     transparent: true,
+    fullscreen: true,
     backgroundColor: '#00000000',
     hasShadow: false,
     autoHideMenuBar: true,

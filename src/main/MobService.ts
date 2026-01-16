@@ -3,7 +3,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 
-import { MobData, MobActionResult, MobListResult, SaveLoadResult, MobStatus, MobStats, MobSkin, CombatStats } from '../shared/types'
+import { MobData, MobActionResult, MobListResult, SaveLoadResult, MobStatus, MobStats, MobSkin, CombatStats, TournamentResult, TournamentData, TournamentHistory } from '../shared/types'
 
 const POSSIBLE_TRAITS = [
   'Sprint Final',
@@ -94,10 +94,11 @@ export class Mob {
 
     // Recalcul des PV Max en fonction de la vitalité
     const maxHP = 100 + (this.stats.vitalite * 5)
-    // Si c'est un nouveau mob (pas chargé via ID), on met la vie au max
-    if (!id) {
-      this.vie = maxHP
-    }
+
+    // Always full health in Hub
+    this.vie = maxHP
+    this.energie = 100
+    this.status = 'vivant'
 
     // Initialisation des traits (3 aléatoires si non fournis)
     this.traits = traits || this.generateRandomTraits()
@@ -109,11 +110,8 @@ export class Mob {
     }
 
     // Initialisation de la progression
-    this.combatProgress = combatProgress || {
-      wins: 0,
-      losses: 0,
-      winStreak: 0
-    }
+    this.combatProgress = combatProgress || { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 }
+    if (typeof this.combatProgress.tournamentWins !== 'number') this.combatProgress.tournamentWins = 0
   }
 
   /**
@@ -381,7 +379,6 @@ class MobManagerClass {
   deleteMob(id: string): boolean {
     const mob = this.mobs.get(id)
     if (!mob) return false
-    if (mob.status !== 'mort') return false
     return this.mobs.delete(id)
   }
 
@@ -398,56 +395,6 @@ class MobManagerClass {
    */
   getAllMobs(): MobData[] {
     return Array.from(this.mobs.values()).map((mob) => mob.toJSON())
-  }
-
-  /**
-   * Inflige des dégâts à un mob
-   */
-  damageMob(id: string, amount: number): MobActionResult {
-    const mob = this.mobs.get(id)
-    if (!mob) {
-      return { success: false, error: 'Mob non trouvé' }
-    }
-    const justDied = mob.takeDamage(amount)
-
-    // XP Gain (Grinding)
-    if (!justDied) {
-      mob.gainExperience(5) // 5 XP par coup reçu/donné (interaction)
-    }
-
-    return { success: true, mob: mob.toJSON(), error: justDied ? 'died' : undefined }
-  }
-
-  /**
-   * Soigne un mob
-   */
-  healMob(id: string, amount: number): MobActionResult {
-    const mob = this.mobs.get(id)
-    if (!mob) {
-      return { success: false, error: 'Mob non trouvé' }
-    }
-    const healed = mob.heal(amount)
-    if (!healed) {
-      return { success: false, error: 'Le mob est mort', mob: mob.toJSON(), changed: false }
-    }
-    return { success: true, mob: mob.toJSON(), changed: true }
-  }
-
-
-
-  /**
-   * Réanime un mob
-   */
-  reviveMob(id: string): MobActionResult {
-    const mob = this.mobs.get(id)
-    if (!mob) {
-      return { success: false, error: 'Mob non trouvé' }
-    }
-    const revived = mob.revive()
-    if (!revived) {
-      return { success: false, error: 'Le mob est déjà vivant', mob: mob.toJSON(), changed: false }
-    }
-    return { success: true, mob: mob.toJSON(), changed: true }
   }
 
   /**
@@ -551,43 +498,44 @@ class MobManagerClass {
   /**
    * Traite le résultat d'un combat
    */
-  processCombatResult(winnerData: MobData, loserData: MobData): { winner: MobData, reward?: string } {
+  processCombatResult(winnerData: MobData, loserData: MobData): { winner: MobData, loser: MobData, reward?: string } {
+    console.log(`[MobService] processCombatResult: Winner=${winnerData.nom} (${winnerData.id}), Loser=${loserData.nom} (${loserData.id})`)
     const winner = this.mobs.get(winnerData.id)
     const loser = this.mobs.get(loserData.id)
 
     if (loser) {
-      // Mettre à jour avec les stats réelles post-combat (mort ou pas)
-      loser.vie = loserData.vie
-      loser.energie = loserData.energie
+      console.log(`[MobService] Healing loser: ${loser.nom}`)
+      loser.vie = loser.getMaxHP()
+      loser.energie = 100
       loser.updateStatus()
-
-      // Si le loser vient d'un "KO" du moteur de combat, il devrait être mort ici.
+    } else {
+      console.warn(`[MobService] Loser not found in Map (expected for PNJs): ${loserData.id}`)
     }
 
     let reward: string | undefined
     if (winner) {
-      // Mettre à jour le vainqueur aussi (il a perdu de la vie !)
-      winner.vie = winnerData.vie
-      winner.energie = winnerData.energie
+      console.log(`[MobService] Healing winner: ${winner.nom}`)
+      winner.vie = winner.getMaxHP()
+      winner.energie = 100
       winner.updateStatus()
 
       winner.combatProgress.wins++
       winner.combatProgress.winStreak++
 
       // XP GAIN POUR VICTOIRE
-      const leveledUp = winner.gainExperience(50) // 50 XP pour une victoire
-      if (leveledUp) {
-        // Logique de notification de level up à gérer (pour l'instant implicite)
-      }
+      winner.gainExperience(50)
 
       if (winner.combatProgress.winStreak >= 5) {
         reward = 'Fiole de Réanimation'
-        winner.combatProgress.winStreak = 0 // Reset après récompense
+        winner.combatProgress.winStreak = 0
       }
+    } else {
+      console.warn(`[MobService] Winner not found in Map (expected for PNJs): ${winnerData.id}`)
     }
 
     return {
-      winner: winner ? winner.toJSON() : winnerData,
+      winner: winner ? winner.toJSON() : { ...winnerData, vie: 100 + (winnerData.stats.vitalite * 5), status: 'vivant' },
+      loser: loser ? loser.toJSON() : { ...loserData, vie: 100 + (loserData.stats.vitalite * 5), status: 'vivant' },
       reward
     }
   }
@@ -620,6 +568,101 @@ class MobManagerClass {
     }
     mob.applyChoice(choice)
     return { success: true, mob: mob.toJSON() }
+  }
+
+  processTournamentWin(id: string): MobActionResult {
+    const mob = this.mobs.get(id)
+    if (!mob) return { success: false, error: 'Mob non trouvé' }
+
+    mob.combatProgress.tournamentWins++
+    mob.gainExperience(500) // 500 XP pour une victoire de tournoi
+
+    return { success: true, mob: mob.toJSON() }
+  }
+
+  /**
+   * Tournois
+   */
+  private getTournamentSavePath(): string {
+    const userDataPath = app.getPath('userData')
+    return join(userDataPath, 'tournament.json')
+  }
+
+  private getTournamentHistorySavePath(): string {
+    const userDataPath = app.getPath('userData')
+    return join(userDataPath, 'tournament_history.json')
+  }
+
+  getTournament(): TournamentResult {
+    try {
+      const path = this.getTournamentSavePath()
+      if (!existsSync(path)) return { success: true }
+      const data = readFileSync(path, 'utf-8')
+      const tournament: TournamentData = JSON.parse(data)
+      return { success: true, tournament }
+    } catch (error) {
+      return { success: false, error: String(error) }
+    }
+  }
+
+  getTournamentHistory(): TournamentHistory {
+    try {
+      const path = this.getTournamentHistorySavePath()
+      if (!existsSync(path)) return { success: true, tournaments: [] }
+      const data = readFileSync(path, 'utf-8')
+      const tournaments: TournamentData[] = JSON.parse(data)
+      return { success: true, tournaments }
+    } catch (error) {
+      return { success: false, error: String(error) }
+    }
+  }
+
+  saveTournament(data: TournamentData): SaveLoadResult {
+    try {
+      // Sauvegarde du tournoi actuel
+      const path = this.getTournamentSavePath()
+      writeFileSync(path, JSON.stringify(data, null, 2), 'utf-8')
+
+      // Si le tournoi est fini, on l'ajoute à l'historique
+      if (data.status === 'completed') {
+        this.archiveTournament(data)
+      }
+
+      return { success: true, path }
+    } catch (error) {
+      return { success: false, error: String(error) }
+    }
+  }
+
+  private archiveTournament(tournament: TournamentData): void {
+    try {
+      const historyPath = this.getTournamentHistorySavePath()
+      let history: TournamentData[] = []
+      if (existsSync(historyPath)) {
+        history = JSON.parse(readFileSync(historyPath, 'utf-8'))
+      }
+
+      // Éviter les doublons si on sauvegarde plusieurs fois un tournoi fini
+      if (!history.find(t => t.id === tournament.id)) {
+        history.push(tournament)
+        writeFileSync(historyPath, JSON.stringify(history, null, 2), 'utf-8')
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'archivage du tournoi:', error)
+    }
+  }
+
+  resetTournament(): SaveLoadResult {
+    try {
+      const path = this.getTournamentSavePath()
+      if (existsSync(path)) {
+        const fs = require('fs')
+        fs.unlinkSync(path)
+      }
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: String(error) }
+    }
   }
 }
 

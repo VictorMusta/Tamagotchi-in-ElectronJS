@@ -9,31 +9,37 @@ import {
   SaveLoadResult,
   UpgradeChoicesResult,
   UpgradeChoice,
-  ApplyUpgradeResult
+  ApplyUpgradeResult,
+  TournamentResult,
+  TournamentData
 } from '../shared/types'
 
 interface CustomAPI {
   // Actions sur les mobs
   createMob: (nom: string, imageUrl: string) => Promise<MobCreateResult>
   deleteMob: (id: string) => Promise<{ success: boolean; error?: string }>
-  damageMob: (id: string, amount: number) => Promise<MobActionResult>
-  healMob: (id: string, amount: number) => Promise<MobActionResult>
-
-  reviveMob: (id: string) => Promise<MobActionResult>
+  deleteMob: (id: string) => Promise<{ success: boolean; error?: string }>
   renameMob: (id: string, newName: string) => Promise<MobActionResult>
   updateMobSkin: (id: string, type: 'hat' | 'bottom', value: string) => Promise<MobActionResult>
 
   // Récupération des mobs
   getAllMobs: () => Promise<MobListResult>
   getMobById: (id: string) => Promise<MobActionResult>
-  processCombatResult: (winnerId: string, loserId: string) => Promise<{ winner: MobData; reward?: string }>
+  processCombatResult: (winner: MobData, loser: MobData) => Promise<{ winner: MobData; loser: MobData; reward?: string }>
 
   // Sauvegarde et chargement
   saveMobs: () => Promise<SaveLoadResult>
   loadMobs: () => Promise<MobListResult>
 
-  getUpgradeChoices: (id: string) => Promise<UpgradeChoicesResult>
-  applyUpgrade: (id: string, choice: UpgradeChoice) => Promise<ApplyUpgradeResult>
+  getMobUpgradeChoices: (id: string) => Promise<UpgradeChoicesResult>
+  applyMobUpgrade: (id: string, choice: any) => Promise<ApplyUpgradeResult>
+  processTournamentWin: (id: string) => Promise<MobActionResult>
+
+  // Tournament
+  getTournament: () => Promise<TournamentResult>
+  saveTournament: (data: TournamentData) => Promise<SaveLoadResult>
+  resetTournament: () => Promise<SaveLoadResult>
+  getTournamentHistory: () => Promise<TournamentHistory>
 
   // Utilitaires
   setIgnoreMouseEvents?: (ignore: boolean) => void

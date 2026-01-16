@@ -4,13 +4,14 @@ import { CombatUI } from './combat/CombatUI'
 import { MobData } from '../../shared/types'
 import { preloadSounds } from './SoundManager'
 import { generateRandomName } from './utils/NameGenerator'
+import { TournamentUI } from './tournament/TournamentUI'
+import { TournamentManager } from '../../shared/TournamentManager'
 import {
   MobRenderer,
   getSelectedMob,
   setSelectedMob,
   setOnRenameCallback,
   setOnMobClick,
-  setIsActionModeActive,
   setOnProfileOpen
 } from './Mob'
 import potatoImage from '../assets/Potato still.png'
@@ -27,92 +28,14 @@ const profileRenderer = new ProfileRenderer()
 // Initialisation du système de combat (UI)
 const combatUI = new CombatUI()
 
-// Mode d'action actuel
-type ActionMode = 'none' | 'damage' | 'heal' | 'revive'
-let currentActionMode: ActionMode = 'none'
+// Initialisation du système de tournoi (UI) - Sera fait dans init()
+let tournamentUI: TournamentUI
 
-/**
- * Vérifie si un mode d'action est actif
- */
-function isActionModeActive(): boolean {
-  return currentActionMode !== 'none'
-}
 
-/**
- * Définit le mode d'action actuel
- */
-function setActionMode(mode: ActionMode): void {
-  currentActionMode = mode
-  const mobContainer = document.getElementById('mob-container')
-  const body = document.body
 
-  // Retirer toutes les classes de mode précédentes
-  body.classList.remove(
-    'action-mode-damage',
-    'action-mode-heal',
-    'action-mode-revive'
-  )
-  mobContainer?.classList.remove(
-    'action-mode-damage',
-    'action-mode-heal',
-    'action-mode-revive'
-  )
-
-  // Retirer la classe active de tous les boutons
-  document.querySelectorAll('.action-btn').forEach((btn) => btn.classList.remove('active'))
-
-  if (mode !== 'none') {
-    body.classList.add(`action-mode-${mode}`)
-    mobContainer?.classList.add(`action-mode-${mode}`)
-
-    // Ajouter la classe active au bouton correspondant
-    const activeBtn = document.getElementById(`btn-${mode}`)
-    activeBtn?.classList.add('active')
-  }
-}
-
-/**
- * Applique l'action actuelle sur un mob via IPC
- * Note: Les sons sont joués AVANT l'appel IPC pour éviter les problèmes d'autoplay policy
- */
 async function applyActionToMob(mobRenderer: MobRenderer): Promise<void> {
-  const id = mobRenderer.id
-
-  switch (currentActionMode) {
-    case 'damage': {
-      // Jouer le son immédiatement (avant l'appel async)
-      mobRenderer.playSoundEffect('punch')
-      const result = await window.api.damageMob(id, 20)
-      if (result.success && result.mob) {
-        mobRenderer.updateFromData(result.mob)
-        // Si le mob vient de mourir
-        if (result.error === 'died') {
-          setTimeout(() => mobRenderer.playSoundEffect('death'), 200)
-        }
-      }
-      break
-    }
-    case 'heal': {
-      const result = await window.api.healMob(id, 20)
-      if (result.success && result.mob) {
-        if (result.changed) mobRenderer.playSoundEffect('heal')
-        mobRenderer.updateFromData(result.mob)
-      }
-      break
-    }
-
-    case 'revive': {
-      const result = await window.api.reviveMob(id)
-      if (result.success && result.mob) {
-        if (result.changed) mobRenderer.playSoundEffect('revive')
-        mobRenderer.updateFromData(result.mob)
-      }
-      break
-    }
-    default:
-      // Pas de mode actif, juste sélectionner le mob
-      setSelectedMob(mobRenderer)
-  }
+  // Pas de mode actif, juste sélectionner le mob
+  setSelectedMob(mobRenderer)
 }
 
 async function init(): Promise<void> {
@@ -120,6 +43,7 @@ async function init(): Promise<void> {
 
   try {
     // 1. UI Setup (Directly, independent of data)
+    tournamentUI = new TournamentUI()
     doAThing()
     setupActionButtons()
     setupWindowControls()
@@ -158,10 +82,6 @@ function setupRenameCallback(): void {
     applyActionToMob(mobRenderer)
   })
 
-  // Configurer le callback pour vérifier si une action est active
-  setIsActionModeActive(() => {
-    return isActionModeActive()
-  })
 
   // Configurer le callback pour ouvrir le profil
   setOnProfileOpen(async (mobRenderer) => {
@@ -251,7 +171,7 @@ async function saveMobs(): Promise<void> {
   }
 }
 
-async function loadMobs(): Promise<void> {
+async function loadMobs(idToSelect?: string): Promise<void> {
   const result = await window.api.loadMobs()
   if (!result.success || !result.mobs) {
     console.error('Erreur de chargement:', result.error)
@@ -263,6 +183,9 @@ async function loadMobs(): Promise<void> {
     const mobContainer = document.getElementById('mob-container')
     if (!mobContainer) return
 
+    // Mémoriser l'ID sélectionné si non spécifié
+    const currentSelectedId = idToSelect || getSelectedMob()?.id
+
     // Supprimer les renderers existants
     mobRenderers.forEach((renderer) => renderer.destroy())
     mobRenderers.clear()
@@ -270,26 +193,23 @@ async function loadMobs(): Promise<void> {
 
     // Créer les nouveaux renderers à partir des données chargées
     result.mobs.forEach((data: MobData) => {
-      // Utiliser l'image importée si c'est le même nom, sinon utiliser l'URL stockée
       const imageUrl = data.imageUrl.includes('Potato') ? potatoImage : data.imageUrl
       const renderer = new MobRenderer({ ...data, imageUrl })
       renderer.render(mobContainer)
       mobRenderers.set(data.id, renderer)
     })
 
-    // Sélectionner le premier mob
-    if (mobRenderers.size > 0) {
+    // Restaurer la sélection
+    if (currentSelectedId && mobRenderers.has(currentSelectedId)) {
+      setSelectedMob(mobRenderers.get(currentSelectedId)!)
+    } else if (mobRenderers.size > 0) {
       const firstRenderer = mobRenderers.values().next().value
-      if (firstRenderer) {
-        setSelectedMob(firstRenderer)
-      }
+      if (firstRenderer) setSelectedMob(firstRenderer)
     }
 
     console.log('Mobs chargés avec succès:', mobRenderers.size)
-    showNotification('Chargement réussi !', 'success')
   } catch (error) {
     console.error('Erreur de parsing:', error)
-    showNotification('Erreur de parsing des données', 'error')
   }
 }
 
@@ -384,8 +304,7 @@ async function deleteSelectedMob(): Promise<void> {
     return
   }
 
-  if (mobRenderer.status !== 'mort') {
-    showNotification('Le mob doit être mort pour être supprimé', 'error')
+  if (!window.confirm(`Voulez-vous vraiment supprimer ${mobRenderer.nom} ? Cette action est irréversible.`)) {
     return
   }
 
@@ -444,37 +363,8 @@ function setupWindowControls(): void {
 
 
 function setupActionButtons(): void {
-  const btnDamage = document.getElementById('btn-damage')
-  const btnHeal = document.getElementById('btn-heal')
-  const btnRevive = document.getElementById('btn-revive')
-
-  // Fonction pour toggle un mode d'action
-  const toggleActionMode = (mode: ActionMode): void => {
-    if (currentActionMode === mode) {
-      setActionMode('none')
-    } else {
-      setActionMode(mode)
-    }
-  }
-
-  // Bouton Attaquer
-  btnDamage?.addEventListener('click', () => {
-    toggleActionMode('damage')
-  })
-
-  // Bouton Soigner
-  btnHeal?.addEventListener('click', () => {
-    toggleActionMode('heal')
-  })
-
-  // Bouton Réanimer
-  btnRevive?.addEventListener('click', () => {
-    toggleActionMode('revive')
-  })
-
   // Bouton BASTON !
   const btnCombat = document.getElementById('btn-combat')
-
   btnCombat?.addEventListener('click', () => {
     console.log('[Renderer] BASTON button clicked')
     showNotification('Ouverture du menu BASTON...', 'success')
@@ -491,26 +381,148 @@ function setupActionButtons(): void {
         console.log('Combat terminé, vainqueur:', winner.nom)
 
         // Traiter le résultat côté serveur
-        // @ts-ignore - Signature being updated
         const result = await window.api.processCombatResult(winner, loser)
+        console.log('[Renderer] Combat results processed (full heal applied):', result)
 
-        if (result.reward) {
-          showNotification(`🏆 RÉCOMPENSE : ${result.reward} !`, 'success')
-        }
+        showNotification('COMBAT TERMINÉ : Patates soignées ! ✨', 'success')
 
-        // Sauvegarder l'état final (si on meurt, c'est permanent)
+        // Sauvegarder l'état final
         await window.api.saveMobs()
-        loadMobs() // Rafraîchir l'affichage
+        await loadMobs(winner.id) // Rafraîchir l'affichage en gardant le winner sélectionné
       })
     })
   })
 
-  // Désactiver le mode avec Escape
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      setActionMode('none')
+  // Bouton TOURNOI
+  const btnTournament = document.getElementById('btn-tournament')
+  if (btnTournament) {
+    btnTournament.addEventListener('click', async () => {
+      const allMobs = Array.from(mobRenderers.values())
+
+      if (allMobs.length < 8) {
+        showNotification(`Il vous faut au moins 8 patates pour lancer un tournoi ! (${allMobs.length}/8)`, 'error')
+        return
+      }
+
+      try {
+        showNotification('Préparation du tournoi...', 'success')
+
+        // Sélectionner 8 patates (on priorise la sélectionnée si elle existe)
+        const selected = getSelectedMob()
+        let participants: any[] = []
+
+        if (selected) {
+          participants.push(selected)
+        }
+
+        // Compléter avec d'autres patates aléatoires
+        const others = allMobs.filter(m => m !== selected).sort(() => Math.random() - 0.5)
+        participants = participants.concat(others).slice(0, 8)
+
+        // Convertir en format participant de tournoi
+        const tourParticipants = participants.map(m => ({
+          id: m.id,
+          nom: m.nom,
+          imageUrl: typeof m.imageUrl === 'string' ? m.imageUrl : '',
+          stats: m.stats,
+          level: m.level,
+          isPlayer: m === selected // On marque seulement la sélectionnée comme joueur
+        }))
+
+        // Générer et sauvegarder le nouveau tournoi
+        const newData = TournamentManager.createTournament(tourParticipants)
+        await window.api.saveTournament(newData)
+
+        tournamentUI.show(handleMatchSelected)
+      } catch (e) {
+        showNotification(`Erreur: ${String(e)}`, 'error')
+      }
+    })
+  }
+}
+
+/**
+ * Gère la sélection d'un match dans le tournoi
+ */
+async function handleMatchSelected(match: any): Promise<void> {
+  if (!match.participant1 || !match.participant2) return
+
+  const f1 = participantToMobData(match.participant1)
+  const f2 = participantToMobData(match.participant2)
+
+  tournamentUI.hide()
+
+  combatUI.renderCombatScene(f1, f2, async (winner, loser) => {
+    console.log('Match de tournoi terminé, vainqueur:', winner.nom)
+
+    // Avancer dans le tournoi
+    await tournamentUI.handleMatchResult(winner.id)
+
+    // Si c'est la patate du joueur, on traite les récompenses standards (XP, etc.)
+    const isPlayerInvolved = (winner.id === f1.id && match.participant1.isPlayer) ||
+      (winner.id === f2.id && match.participant2.isPlayer) ||
+      (loser.id === f1.id && match.participant1.isPlayer) ||
+      (loser.id === f2.id && match.participant2.isPlayer)
+
+    if (isPlayerInvolved) {
+      const result = await window.api.processCombatResult(winner, loser)
+      console.log('[Renderer] Tournament match processed (full heal):', result)
+      await window.api.saveMobs()
+      await loadMobs()
     }
+
+    // Vérifier si le tournoi est fini
+    const tournamentResult = await window.api.getTournament()
+    if (tournamentResult.success && tournamentResult.tournament?.status === 'completed') {
+      const winnerName = tournamentResult.tournament.winnerId === f1.id ? f1.nom : f2.nom
+      showNotification(`🏆 TOURNOI TERMINÉ ! VAINQUEUR : ${winnerName}`, 'success')
+
+      const currentMob = getSelectedMob()
+      if (currentMob && tournamentResult.tournament.winnerId === currentMob.id) {
+        showNotification('VOUS AVEZ GAGNÉ LE TOURNOI ! 👑', 'success')
+
+        // Traiter la victoire (XP + incrémenter le compteur)
+        const winResult = await window.api.processTournamentWin(currentMob.id)
+        if (winResult.success && winResult.mob) {
+          const wins = winResult.mob.combatProgress.tournamentWins
+          showNotification(`Victoires en tournoi : ${wins}`, 'success')
+
+          if (wins === 1) {
+            showNotification('NOUVEAU SKIN DÉBLOQUÉ : Couronne de Champion !', 'success')
+          } else if (wins === 3) {
+            showNotification('NOUVEAU SKIN DÉBLOQUÉ : Cape de Champion !', 'success')
+          }
+
+          // Recharger le mob pour voir les nouveaux stats/XP
+          currentMob.updateFromData(winResult.mob)
+        }
+      }
+    }
+
+    // Réafficher le tournoi (ou proposer de le fermer)
+    tournamentUI.show(handleMatchSelected)
   })
+}
+
+/**
+ * Convertit un participant de tournoi en MobData pour le moteur de combat
+ */
+function participantToMobData(p: any): any {
+  return {
+    id: p.id,
+    nom: p.nom,
+    imageUrl: p.imageUrl || potatoImage,
+    vie: 100 + (p.stats.vitalite * 5),
+    energie: 100,
+    status: 'vivant',
+    stats: p.stats,
+    level: p.level,
+    experience: 0,
+    statPoints: 0,
+    traits: [],
+    skin: { hat: 'none', bottom: 'none' },
+    combatProgress: { wins: 0, losses: 0, winStreak: 0, tournamentWins: p.combatProgress?.tournamentWins || 0 }
+  }
 }
 
 // Lancer l'initialisation quand le DOM est prêt (ou s'il l'est déjà)
