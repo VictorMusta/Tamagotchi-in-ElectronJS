@@ -1,4 +1,4 @@
-import { MobData, MobStatus } from '../../shared/types'
+import { MobData, MobStatus, MobStats, MobSkin, CombatStats } from '../../shared/types'
 import { MobDisplay } from './mob/MobDisplay'
 import { MobAnimation } from './mob/MobAnimation'
 import { MobMovement } from './mob/MobMovement'
@@ -15,6 +15,9 @@ let onMobClickCallback: ((mobRenderer: MobRenderer) => void) | null = null
 
 // Callback pour vérifier si une action est sélectionnée
 let isActionModeActiveCallback: (() => boolean) | null = null
+
+// Callback pour ouvrir le profil d'un mob
+let onProfileOpenCallback: ((mobRenderer: MobRenderer) => void) | null = null
 
 export function getSelectedMob(): MobRenderer | null {
   return selectedMobRenderer
@@ -44,6 +47,10 @@ export function setIsActionModeActive(callback: () => boolean): void {
   isActionModeActiveCallback = callback
 }
 
+export function setOnProfileOpen(callback: (mobRenderer: MobRenderer) => void): void {
+  onProfileOpenCallback = callback
+}
+
 /**
  * Classe MobRenderer - Orchestrateur du rendu et des comportements du mob
  */
@@ -55,6 +62,14 @@ export class MobRenderer {
   energie: number
   faim: number
   status: MobStatus
+  // Nouvelles propriétés pour le combat et la customisation
+  stats: MobStats
+  level: number
+  experience: number
+  statPoints: number
+  traits: string[]
+  skin: MobSkin
+  combatProgress: CombatStats
 
   private display: MobDisplay
   private animation: MobAnimation | null = null
@@ -70,6 +85,13 @@ export class MobRenderer {
     this.energie = data.energie
     this.faim = data.faim
     this.status = data.status
+    this.stats = data.stats
+    this.level = data.level
+    this.experience = data.experience
+    this.statPoints = data.statPoints
+    this.skin = data.skin
+    this.traits = data.traits
+    this.combatProgress = data.combatProgress
 
     this.display = new MobDisplay(data)
   }
@@ -82,6 +104,13 @@ export class MobRenderer {
     this.energie = data.energie
     this.faim = data.faim
     this.status = data.status
+    this.stats = data.stats
+    this.level = data.level
+    this.experience = data.experience
+    this.statPoints = data.statPoints
+    this.skin = data.skin
+    this.traits = data.traits
+    this.combatProgress = data.combatProgress
 
     this.display.update(data)
 
@@ -158,7 +187,11 @@ export class MobRenderer {
       (nameEl) => {
         const isActionActive = isActionModeActiveCallback ? isActionModeActiveCallback() : false
         if (!isActionActive) {
-          this.renamer?.start(nameEl)
+          if (onProfileOpenCallback) {
+            onProfileOpenCallback(this)
+          } else {
+            this.renamer?.start(nameEl)
+          }
         }
       }
     )

@@ -7,25 +7,32 @@ function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
-    height: 670,
-    transparent: true,
-    frame: false,
+    height: 800,
     show: false,
-    fullscreen: true,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    hasShadow: false,
     autoHideMenuBar: true,
-    minimizable: false,
-    alwaysOnTop: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
 
+  ipcMain.on('window:minimize', () => {
+    mainWindow.minimize()
+  })
+
+  ipcMain.on('window:close', () => {
+    mainWindow.close()
+  })
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
     // Ouvrir DevTools en mode développement pour debug
     if (is.dev) {
-      mainWindow.webContents.openDevTools()
+      // mainWindow.webContents.openDevTools()
     }
   })
 
