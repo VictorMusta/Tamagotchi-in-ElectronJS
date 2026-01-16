@@ -28,9 +28,6 @@ export class WebPlatformAPI implements PlatformAPI {
         return WebMobManager.healMob(id, amount)
     }
 
-    async feedMob(id: string, amount: number): Promise<MobActionResult> {
-        return WebMobManager.feedMob(id, amount)
-    }
 
     async reviveMob(id: string): Promise<MobActionResult> {
         return WebMobManager.reviveMob(id)
@@ -38,6 +35,11 @@ export class WebPlatformAPI implements PlatformAPI {
 
     async renameMob(id: string, newName: string): Promise<MobActionResult> {
         return WebMobManager.renameMob(id, newName)
+    }
+
+    async updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): Promise<MobActionResult> {
+        // Not fully implemented in web yet, but following interface
+        return { success: false, error: 'Non implémenté sur le web' }
     }
 
     async getAllMobs(): Promise<{ success: boolean; mobs: MobData[] }> {
@@ -53,6 +55,26 @@ export class WebPlatformAPI implements PlatformAPI {
         return { success: true, mob }
     }
 
+    async processCombatResult(winner: MobData, loser: MobData): Promise<{ winner: MobData, reward?: string }> {
+        return WebMobManager.processCombatResult(winner, loser)
+    }
+
+    async getMobUpgradeChoices(_id: string): Promise<{ success: boolean; choices: any[]; error?: string }> {
+        return { success: false, choices: [], error: 'Non implémenté sur le web' }
+    }
+
+    async applyMobUpgrade(_id: string, _choice: any): Promise<MobActionResult> {
+        return { success: false, error: 'Non implémenté sur le web' }
+    }
+
+    async saveBiome(data: any[]): Promise<SaveLoadResult> {
+        return WebMobManager.saveBiome(data)
+    }
+
+    async loadBiome(): Promise<{ success: boolean; data?: any[] }> {
+        return WebMobManager.loadBiome()
+    }
+
     async saveMobs(): Promise<SaveLoadResult> {
         return WebMobManager.saveMobs()
     }
@@ -61,7 +83,10 @@ export class WebPlatformAPI implements PlatformAPI {
         return WebMobManager.loadMobs()
     }
 
-    // Web version doesn't support click-through
+    // Web version doesn't support target actions for window
+    minimizeWindow(): void { }
+    closeWindow(): void { }
+
     setIgnoreMouseEvents(_ignore: boolean): void {
         // No-op for web
     }

@@ -9,6 +9,9 @@ import {
 import { MobData } from '../shared/types'
 import { preloadSounds } from '../renderer/src/SoundManager'
 import { WebPlatformAPI } from './WebPlatformAPI'
+import { BiomeRenderer } from '../renderer/src/BiomeRenderer'
+import { CombatUI } from '../renderer/src/combat/CombatUI'
+import { generateRandomName } from '../renderer/src/utils/NameGenerator'
 import potatoImage from '../renderer/assets/Potato still.png'
 
 // Utiliser l'API web
@@ -17,8 +20,14 @@ const api = new WebPlatformAPI()
 // Map des renderers de mobs par ID
 const mobRenderers: Map<string, MobRenderer> = new Map()
 
+// Initialisation du biome
+const biomeRenderer = new BiomeRenderer('biome-container')
+
+// Initialisation du système de combat (UI)
+const combatUI = new CombatUI()
+
 // Mode d'action actuel
-type ActionMode = 'none' | 'damage' | 'heal' | 'feed' | 'revive'
+type ActionMode = 'none' | 'damage' | 'heal' | 'revive'
 let currentActionMode: ActionMode = 'none'
 
 function isActionModeActive(): boolean {
@@ -33,13 +42,11 @@ function setActionMode(mode: ActionMode): void {
     body.classList.remove(
         'action-mode-damage',
         'action-mode-heal',
-        'action-mode-feed',
         'action-mode-revive'
     )
     mobContainer?.classList.remove(
         'action-mode-damage',
         'action-mode-heal',
-        'action-mode-feed',
         'action-mode-revive'
     )
 
@@ -70,25 +77,17 @@ async function applyActionToMob(mobRenderer: MobRenderer): Promise<void> {
             break
         }
         case 'heal': {
-            mobRenderer.playSoundEffect('heal')
             const result = await api.healMob(id, 20)
             if (result.success && result.mob) {
-                mobRenderer.updateFromData(result.mob)
-            }
-            break
-        }
-        case 'feed': {
-            mobRenderer.playSoundEffect('feed')
-            const result = await api.feedMob(id, 20)
-            if (result.success && result.mob) {
+                if (result.changed) mobRenderer.playSoundEffect('heal')
                 mobRenderer.updateFromData(result.mob)
             }
             break
         }
         case 'revive': {
-            mobRenderer.playSoundEffect('revive')
             const result = await api.reviveMob(id)
             if (result.success && result.mob) {
+                if (result.changed) mobRenderer.playSoundEffect('revive')
                 mobRenderer.updateFromData(result.mob)
             }
             break
@@ -98,11 +97,12 @@ async function applyActionToMob(mobRenderer: MobRenderer): Promise<void> {
     }
 }
 
-function init(): void {
+async function init(): Promise<void> {
     window.addEventListener('DOMContentLoaded', async () => {
-        await preloadSounds()
+        await preloadSounds().catch(e => console.error('[Web] Sound preload failed:', e))
         setupRenameCallback()
-        await initMobs()
+        await initMobs().catch(e => console.error('[Web] Mob init failed:', e))
+        await initBiome().catch(e => console.error('[Web] Biome init failed:', e))
         setupActionButtons()
         setupSaveLoadButtons()
         setupMobManagementButtons()
@@ -238,6 +238,7 @@ function showNotification(message: string, type: 'success' | 'error'): void {
 function setupSaveLoadButtons(): void {
     const btnSave = document.getElementById('btn-save')
     const btnLoad = document.getElementById('btn-load')
+    const btnSaveBiome = document.getElementById('btn-save-biome')
 
     btnSave?.addEventListener('click', () => {
         saveMobs()
@@ -246,13 +247,43 @@ function setupSaveLoadButtons(): void {
     btnLoad?.addEventListener('click', () => {
         loadMobs()
     })
+
+    btnSaveBiome?.addEventListener('click', () => {
+        saveBiome()
+    })
+}
+
+async function initBiome(): Promise<void> {
+    const result = await api.loadBiome()
+    if (result.success && result.data) {
+        biomeRenderer.setObjects(result.data)
+    } else {
+        biomeRenderer.addObject('tree', 200)
+        biomeRenderer.addObject('flower', 400)
+        biomeRenderer.addObject('tree', 600)
+    }
+
+    setInterval(() => {
+        biomeRenderer.growTrees()
+    }, 30000)
+}
+
+async function saveBiome(): Promise<void> {
+    const data = biomeRenderer.getObjects()
+    const result = await api.saveBiome(data)
+    if (result.success) {
+        showNotification('Biome sauvegardé !', 'success')
+    } else {
+        showNotification('Erreur sauvegarde biome', 'error')
+    }
 }
 
 async function addNewMob(): Promise<void> {
     const mobContainer = document.getElementById('mob-container')
     if (!mobContainer) return
 
-    const result = await api.createMob('Nouveau Mob', potatoImage)
+    const randomName = generateRandomName()
+    const result = await api.createMob(randomName, potatoImage)
     if (result.success && result.mob) {
         const renderer = new MobRenderer(result.mob)
         renderer.render(mobContainer)
@@ -312,8 +343,8 @@ function setupMobManagementButtons(): void {
 function setupActionButtons(): void {
     const btnDamage = document.getElementById('btn-damage')
     const btnHeal = document.getElementById('btn-heal')
-    const btnFeed = document.getElementById('btn-feed')
     const btnRevive = document.getElementById('btn-revive')
+    const btnCombat = document.getElementById('btn-combat')
 
     const toggleActionMode = (mode: ActionMode): void => {
         if (currentActionMode === mode) {
@@ -331,12 +362,26 @@ function setupActionButtons(): void {
         toggleActionMode('heal')
     })
 
-    btnFeed?.addEventListener('click', () => {
-        toggleActionMode('feed')
-    })
-
     btnRevive?.addEventListener('click', () => {
         toggleActionMode('revive')
+    })
+
+    btnCombat?.addEventListener('click', () => {
+        showNotification('Ouverture du menu BASTON...', 'success')
+        combatUI.showSelectionMenu((f1, f2) => {
+            if (!f1.stats || !f2.stats) {
+                showNotification('Erreur: Stats de mob manquantes', 'error');
+                return;
+            }
+            combatUI.renderCombatScene(f1, f2, async (winner, loser) => {
+                const result = await api.processCombatResult(winner, loser)
+                if (result.reward) {
+                    showNotification(`🏆 RÉCOMPENSE : ${result.reward} !`, 'success')
+                }
+                await api.saveMobs()
+                loadMobs()
+            })
+        })
     })
 
     document.addEventListener('keydown', (e) => {
