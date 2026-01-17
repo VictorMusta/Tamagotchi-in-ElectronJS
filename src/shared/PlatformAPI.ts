@@ -11,6 +11,7 @@ export interface PlatformAPI {
 
     renameMob(id: string, newName: string): Promise<MobActionResult>
     updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): Promise<MobActionResult>
+    toggleSquad(id: string): Promise<MobActionResult>
 
     // Récupération des mobs
     getAllMobs(): Promise<{ success: boolean; mobs: MobData[] }>

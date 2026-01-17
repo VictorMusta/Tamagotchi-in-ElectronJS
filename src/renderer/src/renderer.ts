@@ -6,6 +6,8 @@ import { preloadSounds } from './SoundManager'
 import { generateRandomName } from './utils/NameGenerator'
 import { TournamentUI } from './tournament/TournamentUI'
 import { TournamentManager } from '../../shared/TournamentManager'
+import { PartyUI } from './mob/PartyUI'
+
 import {
   MobRenderer,
   getSelectedMob,
@@ -15,6 +17,7 @@ import {
   setOnProfileOpen
 } from './Mob'
 import potatoImage from '../assets/Potato still.png'
+import { PhysicsWorld } from './physics/PhysicsWorld'
 
 // Map des renderers de mobs par ID
 const mobRenderers: Map<string, MobRenderer> = new Map()
@@ -28,28 +31,48 @@ const profileRenderer = new ProfileRenderer()
 // Initialisation du système de combat (UI)
 const combatUI = new CombatUI()
 
-// Initialisation du système de tournoi (UI) - Sera fait dans init()
+// Initialisation du système de tournoi (UI)
 let tournamentUI: TournamentUI
 
 
 
+// Physics World
+const physicsWorld = new PhysicsWorld(document.getElementById('app') || document.body)
+
+// Party UI
+let partyUI: PartyUI
+
 async function applyActionToMob(mobRenderer: MobRenderer): Promise<void> {
-  // Pas de mode actif, juste sélectionner le mob
-  setSelectedMob(mobRenderer)
+  // Toggle selection
+  const current = getSelectedMob()
+  if (current && current.id === mobRenderer.id) {
+    setSelectedMob(null)
+  } else {
+    setSelectedMob(mobRenderer)
+  }
 }
+
+// Physics Helper removed
+
 
 async function init(): Promise<void> {
   console.log('[Renderer] Initializing...')
 
   try {
-    // 1. UI Setup (Directly, independent of data)
+    // 1. UI Setup
     tournamentUI = new TournamentUI()
+    partyUI = new PartyUI(
+      () => { }, // On close
+      () => loadMobs() // On update (moved from box to squad)
+    )
+
     doAThing()
     setupActionButtons()
     setupWindowControls()
     setupSaveLoadButtons()
     setupMobManagementButtons()
     setupRenameCallback()
+
     console.log('[Renderer] UI Setup complete')
 
     // 2. Data/Content Setup (Async)
@@ -118,11 +141,8 @@ async function initMobs(): Promise<void> {
     const result = await window.api.createMob('Potato', potatoImage)
     if (result.success && result.mob) {
       const renderer = new MobRenderer(result.mob)
-      renderer.render(mobContainer)
+      renderer.render(mobContainer, physicsWorld)
       mobRenderers.set(result.mob.id, renderer)
-
-      // Sélectionner le premier mob par défaut
-      setSelectedMob(renderer)
     }
   }
 }
@@ -135,22 +155,19 @@ async function loadMobsOnStartup(mobContainer: HTMLElement): Promise<boolean> {
   }
 
   try {
-    // Créer les renderers à partir des données chargées
-    result.mobs.forEach((data: MobData) => {
+    // Filter only squad mobs
+    const squadMobs = result.mobs.filter((m: MobData) => m.inSquad)
+
+    squadMobs.forEach((data: MobData) => {
       // Sécurité sur imageUrl
       const imageUrl = (data.imageUrl && data.imageUrl.includes('Potato')) ? potatoImage : (data.imageUrl || potatoImage)
       const renderer = new MobRenderer({ ...data, imageUrl })
-      renderer.render(mobContainer)
+      renderer.render(mobContainer, physicsWorld)
       mobRenderers.set(data.id, renderer)
     })
 
-    // Sélectionner le premier mob
-    if (mobRenderers.size > 0) {
-      const firstRenderer = mobRenderers.values().next().value
-      if (firstRenderer) {
-        setSelectedMob(firstRenderer)
-      }
-    }
+
+
 
     console.log('Sauvegarde chargée automatiquement:', mobRenderers.size, 'mob(s)')
     return true
@@ -192,19 +209,17 @@ async function loadMobs(idToSelect?: string): Promise<void> {
     setSelectedMob(null)
 
     // Créer les nouveaux renderers à partir des données chargées
-    result.mobs.forEach((data: MobData) => {
+    const squadMobs = result.mobs.filter((m: MobData) => m.inSquad)
+    squadMobs.forEach((data: MobData) => {
       const imageUrl = data.imageUrl.includes('Potato') ? potatoImage : data.imageUrl
       const renderer = new MobRenderer({ ...data, imageUrl })
-      renderer.render(mobContainer)
+      renderer.render(mobContainer, physicsWorld)
       mobRenderers.set(data.id, renderer)
     })
 
     // Restaurer la sélection
     if (currentSelectedId && mobRenderers.has(currentSelectedId)) {
       setSelectedMob(mobRenderers.get(currentSelectedId)!)
-    } else if (mobRenderers.size > 0) {
-      const firstRenderer = mobRenderers.values().next().value
-      if (firstRenderer) setSelectedMob(firstRenderer)
     }
 
     console.log('Mobs chargés avec succès:', mobRenderers.size)
@@ -282,7 +297,7 @@ async function addNewMob(): Promise<void> {
   const result = await window.api.createMob(randomName, potatoImage)
   if (result.success && result.mob) {
     const renderer = new MobRenderer(result.mob)
-    renderer.render(mobContainer)
+    renderer.render(mobContainer, physicsWorld)
     mobRenderers.set(result.mob.id, renderer)
 
     // Sélectionner le nouveau mob
@@ -439,6 +454,12 @@ function setupActionButtons(): void {
       }
     })
   }
+
+  // Bouton PC / Party
+  const btnParty = document.getElementById('btn-party')
+  btnParty?.addEventListener('click', () => {
+    partyUI.toggle()
+  })
 }
 
 /**

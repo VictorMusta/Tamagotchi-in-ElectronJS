@@ -32,6 +32,7 @@ export class Mob {
   traits: string[]
   skin: MobSkin
   combatProgress: CombatStats
+  inSquad: boolean
 
   constructor(
     nom: string,
@@ -43,6 +44,7 @@ export class Mob {
     traits?: string[],
     skin?: MobSkin,
     combatProgress?: CombatStats,
+    inSquad: boolean = false,
     level: number = 1,
     experience: number = 0,
     statPoints: number = 0
@@ -112,6 +114,9 @@ export class Mob {
     // Initialisation de la progression
     this.combatProgress = combatProgress || { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 }
     if (typeof this.combatProgress.tournamentWins !== 'number') this.combatProgress.tournamentWins = 0
+
+    // Squad logic
+    this.inSquad = inSquad
   }
 
   /**
@@ -322,7 +327,8 @@ export class Mob {
       statPoints: this.statPoints,
       traits: this.traits,
       skin: this.skin,
-      combatProgress: this.combatProgress
+      combatProgress: this.combatProgress,
+      inSquad: this.inSquad
     }
   }
 
@@ -336,16 +342,19 @@ export class Mob {
       data.vie,
       data.energie,
       data.id,
-      // Utilisation explicite de undefined pour déclencher les valeurs par défaut du constructeur
       data.stats || undefined,
       data.traits || undefined,
       data.skin || undefined,
       data.combatProgress || undefined,
+      data.inSquad, // Pass explicitly
       data.level || 1,
       data.experience || 0,
       data.statPoints || 0
     )
-    mob.status = data.status
+    // Force full heal / revive logic on load (Hub = Safe Zone)
+    mob.vie = mob.getMaxHP()
+    mob.energie = 100
+    mob.status = 'vivant'
     return mob
   }
 }
@@ -368,9 +377,38 @@ class MobManagerClass {
    */
   createMob(nom: string, imageUrl: string): MobData {
     const uniqueName = this.getUniqueName(nom)
-    const mob = new Mob(uniqueName, imageUrl)
+
+    // Check squad size
+    const squadSize = Array.from(this.mobs.values()).filter(m => m.inSquad).length
+    const inSquad = squadSize < 10
+
+    const mob = new Mob(uniqueName, imageUrl, 100, 100, undefined, undefined, undefined, undefined, undefined, inSquad)
     this.mobs.set(mob.id, mob)
+
+    // Auto-save
+    this.saveMobs()
+
     return mob.toJSON()
+  }
+
+  toggleSquad(id: string): MobActionResult {
+    const mob = this.mobs.get(id)
+    if (!mob) return { success: false, error: 'Mob non trouvé' }
+
+    if (mob.inSquad) {
+      // Removing from squad is always allowed
+      mob.inSquad = false
+    } else {
+      // Adding to squad: check limit
+      const squadSize = Array.from(this.mobs.values()).filter(m => m.inSquad).length
+      if (squadSize >= 10) {
+        return { success: false, error: 'L\'équipe est complète (10 max)' }
+      }
+      mob.inSquad = true
+    }
+
+    this.saveMobs()
+    return { success: true, mob: mob.toJSON() }
   }
 
   /**

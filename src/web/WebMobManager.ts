@@ -31,6 +31,7 @@ export class Mob {
     traits: string[]
     skin: MobSkin
     combatProgress: CombatStats
+    inSquad: boolean
 
     constructor(
         nom: string,
@@ -42,6 +43,7 @@ export class Mob {
         traits?: string[],
         skin?: MobSkin,
         combatProgress?: CombatStats,
+        inSquad: boolean = false,
         level: number = 1,
         experience: number = 0,
         statPoints: number = 0
@@ -82,6 +84,8 @@ export class Mob {
         this.skin = skin || { hat: 'none', bottom: 'none' }
         this.combatProgress = combatProgress || { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 }
         if (typeof this.combatProgress.tournamentWins !== 'number') this.combatProgress.tournamentWins = 0
+
+        this.inSquad = inSquad
     }
 
     private generateRandomTraits(): string[] {
@@ -229,7 +233,8 @@ export class Mob {
             statPoints: this.statPoints,
             traits: this.traits,
             skin: this.skin,
-            combatProgress: this.combatProgress
+            combatProgress: this.combatProgress,
+            inSquad: this.inSquad
         }
     }
 
@@ -237,6 +242,7 @@ export class Mob {
         const mob = new Mob(
             data.nom, data.imageUrl, data.vie, data.energie, data.id,
             data.stats, data.traits, data.skin, data.combatProgress,
+            data.inSquad, // new arg
             data.level, data.experience, data.statPoints
         )
         mob.status = data.status
@@ -249,9 +255,32 @@ class WebMobManagerClass {
 
     createMob(nom: string, imageUrl: string): MobData {
         const uniqueName = this.getUniqueName(nom)
-        const mob = new Mob(uniqueName, imageUrl)
+
+        const squadSize = Array.from(this.mobs.values()).filter(m => m.inSquad).length
+        const inSquad = squadSize < 10
+
+        const mob = new Mob(uniqueName, imageUrl, 100, 100, undefined, undefined, undefined, undefined, undefined, inSquad)
         this.mobs.set(mob.id, mob)
+        this.saveMobs()
         return mob.toJSON()
+    }
+
+    toggleSquad(id: string): MobActionResult {
+        const mob = this.mobs.get(id)
+        if (!mob) return { success: false, error: 'Mob non trouvé' }
+
+        if (mob.inSquad) {
+            mob.inSquad = false
+        } else {
+            const squadSize = Array.from(this.mobs.values()).filter(m => m.inSquad).length
+            if (squadSize >= 10) {
+                return { success: false, error: 'L\'équipe est complète (10 max)' }
+            }
+            mob.inSquad = true
+        }
+
+        this.saveMobs()
+        return { success: true, mob: mob.toJSON() }
     }
 
     deleteMob(id: string): boolean {
@@ -272,6 +301,7 @@ class WebMobManagerClass {
         const mob = this.mobs.get(id)
         if (!mob) return { success: false, error: 'Mob non trouvé' }
         mob.rename(this.getUniqueName(newName, id))
+        this.saveMobs()
         return { success: true, mob: mob.toJSON() }
     }
 
@@ -301,6 +331,9 @@ class WebMobManagerClass {
                 reward = 'Fiole de Réanimation'
                 winner.combatProgress.winStreak = 0
             }
+
+            // Web XP
+            winner.gainExperience(50)
         }
 
         return {

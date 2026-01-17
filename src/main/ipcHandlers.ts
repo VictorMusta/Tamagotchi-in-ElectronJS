@@ -36,8 +36,12 @@ export function registerMobHandlers(): void {
     const mob = MobManager.getMobById(id)
     if (!mob) return { success: false, error: 'Mob non trouvé' }
 
-    // On doit passer par MobManager pour modifier l'état réel (Map)
     return MobManager.updateMobSkin(id, type, value)
+  })
+
+  // Toggle Squad status
+  ipcMain.handle('mob:toggleSquad', (_event, id: string) => {
+    return MobManager.toggleSquad(id)
   })
 
   // Récupérer tous les mobs

@@ -34,6 +34,7 @@ export interface MobData {
     traits: string[]
     skin: MobSkin
     combatProgress: CombatStats
+    inSquad: boolean // True if in active squad (Hub), false if in Box
 }
 
 export interface MobActionResult {

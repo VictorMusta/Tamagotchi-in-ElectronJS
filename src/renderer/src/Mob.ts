@@ -3,6 +3,7 @@ import { MobDisplay } from './mob/MobDisplay'
 import { MobAnimation } from './mob/MobAnimation'
 import { MobMovement } from './mob/MobMovement'
 import { MobRenamer } from './mob/MobRenamer'
+import { PhysicsWorld } from './physics/PhysicsWorld'
 
 // Gestionnaire global pour le mob sélectionné
 let selectedMobRenderer: MobRenderer | null = null
@@ -134,46 +135,43 @@ export class MobRenderer {
   }
 
   startBehavior(): void {
-    this.movement?.start()
+    // Random hopping behavior
+    if (this.status === 'vivant') {
+      // Clear existing interval just in case
+      this.stopBehavior()
+      // Simple random interval for hopping
+      // Storing interval on the instance would be better but this is quick cleanup
+      // Actually let's use a property on the class if possible, or just rely on MobMovement's internal updates if we moved logic there.
+      // For now, let's just make them hop occasionally via timeout loop locally.
+      const planHop = () => {
+        if (this.status !== 'vivant') return
+
+        if (Math.random() < 0.3) {
+          this.movement?.hop()
+        }
+
+        // Next thought
+        setTimeout(planHop, 2000 + Math.random() * 3000)
+      }
+      planHop()
+    }
   }
 
   stopBehavior(): void {
+    // Stop intervals if stored
     this.movement?.stop()
   }
 
-  private jump(distance: number, targetX: number): void {
-    if (!this.animation || !this.movement) return
+  // Legacy jump removed. Physics handles position.
 
-    const jumpHeight = 100 + Math.random() * 200
-    const jumpDistance = (20 + Math.random() * 25) * Math.sign(distance)
-    const jumpDuration = 0.5 + Math.random() * 0.3
-
-    this.animation.setFacingLeft(distance < 0)
-    this.animation.applyJumpAnimation(jumpHeight, jumpDuration)
-
-    setTimeout(() => {
-      if (!this.movement) return
-      const actualDistance = Math.min(Math.abs(distance), Math.abs(jumpDistance)) * Math.sign(distance)
-      this.movement.updatePosition(this.movement.getPosX() + actualDistance)
-    }, (jumpDuration * 1000) / 3)
-
-    setTimeout(() => {
-      this.animation?.removeJumpAnimation()
-
-      const remainingDistance = targetX - (this.movement?.getPosX() || 0)
-      if (this.movement?.isCurrentlyMoving() && Math.abs(remainingDistance) >= 5) {
-        setTimeout(() => {
-          if (this.movement?.isCurrentlyMoving()) {
-            this.jump(remainingDistance, targetX)
-          }
-        }, 3000 + Math.random() * 7000)
-      } else {
-        this.movement?.setIsMoving(false)
-      }
-    }, jumpDuration * 1000)
+  getPosX(): number {
+    return this.movement?.getPosX() || 0
   }
 
-  render(container: HTMLElement): HTMLElement {
+  render(
+    container: HTMLElement,
+    physicsWorld: PhysicsWorld
+  ): HTMLElement {
     const el = this.display.render(
       container,
       () => {
@@ -196,12 +194,15 @@ export class MobRenderer {
     )
 
     this.animation = new MobAnimation(el)
+
+    // Initial Position (Random if not set)
+    const initialX = Math.random() * (window.innerWidth - 100) + 50
     this.movement = new MobMovement(
       el,
-      this.status,
-      () => this.isRenaming,
-      (dist, target) => this.jump(dist, target)
+      physicsWorld,
+      initialX
     )
+
     this.renamer = new MobRenamer(
       this.id,
       () => this.nom,
@@ -233,8 +234,7 @@ export class MobRenderer {
 
   destroy(): void {
     this.stopBehavior()
+    this.movement?.destroy() // Ensure physics body is removed
     this.display.destroy()
   }
 }
-
-
