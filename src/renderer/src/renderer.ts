@@ -39,6 +39,15 @@ let tournamentUI: TournamentUI
 // Physics World
 const physicsWorld = new PhysicsWorld(document.getElementById('app') || document.body)
 
+// Web API Fallback
+import { WebApi } from './WebApi'
+// @ts-ignore
+if (!window.api) {
+  console.log('Running in Web Mode - Using localStorage API')
+  // @ts-ignore
+  window.api = new WebApi()
+}
+
 // Party UI
 let partyUI: PartyUI
 
