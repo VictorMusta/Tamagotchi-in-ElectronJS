@@ -28,6 +28,10 @@ export class WebPlatformAPI implements PlatformAPI {
         return WebMobManager.updateMobSkin(id, type, value)
     }
 
+    async toggleSquad(id: string): Promise<MobActionResult> {
+        return WebMobManager.toggleSquad(id)
+    }
+
     async getAllMobs(): Promise<{ success: boolean; mobs: MobData[] }> {
         const mobs = WebMobManager.getAllMobs()
         return { success: true, mobs }

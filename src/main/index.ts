@@ -15,6 +15,8 @@ function createWindow(): void {
     backgroundColor: '#00000000',
     hasShadow: false,
     autoHideMenuBar: true,
+    ...(process.platform === 'linux' ? { icon: join(__dirname, '../../build/icon.png') } : {}),
+    icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
