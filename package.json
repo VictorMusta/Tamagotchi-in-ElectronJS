@@ -5,6 +5,10 @@
   "main": "./out/main/index.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VictorMusta/Tamagotchi-in-ElectronJS.git"
+  },
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
