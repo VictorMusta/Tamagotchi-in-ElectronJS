@@ -22,6 +22,34 @@ import { PhysicsWorld } from './physics/PhysicsWorld'
 // Map des renderers de mobs par ID
 const mobRenderers: Map<string, MobRenderer> = new Map()
 
+const themes = ['forest', 'cyberpunk', 'cozy']
+let currentThemeIndex = 0
+
+function applyTheme(themeName: string): void {
+  document.body.classList.remove('theme-forest', 'theme-cyberpunk', 'theme-cozy')
+  document.body.classList.add(`theme-${themeName}`)
+  localStorage.setItem('selectedTheme', themeName)
+}
+
+function loadTheme(): void {
+  const savedTheme = localStorage.getItem('selectedTheme')
+  if (savedTheme && themes.includes(savedTheme)) {
+    currentThemeIndex = themes.indexOf(savedTheme)
+    applyTheme(savedTheme)
+  } else {
+    // Default theme
+    applyTheme('forest')
+  }
+}
+
+function toggleTheme(): void {
+  currentThemeIndex = (currentThemeIndex + 1) % themes.length
+  applyTheme(themes[currentThemeIndex])
+}
+
+// Initialisation
+loadTheme()
+
 // Initialisation du biome
 const biomeRenderer = new BiomeRenderer('biome-container')
 
@@ -266,6 +294,8 @@ function setupSaveLoadButtons(): void {
   btnSaveBiome?.addEventListener('click', () => {
     saveBiome()
   })
+
+  document.getElementById('btn-theme')?.addEventListener('click', toggleTheme)
 }
 
 async function initBiome(): Promise<void> {

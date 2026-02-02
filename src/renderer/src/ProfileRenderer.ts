@@ -9,7 +9,7 @@ export class ProfileRenderer {
   /**
    * Affiche l'overlay de profil pour un mob donné
    */
-  render(mob: MobData, onClose: () => void, onRename?: (mobId: string, mob: MobData) => void): void {
+  render(mob: MobData, onClose: () => void, onUpdate?: (mobId: string, mob: MobData) => void): void {
     // Supprimer l'ancien overlay si existant
     this.destroy()
 
@@ -120,7 +120,11 @@ export class ProfileRenderer {
           layer.className = `layer ${type}-layer ${value}`
         }
 
-        window.api.updateMobSkin(mob.id, type, value)
+        window.api.updateMobSkin(mob.id, type, value).then((result) => {
+          if (result.success && result.mob && onUpdate) {
+            onUpdate(mob.id, result.mob)
+          }
+        })
       })
     })
 
@@ -182,14 +186,14 @@ export class ProfileRenderer {
         if (newName && newName !== currentName) {
           const result = await window.api.renameMob(mob.id, newName)
           if (result.success && result.mob) {
-            this.render(result.mob, onClose, onRename)
-            if (onRename) onRename(result.mob.id, result.mob)
+            this.render(result.mob, onClose, onUpdate)
+            if (onUpdate) onUpdate(result.mob.id, result.mob)
           } else {
             alert(result.error || 'Erreur lors du renommage')
-            this.render(mob, onClose, onRename)
+            this.render(mob, onClose, onUpdate)
           }
         } else {
-          this.render(mob, onClose, onRename)
+          this.render(mob, onClose, onUpdate)
         }
       }
 
