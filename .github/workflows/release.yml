@@ -116,6 +116,8 @@ jobs:
           files: |
             dist/*.exe
             dist/*-portable.zip
+            dist/*.yml
+            dist/*.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -148,6 +150,8 @@ jobs:
           files: |
             dist/*.AppImage
             dist/*.deb
+            dist/*.yml
+            dist/*.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -181,6 +185,8 @@ jobs:
           tag_name: v${{ needs.create-release.outputs.version }}
           files: |
             dist/*.dmg
+            dist/*.yml
+            dist/*.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
