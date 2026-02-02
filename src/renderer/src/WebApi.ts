@@ -1,4 +1,4 @@
-import { MobActionResult, MobData, MobListResult, UpgradeChoicesResult, UpgradeChoice, ApplyUpgradeResult, MobStatus, MobSkin, MobStats, CombatStats } from '../../shared/types'
+import { MobActionResult, MobData, MobListResult, UpgradeChoicesResult, UpgradeChoice, ApplyUpgradeResult, MobStats } from '../../shared/types'
 
 // Replicating basic shared types and logic for Web Version
 // Ideally this should be shared code but for now we duplicate small parts to avoid complex build changes.

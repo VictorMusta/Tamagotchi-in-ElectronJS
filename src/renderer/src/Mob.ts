@@ -75,7 +75,6 @@ export class MobRenderer {
   private animation: MobAnimation | null = null
   private movement: MobMovement | null = null
   private renamer: MobRenamer | null = null
-  private isRenaming: boolean = false
 
   constructor(data: MobData) {
     this.id = data.id
@@ -208,11 +207,9 @@ export class MobRenderer {
       () => this.nom,
       (name) => { this.nom = name },
       () => {
-        this.isRenaming = true
         this.stopBehavior()
       },
       () => {
-        this.isRenaming = false
         if (this.status === 'vivant') {
           this.startBehavior()
         }

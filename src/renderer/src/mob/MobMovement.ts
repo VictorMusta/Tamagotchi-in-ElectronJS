@@ -4,8 +4,6 @@ import { PhysicsWorld } from '../physics/PhysicsWorld'
 
 export class MobMovement {
     public body: Matter.Body
-    private isHeld: boolean = false
-    private updateInterval: number | null = null
 
     // Balance constants
     private readonly UPRIGHT_STIFFNESS = 0.05
@@ -14,7 +12,6 @@ export class MobMovement {
     constructor(
         private element: HTMLElement,
         private physicsWorld: PhysicsWorld,
-        private status: MobStatus,
         initialX: number
     ) {
         // Create physics body
@@ -84,8 +81,6 @@ export class MobMovement {
             // CSS says: .mob { bottom: 50px; ... } which anchors it to bottom.
             // To use physics X/Y freely, we should change .mob to top/left positioning or use transform translate.
             // Using transform translate is better for performance.
-
-
 
             // Matter.js positions are center of mass.
             // HTML transform origin is usually center.
@@ -169,7 +164,7 @@ export class MobMovement {
         }
         update()
     }
-
+    
     public hop(): void {
         if (!this.body) return
 
@@ -193,7 +188,7 @@ export class MobMovement {
     }
 
     // Legacy support (noop or adapt)
-    updateStatus(status: MobStatus): void { this.status = status }
+    updateStatus(_status: MobStatus): void { }
     start(): void { }
     stop(): void { }
 }
