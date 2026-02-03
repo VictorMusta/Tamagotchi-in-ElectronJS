@@ -36,6 +36,30 @@ const combatUI = new CombatUI()
 // Physics World
 const physicsWorld = new PhysicsWorld(document.getElementById('app') || document.body)
 
+const themes = ['forest', 'cyberpunk', 'cozy']
+let currentThemeIndex = 0
+
+function applyTheme(themeName: string): void {
+  document.body.classList.remove('theme-forest', 'theme-cyberpunk', 'theme-cozy')
+  document.body.classList.add(`theme-${themeName}`)
+  localStorage.setItem('selectedTheme', themeName)
+}
+
+function loadTheme(): void {
+  const savedTheme = localStorage.getItem('selectedTheme')
+  if (savedTheme && themes.includes(savedTheme)) {
+    currentThemeIndex = themes.indexOf(savedTheme)
+    applyTheme(savedTheme)
+  } else {
+    applyTheme('forest')
+  }
+}
+
+function toggleTheme(): void {
+  currentThemeIndex = (currentThemeIndex + 1) % themes.length
+  applyTheme(themes[currentThemeIndex])
+}
+
 // Mode d'action actuel
 type ActionMode = 'none' | 'damage' | 'heal' | 'revive'
 let currentActionMode: ActionMode = 'none'
@@ -109,6 +133,7 @@ async function applyActionToMob(mobRenderer: MobRenderer): Promise<void> {
 
 async function init(): Promise<void> {
     window.addEventListener('DOMContentLoaded', async () => {
+        loadTheme()
         await preloadSounds().catch(e => console.error('[Web] Sound preload failed:', e))
         setupRenameCallback()
         await initMobs().catch(e => console.error('[Web] Mob init failed:', e))
@@ -280,9 +305,10 @@ async function initBiome(): Promise<void> {
     if (result.success && result.data) {
         biomeRenderer.setObjects(result.data)
     } else {
-        biomeRenderer.addObject('tree', 200)
-        biomeRenderer.addObject('flower', 400)
-        biomeRenderer.addObject('tree', 600)
+        // User requested no trees by default
+        // biomeRenderer.addObject('tree', 200)
+        // biomeRenderer.addObject('flower', 400)
+        // biomeRenderer.addObject('tree', 600)
     }
 
     setInterval(() => {
