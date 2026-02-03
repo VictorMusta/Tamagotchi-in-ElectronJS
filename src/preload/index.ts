@@ -7,6 +7,7 @@ const api = {
   // Actions sur les mobs
   createMob: (nom: string, imageUrl: string) => ipcRenderer.invoke('mob:create', nom, imageUrl),
   deleteMob: (id: string) => ipcRenderer.invoke('mob:delete', id),
+  deleteAllMobs: () => ipcRenderer.invoke('mob:deleteAll'),
   renameMob: (id: string, newName: string) => ipcRenderer.invoke('mob:rename', id, newName),
   updateMobSkin: (id: string, type: 'hat' | 'bottom', value: string) => ipcRenderer.invoke('mob:updateSkin', id, type, value),
   toggleSquad: (id: string) => ipcRenderer.invoke('mob:toggleSquad', id),

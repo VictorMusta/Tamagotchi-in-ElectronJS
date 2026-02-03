@@ -124,6 +124,22 @@ export class PartyUI {
             }
             card.appendChild(btn)
 
+            // Delete Button
+            const deleteBtn = document.createElement('button')
+            deleteBtn.innerHTML = '🗑️'
+            deleteBtn.title = "Supprimer définitivement"
+            deleteBtn.style.marginLeft = '5px'
+            deleteBtn.style.background = 'rgba(255, 50, 50, 0.2)'
+            deleteBtn.style.border = '1px solid rgba(255, 50, 50, 0.5)'
+            deleteBtn.onclick = async () => {
+                if (confirm(`Supprimer ${mob.nom} définitivement ?`)) {
+                    await window.api.deleteMob(mob.id)
+                    this.render()
+                    this.onUpdate()
+                }
+            }
+            card.appendChild(deleteBtn)
+
             list.appendChild(card)
         })
 

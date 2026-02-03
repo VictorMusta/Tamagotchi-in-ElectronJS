@@ -1,5 +1,6 @@
 import { MobData } from '../../shared/types'
 import { TRAIT_DEFINITIONS } from './mob/TraitDefinitions'
+import { WEAPON_REGISTRY } from '../../shared/WeaponRegistry'
 
 export class ProfileRenderer {
   private overlay: HTMLElement | null = null
@@ -41,36 +42,60 @@ export class ProfileRenderer {
             <div class="stat-item">
               <span class="stat-label">FOR</span>
               <span class="stat-value">${mob.stats.force}</span>
-              <div class="stat-bar"><div class="stat-fill" style="width: ${mob.stats.force * 5}%; background: #ff4757;"></div></div>
+              ${this.getStatBarHtml(mob.stats.force, '#ff4757')}
             </div>
             <div class="stat-item">
               <span class="stat-label">VIT</span>
               <span class="stat-value">${mob.stats.vitalite}</span>
-              <div class="stat-bar"><div class="stat-fill" style="width: ${mob.stats.vitalite * 5}%; background: #2ed573;"></div></div>
+              ${this.getStatBarHtml(mob.stats.vitalite, '#2ed573')}
             </div>
             <div class="stat-item">
               <span class="stat-label">AGI</span>
               <span class="stat-value">${mob.stats.agilite}</span>
-              <div class="stat-bar"><div class="stat-fill" style="width: ${mob.stats.agilite * 5}%; background: #1e90ff;"></div></div>
+              ${this.getStatBarHtml(mob.stats.agilite, '#1e90ff')}
             </div>
             <div class="stat-item">
               <span class="stat-label">SPD</span>
               <span class="stat-value">${mob.stats.vitesse}</span>
-              <div class="stat-bar"><div class="stat-fill" style="width: ${mob.stats.vitesse * 5}%; background: #f1c40f;"></div></div>
+              ${this.getStatBarHtml(mob.stats.vitesse, '#f1c40f')}
             </div>
           </div>
+          
+           ${mob.weapons && mob.weapons.length > 0 ? `
+          <div class="weapon-section" style="margin-top: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+            <div style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">Arsenal (${mob.weapons.length})</div>
+            <div class="arsenal-grid" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                ${mob.weapons.map(w => {
+                    const def = WEAPON_REGISTRY[w]
+                    const icon = def?.icon || 'toothpick.png'
+                    return `
+                    <div class="weapon-item" data-weapon="${w}" style="
+                        width: 48px; height: 48px; 
+                        background: rgba(255,255,255,0.05); 
+                        border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 6px; 
+                        display: flex; justify-content: center; align-items: center; 
+                        cursor: help;
+                        position: relative;
+                        transition: all 0.2s;
+                    ">
+                        <img src="./assets/weapons/${icon}" style="width: 32px; height: 32px; image-rendering: pixelated; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));" />
+                    </div>
+                    `
+                }).join('')}
+            </div>
+          </div>
+          ` : ''}
 
           <div class="traits-section">
             <h3>Mutations</h3>
             <div class="traits-list">
               ${mob.traits.map(trait => {
-      return `<span class="trait-tag" data-trait="${trait}">${trait}</span>`
-    }).join('')}
+                return `<span class="trait-tag" data-trait="${trait}">${trait}</span>`
+                }).join('')}
             </div>
           </div>
 
-          <!-- Tooltip Container (will be positioned dynamically) -->
-          <div id="trait-tooltip" class="trait-tooltip" style="display: none; position: absolute; z-index: 1000;"></div>
 
           <div class="customization-section">
             <h3>Customisation</h3>
@@ -107,6 +132,14 @@ export class ProfileRenderer {
 
     document.body.appendChild(this.overlay)
 
+    // Append tooltip to overlay directly to avoid relative positioning issues from profile-card
+    const tooltipEl = document.createElement('div')
+    tooltipEl.id = 'trait-tooltip'
+    tooltipEl.className = 'trait-tooltip'
+    tooltipEl.style.display = 'none'
+    tooltipEl.style.position = 'absolute'
+    this.overlay.appendChild(tooltipEl)
+
     // Events de customisation
     this.overlay.querySelectorAll('.skin-select').forEach(select => {
       select.addEventListener('change', (e) => {
@@ -128,42 +161,82 @@ export class ProfileRenderer {
       })
     })
 
-    // Tooltip Events
-    const tooltipEl = this.overlay.querySelector('#trait-tooltip') as HTMLElement
+    // Helper for tooltip positioning
+    const positionTooltip = (target: HTMLElement, content: string) => {
+         tooltipEl.innerHTML = content
+         tooltipEl.style.display = 'block'
+         
+         const rect = target.getBoundingClientRect()
+         const tooltipWidth = tooltipEl.offsetWidth
+         const tooltipHeight = tooltipEl.offsetHeight
+
+         let left = rect.left + (rect.width / 2) - (tooltipWidth / 2)
+         let top = rect.top - tooltipHeight - 10
+
+         if (left < 10) left = 10
+         if (left + tooltipWidth > window.innerWidth - 10) left = window.innerWidth - tooltipWidth - 10
+         if (top < 10) top = rect.bottom + 10
+
+         tooltipEl.style.left = `${left}px`
+         tooltipEl.style.top = `${top}px`
+    }
+
+    // Trait Tooltip Events
     this.overlay.querySelectorAll('.trait-tag').forEach(tag => {
       tag.addEventListener('mouseenter', (e) => {
         const target = e.target as HTMLElement
         const traitName = target.dataset.trait
         if (traitName && TRAIT_DEFINITIONS[traitName]) {
           const def = TRAIT_DEFINITIONS[traitName]
-          tooltipEl.innerHTML = `
+          const html = `
             <h4>${traitName}</h4>
             <p>${def.description}</p>
             ${def.effect ? `<p class="tooltip-effect"><strong>Effet:</strong> ${def.effect}</p>` : ''}
             ${def.stats ? `<p class="tooltip-stats"><strong>Stats:</strong> ${def.stats}</p>` : ''}
           `
-          tooltipEl.style.display = 'block'
-
-          // Position relative to the tag
-          const rect = target.getBoundingClientRect()
-          const tooltipRect = tooltipEl.getBoundingClientRect()
-
-          // Centered above the tag
-          let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2)
-          let top = rect.top - tooltipRect.height - 10
-
-          // Boundary checks
-          if (left < 0) left = 10
-          if (top < 0) top = rect.bottom + 10 // Show below if no space above
-
-          tooltipEl.style.left = `${left}px`
-          tooltipEl.style.top = `${top}px`
+          positionTooltip(target, html)
         }
       })
 
       tag.addEventListener('mouseleave', () => {
         tooltipEl.style.display = 'none'
       })
+    })
+
+    // Weapon Tooltip Events
+    this.overlay.querySelectorAll('.weapon-item').forEach(item => {
+        item.addEventListener('mouseenter', (e) => {
+            const target = e.target as HTMLElement
+            const weaponName = target.dataset.weapon
+            const def = weaponName ? WEAPON_REGISTRY[weaponName] : null
+            
+            if (def) {
+                const html = `
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:5px;">
+                        <img src="./assets/weapons/${def.icon}" style="width:24px; height:24px;" />
+                        <h4 style="margin:0;">${def.name}</h4>
+                    </div>
+                    <p style="font-size:11px; margin-bottom:5px; color:#ddd;">${def.description}</p>
+                    <div style="font-size:10px; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+                        <span style="color:#ff7675;">Dmg +${def.damageBonus}</span>
+                        <span style="color:#74b9ff;">Type: ${def.type}</span>
+                        ${def.statBonus ? `<span style="color:#ffeaa7;">+${def.statBonus.amount} ${def.statBonus.stat}</span>` : ''}
+                    </div>
+                    ${def.effects ? `
+                    <div style="margin-top:5px; font-size:10px; color:#a29bfe;">
+                        ${def.effects.stunChance ? `<div>💫 Stun ${def.effects.stunChance * 100}%</div>` : ''}
+                        ${def.effects.blockChance ? `<div>🛡️ Block ${(def.effects.blockChance * 100)}%</div>` : ''}
+                        ${def.effects.counterChance ? `<div>↩️ Counter ${(def.effects.counterChance * 100)}%</div>` : ''}
+                    </div>
+                    ` : ''}
+                `
+                positionTooltip(target, html)
+            }
+        })
+        
+        item.addEventListener('mouseleave', () => {
+             tooltipEl.style.display = 'none'
+        })
     })
 
     // Renommage
@@ -224,5 +297,32 @@ export class ProfileRenderer {
       this.overlay.remove()
       this.overlay = null
     }
+  }
+
+  private getStatBarHtml(value: number, baseColor: string): string {
+    const MAX_PER_BAR = 30
+    const TIERS = [
+        baseColor,
+        '#00d2d3', // Cyan
+        '#a29bfe', // Purple
+        '#ff9f43', // Orange
+        '#ff7675'  // Salmon
+    ]
+    
+    // 0-30 -> Tier 0
+    let tier = Math.floor((value - 0.1) / MAX_PER_BAR)
+    if (tier < 0) tier = 0
+    
+    // Colors
+    const fgColor = TIERS[tier] || TIERS[TIERS.length - 1]
+    const bgColor = tier > 0 ? TIERS[tier - 1] : 'rgba(255,255,255,0.1)' 
+    
+    // Width
+    const remainder = value - (tier * MAX_PER_BAR)
+    const widthPct = Math.min(100, (remainder / MAX_PER_BAR) * 100)
+    
+    return `<div class="stat-bar" style="background: ${bgColor}; box-shadow: inset 0 0 5px rgba(0,0,0,0.5);">
+              <div class="stat-fill" style="width: ${widthPct}%; background: ${fgColor}; box-shadow: 0 0 10px ${fgColor};"></div>
+            </div>`
   }
 }

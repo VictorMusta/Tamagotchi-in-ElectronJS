@@ -35,6 +35,7 @@ export interface MobData {
     skin: MobSkin
     combatProgress: CombatStats
     inSquad: boolean // True if in active squad (Hub), false if in Box
+    weapons: string[] // List of owned weapons
 }
 
 export interface MobActionResult {

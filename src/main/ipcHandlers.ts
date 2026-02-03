@@ -23,6 +23,12 @@ export function registerMobHandlers(): void {
     return { success: true }
   })
 
+  // Supprimer TOUS les mobs
+  ipcMain.handle('mob:deleteAll', () => {
+    MobManager.deleteAllMobs()
+    return { success: true }
+  })
+
   // Réanimer (removed from UI but kept for backend if needed? No, user said "supprime les modes")
   // So let's delete them.
 

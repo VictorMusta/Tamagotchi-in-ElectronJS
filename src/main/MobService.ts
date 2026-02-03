@@ -4,6 +4,7 @@ import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 
 import { MobData, MobActionResult, MobListResult, SaveLoadResult, MobStatus, MobStats, MobSkin, CombatStats, TournamentResult, TournamentData, TournamentHistory } from '../shared/types'
+import { WEAPON_REGISTRY } from '../shared/WeaponRegistry'
 
 const POSSIBLE_TRAITS = [
   'Sprint Final',
@@ -33,6 +34,7 @@ export class Mob {
   skin: MobSkin
   combatProgress: CombatStats
   inSquad: boolean
+  weapons: string[]
 
   constructor(
     nom: string,
@@ -47,7 +49,8 @@ export class Mob {
     inSquad: boolean = false,
     level: number = 1,
     experience: number = 0,
-    statPoints: number = 0
+    statPoints: number = 0,
+    weapons?: string[]
   ) {
     this.id = id || randomUUID()
     this.nom = nom
@@ -106,10 +109,7 @@ export class Mob {
     this.traits = traits || this.generateRandomTraits()
 
     // Initialisation du skin
-    this.skin = skin || {
-      hat: 'none',
-      bottom: 'none'
-    }
+    this.skin = skin || this.generateRandomSkin()
 
     // Initialisation de la progression
     this.combatProgress = combatProgress || { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 }
@@ -117,179 +117,124 @@ export class Mob {
 
     // Squad logic
     this.inSquad = inSquad
+    
+    // Weapon Stock
+    this.weapons = weapons || []
   }
 
-  /**
-   * Génère 3 traits aléatoires sans doublons
-   */
-  private generateRandomTraits(): string[] {
+  generateRandomSkin(): MobSkin {
+      const HATS = ['none', 'crown', 'cap', 'wizard']
+      const BOTTOMS = ['none', 'shorts', 'tu-tu', 'boots']
+      
+      return {
+          hat: HATS[Math.floor(Math.random() * HATS.length)],
+          bottom: BOTTOMS[Math.floor(Math.random() * BOTTOMS.length)]
+      }
+  }
+
+  generateRandomTraits(): string[] {
     const traits: string[] = []
     const available = [...POSSIBLE_TRAITS]
-    for (let i = 0; i < 3; i++) {
-      const index = Math.floor(Math.random() * available.length)
-      traits.push(available.splice(index, 1)[0])
+    
+    // 3 traits max initially
+    for(let i=0; i<3; i++) {
+        if (Math.random() < 0.3 && available.length > 0) {
+            const index = Math.floor(Math.random() * available.length)
+            traits.push(available[index])
+            available.splice(index, 1) // Avoid duplicates
+        }
     }
     return traits
   }
 
-  /**
-   * Met à jour le statut du mob en fonction de sa vie
-   */
-  public updateStatus(): void {
-    this.status = this.vie > 0 ? 'vivant' : 'mort'
-  }
-
-  /**
-   * Calcule les PV Max du mob
-   */
-  public getMaxHP(): number {
-    return 100 + (this.stats.vitalite * 5)
-  }
-
-  /**
-   * Inflige des dégâts au mob
-   * @returns true si le mob vient de mourir
-   */
-  takeDamage(amount: number): boolean {
-    const wasAlive = this.status === 'vivant'
-    this.vie = Math.max(0, this.vie - amount)
-    this.updateStatus()
-    return wasAlive && this.status === 'mort'
-  }
-
-  /**
-   * Soigne le mob
-   * @returns true si le soin a été appliqué
-   */
-  heal(amount: number): boolean {
-    if (this.status === 'mort') return false
-    const maxHP = this.getMaxHP()
-    this.vie = Math.min(maxHP, this.vie + amount)
-    this.updateStatus()
-    return true
-  }
-
-
-
-  /**
-   * Réanime le mob
-   * @returns true si le mob a été réanimé
-   */
-  revive(): boolean {
-    if (this.status === 'vivant') return false
-    this.vie = Math.floor(this.getMaxHP() / 2) // 50% HP
-    this.energie = 50
-    this.updateStatus()
-    return true
-  }
-
-  /**
-   * Renomme le mob
-   */
   rename(newName: string): void {
-    this.nom = newName
+      this.nom = newName
   }
 
-  /**
-   * Modifie l'énergie du mob
-   */
-  setEnergie(amount: number): void {
-    this.energie = Math.max(0, Math.min(100, amount))
-  }
-
-
-
-  /**
-   * Modifie le skin du mob
-   */
   setSkin(type: 'hat' | 'bottom', value: string): void {
-    this.skin[type] = value
+      if (type === 'hat') this.skin.hat = value
+      else if (type === 'bottom') this.skin.bottom = value
   }
 
-  /**
-   * Ajoute de l'XP et gère la montée de niveau
-   * @returns true si level up
-   */
-  gainExperience(amount: number): boolean {
-    if (this.status === 'mort') return false
-    this.experience += amount
+  getMaxHP(): number {
+      return 100 + (this.stats.vitalite * 5)
+  }
 
-    const xpNeeded = this.targetXpForNextLevel()
-    if (this.experience >= xpNeeded) {
-      this.experience -= xpNeeded
-      this.level++
-      this.statPoints++ // Donne un point à dépenser/choisir (logique handle par UI)
-      return true
+  updateStatus(): void {
+      if (this.vie <= 0) {
+          this.vie = 0
+          this.status = 'mort'
+      } else {
+          this.status = 'vivant'
+      }
+  }
+
+  gainExperience(amount: number): void {
+      this.experience += amount
+      // Level Up Logic (Simple: every 100 * level XP)
+      const threshold = this.level * 100
+      while (this.experience >= threshold) {
+          this.experience -= threshold
+          this.level++
+          this.statPoints++ // Gain 1 stat point per level
+          console.log(`[Mob] ${this.nom} Level Up! Now level ${this.level}`)
+          // Threshold increases
+      }
+  }
+
+  upgradeStat(stat: keyof MobStats, amount: number = 1): void {
+    if (this.stats[stat] !== undefined) {
+      this.stats[stat] += amount
     }
-    return false
   }
 
-  targetXpForNextLevel(): number {
-    return Math.floor(100 * Math.pow(1.5, this.level - 1))
-  }
-
-  /**
-   * Applique une amélioration de stat
-   */
-  upgradeStat(statName: keyof MobStats, amount: number): void {
-    this.stats[statName] += amount
-    // Si on augmente la vitalité, on soigne du montant de PV gagné par l'augmentation (pour pas être "blessé" par le level up)
-    if (statName === 'vitalite') {
-      this.vie += (amount * 5)
-    }
-  }
-
-  /**
-   * Génère 3 choix d'amélioration aléatoires pour un level up
-   */
   generateUpgradeChoices(): any[] {
-    const choices: any[] = []
-
-    // Choix 1: Stat aléatoire
-    const stats: Array<keyof MobStats> = ['force', 'vitalite', 'vitesse', 'agilite']
-    const randomStat = stats[Math.floor(Math.random() * stats.length)]
-    const statAmount = 2 + Math.floor(Math.random() * 2) // 2 ou 3
-    const statLabels = { force: 'FOR', vitalite: 'VIT', vitesse: 'SPD', agilite: 'AGI' }
-    choices.push({
-      type: 'stat',
-      stat: randomStat,
-      amount: statAmount,
-      label: `+${statAmount} ${statLabels[randomStat]}`
-    })
-
-    // Choix 2: Arme
-    const weapons = ['Épée Rouillée', 'Bâton Noueux', 'Hache Ébréchée', 'Marteau Lourd', 'Dague Acérée']
-    const randomWeapon = weapons[Math.floor(Math.random() * weapons.length)]
-    choices.push({
-      type: 'weapon',
-      name: randomWeapon,
-      label: randomWeapon
-    })
-
-    // Choix 3: Trait (si pas déjà possédé)
-    const availableTraits = POSSIBLE_TRAITS.filter(t => !this.traits.includes(t))
-    if (availableTraits.length > 0) {
-      const randomTrait = availableTraits[Math.floor(Math.random() * availableTraits.length)]
+      const choices: any[] = []
+      
+      // 1. Random Stat Upgrade
+      const stats: (keyof MobStats)[] = ['force', 'vitalite', 'vitesse', 'agilite']
+      const randomStat = stats[Math.floor(Math.random() * stats.length)]
       choices.push({
-        type: 'trait',
-        name: randomTrait,
-        label: randomTrait,
-        description: `Nouveau trait: ${randomTrait}`
+          type: 'stat',
+          label: `+1 ${randomStat.toUpperCase()}`,
+          stat: randomStat,
+          amount: 1
       })
-    } else {
-      // Si tous les traits sont déjà acquis, donner un autre choix de stat
-      const altStat = stats[Math.floor(Math.random() * stats.length)]
-      const altAmount = 2 + Math.floor(Math.random() * 2)
-      const altLabels = { force: 'FOR', vitalite: 'VIT', vitesse: 'SPD', agilite: 'AGI' }
-      choices.push({
-        type: 'stat',
-        stat: altStat,
-        amount: altAmount,
-        label: `+${altAmount} ${altLabels[altStat]}`
-      })
-    }
 
-    return choices
+      // 2. Random Weapon (if lucky)
+      if (Math.random() < 0.4) { // 40% chance for weapon choice
+          const weaponKeys = Object.keys(WEAPON_REGISTRY)
+          const randomWeapon = weaponKeys[Math.floor(Math.random() * weaponKeys.length)]
+          // Don't offer if already owns it? No, having duplicates in stock is fine (repair/spare) or we can restrict.
+          // Let's restrict unique weapons for now to avoid confusion unless we implement durability.
+          if (!this.weapons.includes(randomWeapon)) {
+             choices.push({
+                type: 'weapon',
+                label: `Arme: ${randomWeapon}`,
+                name: randomWeapon,
+                description: `Ajoute ${randomWeapon} à l'arsenal.`
+             })
+          }
+      }
+
+      // 3. New Trait (if lucky and not maxed)
+      if (Math.random() < 0.3 && this.traits.length < 6) {
+          const available = POSSIBLE_TRAITS.filter(t => !this.traits.includes(t))
+          if (available.length > 0) {
+              const randomTrait = available[Math.floor(Math.random() * available.length)]
+              choices.push({
+                  type: 'trait',
+                  label: `Mutation: ${randomTrait}`,
+                  name: randomTrait,
+                  description: "Nouvelle mutation génétique."
+              })
+          }
+      }
+
+      // Fill with generic consumable if not enough choices? 
+      // For now just return whatever we found.
+      
+      return choices
   }
 
   /**
@@ -300,8 +245,15 @@ export class Mob {
       this.upgradeStat(choice.stat, choice.amount)
       this.statPoints-- // Consommer un point de stat
     } else if (choice.type === 'weapon') {
-      // Pour l'instant, juste logger (pas de système d'armes complet)
-      console.log(`[Mob] ${this.nom} a obtenu: ${choice.name}`)
+      const weaponDef = WEAPON_REGISTRY[choice.name]
+      if (weaponDef) {
+          // Add to stock instead of replacing
+          this.weapons.push(choice.name)
+          if (weaponDef.statBonus) {
+              this.upgradeStat(weaponDef.statBonus.stat as keyof MobStats, weaponDef.statBonus.amount)
+          }
+          console.log(`[Mob] ${this.nom} a gagné une nouvelle arme: ${choice.name}`)
+      }
     } else if (choice.type === 'trait') {
       if (!this.traits.includes(choice.name)) {
         this.traits.push(choice.name)
@@ -328,14 +280,21 @@ export class Mob {
       traits: this.traits,
       skin: this.skin,
       combatProgress: this.combatProgress,
-      inSquad: this.inSquad
+      inSquad: this.inSquad,
+      weapons: this.weapons
     }
   }
 
   /**
    * Crée un mob à partir de données sérialisées
    */
-  static fromJSON(data: MobData): Mob {
+  static fromJSON(data: MobData & { weapon?: string }): Mob {
+    // Legacy migration: if 'weapon' exists but 'weapons' doesn't, migrate it.
+    let migratedWeapons = data.weapons || []
+    if (data.weapon && migratedWeapons.length === 0) {
+        migratedWeapons.push(data.weapon)
+    }
+
     const mob = new Mob(
       data.nom,
       data.imageUrl,
@@ -346,15 +305,20 @@ export class Mob {
       data.traits || undefined,
       data.skin || undefined,
       data.combatProgress || undefined,
-      data.inSquad, // Pass explicitly
+      true, // FORCE inSquad to true to prevent disappearing mobs on load
       data.level || 1,
       data.experience || 0,
-      data.statPoints || 0
+      data.statPoints || 0,
+      migratedWeapons
     )
     // Force full heal / revive logic on load (Hub = Safe Zone)
     mob.vie = mob.getMaxHP()
     mob.energie = 100
     mob.status = 'vivant'
+    
+    // Sanitize Traits (deduplicate)
+    mob.traits = Array.from(new Set(mob.traits))
+    
     return mob
   }
 }
@@ -417,7 +381,11 @@ class MobManagerClass {
   deleteMob(id: string): boolean {
     const mob = this.mobs.get(id)
     if (!mob) return false
-    return this.mobs.delete(id)
+    const deleted = this.mobs.delete(id)
+    if (deleted) {
+        this.saveMobs()
+    }
+    return deleted
   }
 
   /**
@@ -426,6 +394,15 @@ class MobManagerClass {
   getMobById(id: string): MobData | null {
     const mob = this.mobs.get(id)
     return mob ? mob.toJSON() : null
+  }
+
+  /**
+   * Supprime tous les mobs
+   */
+  deleteAllMobs(): boolean {
+    this.mobs.clear()
+    this.saveMobs()
+    return true
   }
 
   /**
@@ -571,6 +548,8 @@ class MobManagerClass {
       console.warn(`[MobService] Winner not found in Map (expected for PNJs): ${winnerData.id}`)
     }
 
+    this.saveMobs()
+
     return {
       winner: winner ? winner.toJSON() : { ...winnerData, vie: 100 + (winnerData.stats.vitalite * 5), status: 'vivant' },
       loser: loser ? loser.toJSON() : { ...loserData, vie: 100 + (loserData.stats.vitalite * 5), status: 'vivant' },
@@ -605,6 +584,7 @@ class MobManagerClass {
       return { success: false, error: 'Aucun point de stat disponible' }
     }
     mob.applyChoice(choice)
+    this.saveMobs()
     return { success: true, mob: mob.toJSON() }
   }
 

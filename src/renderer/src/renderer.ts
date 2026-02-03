@@ -109,6 +109,7 @@ async function init(): Promise<void> {
     setupSaveLoadButtons()
     setupMobManagementButtons()
     setupRenameCallback()
+    setupParallax()
 
     console.log('[Renderer] UI Setup complete')
 
@@ -226,7 +227,9 @@ async function saveMobs(): Promise<void> {
 }
 
 async function loadMobs(idToSelect?: string): Promise<void> {
-  const result = await window.api.loadMobs()
+  // Use getAllMobs (memory) instead of loadMobs (disk) to ensure UI reflects current state
+  // especially after deletions, avoiding race conditions with file writes.
+  const result = await window.api.getAllMobs()
   if (!result.success || !result.mobs) {
     console.error('Erreur de chargement:', result.error)
     showNotification(result.error || 'Erreur de chargement', 'error')
@@ -246,12 +249,20 @@ async function loadMobs(idToSelect?: string): Promise<void> {
     setSelectedMob(null)
 
     // Créer les nouveaux renderers à partir des données chargées
-    const squadMobs = result.mobs.filter((m: MobData) => m.inSquad)
-    squadMobs.forEach((data: MobData) => {
-      const imageUrl = data.imageUrl.includes('Potato') ? potatoImage : data.imageUrl
-      const renderer = new MobRenderer({ ...data, imageUrl })
-      renderer.render(mobContainer, physicsWorld)
-      mobRenderers.set(data.id, renderer)
+    // Enforce strict limit of 10 mobs for the squad view
+    const squadMobs = result.mobs.filter((m: MobData) => m.inSquad).slice(0, 10)
+    console.log('[Renderer] Squad mobs to render (limited to 10):', squadMobs.length)
+    
+    squadMobs.forEach((data: MobData, index: number) => {
+      try {
+          console.log(`[Renderer] Rendering mob ${index}: ${data.nom} (${data.id})`)
+          const imageUrl = (data.imageUrl && data.imageUrl.includes('Potato')) ? potatoImage : (data.imageUrl || potatoImage)
+          const renderer = new MobRenderer({ ...data, imageUrl })
+          renderer.render(mobContainer, physicsWorld)
+          mobRenderers.set(data.id, renderer)
+      } catch (err) {
+          console.error(`[Renderer] Failed to render mob ${data.nom}:`, err)
+      }
     })
 
     // Restaurer la sélection
@@ -336,6 +347,11 @@ async function addNewMob(): Promise<void> {
   const mobContainer = document.getElementById('mob-container')
   if (!mobContainer) return
 
+  if (mobRenderers.size >= 10) {
+    showNotification('L\'équipe est complète ! (Max 10)', 'error')
+    return
+  }
+
   const randomName = generateRandomName()
   const result = await window.api.createMob(randomName, potatoImage)
   if (result.success && result.mob) {
@@ -404,6 +420,46 @@ function setupMobManagementButtons(): void {
   btnDeleteMob?.addEventListener('click', () => {
     deleteSelectedMob()
   })
+
+  // Delete All Button
+  const btnDeleteAll = document.getElementById('btn-delete-all')
+  if (btnDeleteAll) {
+      console.log('[Renderer] Delete All button found, attaching listener.')
+      btnDeleteAll.addEventListener('click', async () => {
+        console.log('[Renderer] Delete All clicked.')
+        
+        if (!window.api.deleteAllMobs) {
+            console.error('[Renderer] deleteAllMobs API is missing!')
+            showNotification('Erreur: API non supportée (redémarrez ?)', 'error')
+            return
+        }
+
+        if (confirm('⚠️ ATTENTION ⚠️\nVoulez-vous vraiment supprimer TOUTES les patates ?\nCette action est irréversible et supprimera toute votre progression.')) {
+            if (confirm('Vraiment sûr ? Tout effacer ?')) {
+                try {
+                    console.log('[Renderer] Calling deleteAllMobs...')
+                    await window.api.deleteAllMobs()
+                    console.log('[Renderer] deleteAllMobs success.')
+                    
+                    // Clear UI
+                    mobRenderers.forEach(r => r.destroy())
+                    mobRenderers.clear()
+                    setSelectedMob(null)
+                    showNotification('Toutes les patates ont été supprimées.', 'success')
+                    
+                    setTimeout(() => {
+                        initMobs()
+                    }, 1000)
+                } catch (e) {
+                    console.error('[Renderer] Error executing deleteAllMobs:', e)
+                    showNotification('Erreur lors de la suppression: ' + String(e), 'error')
+                }
+            }
+        }
+      })
+  } else {
+      console.error('[Renderer] Delete All button NOT found in DOM.')
+  }
 }
 
 function setupWindowControls(): void {
@@ -438,14 +494,8 @@ function setupActionButtons(): void {
         // Gérer la fin du combat (récompenses, mise à jour des stats, mort de l'autre)
         console.log('Combat terminé, vainqueur:', winner.nom)
 
-        // Traiter le résultat côté serveur
-        const result = await window.api.processCombatResult(winner, loser)
-        console.log('[Renderer] Combat results processed (full heal applied):', result)
-
-        showNotification('COMBAT TERMINÉ : Patates soignées ! ✨', 'success')
-
         // Sauvegarder l'état final
-        await window.api.saveMobs()
+        await window.api.saveMobs() // Safety save
         await loadMobs(winner.id) // Rafraîchir l'affichage en gardant le winner sélectionné
       })
     })
@@ -596,6 +646,33 @@ function participantToMobData(p: any): any {
     skin: { hat: 'none', bottom: 'none' },
     combatProgress: { wins: 0, losses: 0, winStreak: 0, tournamentWins: p.combatProgress?.tournamentWins || 0 }
   }
+}
+
+// Parallax Effect
+function setupParallax(): void {
+    let bg = document.getElementById('parallax-background')
+    if (!bg) {
+        bg = document.createElement('div')
+        bg.id = 'parallax-background'
+        document.body.prepend(bg)
+    }
+
+    // Initialize variables
+    document.body.style.setProperty('--parallax-x', '0px')
+    document.body.style.setProperty('--parallax-y', '0px')
+
+    // Mouse Move Listener
+    document.addEventListener('mousemove', (e) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 2 // -1 to 1
+        const y = (e.clientY / window.innerHeight - 0.5) * 2 // -1 to 1
+        
+        // Base Unit: 10px (halved from original 20px request)
+        const baseX = x * -10 
+        const baseY = y * -10
+        
+        document.body.style.setProperty('--parallax-x', `${baseX}px`)
+        document.body.style.setProperty('--parallax-y', `${baseY}px`)
+    })
 }
 
 // Lancer l'initialisation quand le DOM est prêt (ou s'il l'est déjà)

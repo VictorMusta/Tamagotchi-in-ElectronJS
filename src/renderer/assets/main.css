@@ -71,24 +71,44 @@ body {
   background: transparent;
   color: white;
   user-select: none;
+  background: transparent;
+  color: white;
+  user-select: none;
   font-family: var(--font-main);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-repeat: no-repeat;
-  transition: background-image 0.5s ease-in-out;
   touch-action: none; /* Crucial for dragging vs scrolling */
+  overflow: hidden;
 }
 
-body.theme-forest {
+#parallax-background {
+    position: fixed;
+    top: -5%;
+    left: -5%;
+    width: 110%;
+    height: 110%;
+    z-index: -10;
+    pointer-events: none;
+    
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* Factor 0.2 (Deepest - subtle) */
+    transform: translate(calc(var(--parallax-x) * 0.2), calc(var(--parallax-y) * 0.2)); 
+}
+
+/* Allow scrolling in modals */
+.selection-list, .party-list, .history-section {
+    touch-action: pan-y !important;
+}
+
+body.theme-forest #parallax-background {
   background-image: url('./backgrounds/bg-forest.png');
 }
 
-body.theme-cyberpunk {
+body.theme-cyberpunk #parallax-background {
   background-image: url('./backgrounds/bg-cyberpunk.png');
 }
 
-body.theme-cozy {
+body.theme-cozy #parallax-background {
   background-image: url('./backgrounds/bg-cozy.png');
 }
 
@@ -109,6 +129,9 @@ body.theme-cozy {
   left: 0;
   right: 0;
   height: 600px;
+  /* Factor 0.6 (Midground) */
+  transform: translate(calc(var(--parallax-x) * 0.6), calc(var(--parallax-y) * 0.6));
+  transition: transform 0.1s linear; /* Smooth mouse movement */
 
   z-index: 5;
 }
@@ -180,6 +203,9 @@ body.theme-cozy {
   pointer-events: none;
   /* Let clicks pass through empty space */
   z-index: 10;
+  /* Factor 0.6 (Midground - same as Biome) */
+  transform: translate(calc(var(--parallax-x) * 0.6), calc(var(--parallax-y) * 0.6));
+  transition: transform 0.1s linear; 
 }
 
 .mob {
@@ -326,7 +352,9 @@ body.theme-cozy {
   flex-direction: column;
   gap: 10px;
   z-index: 1000;
-
+  /* Factor 1.2 (Foreground UI) */
+  transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
+  transition: transform 0.1s linear; 
 }
 
 .action-btn {
@@ -430,6 +458,12 @@ body.theme-cozy {
 .overlay.active {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* Apply Parallax to all modal content (Foreground UI) */
+.overlay.active > * {
+    transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
+    transition: transform 0.1s linear;
 }
 
 .profile-card {
@@ -785,6 +819,114 @@ body.theme-cozy {
   color: rgba(255, 255, 255, 0.1);
   font-style: italic;
   pointer-events: none;
+}
+
+/* WEAPON ANIMATIONS & STYLES */
+/* WEAPON ANIMATIONS & STYLES */
+.weapon-pivot {
+    position: absolute;
+    top: 50%;
+    right: -10px;
+    width: 60px;
+    height: 60px;
+    z-index: 20;
+    pointer-events: none;
+    transform-origin: center center;
+}
+
+.weapon-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    /* Animation handles transform, so we don't set it here */
+    filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+}
+
+/* Float Animation */
+@keyframes weapon-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.weapon-container {
+    animation: weapon-float 2s infinite ease-in-out;
+}
+
+.weapon-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Left Fighter Pivot */
+.fighter-container.left .weapon-pivot {
+    right: -20px;
+    transform: scaleX(1);
+}
+
+/* Right Fighter Pivot - FLIP HERE */
+.fighter-container.right .weapon-pivot {
+    left: -20px; 
+    right: auto;
+    transform: scaleX(-1); /* Flips entire pivot, including attack direction */
+}
+
+/* Right Fighter Maggot Companion flip */
+.fighter-container.right .maggot-companion {
+    transform: scaleX(-1);
+    left: auto;
+    right: 10px; 
+}
+
+
+/* ATTACK ANIMATIONS */
+
+/* PIERCE (Estoc) - Fork, Toothpick */
+@keyframes attack-pierce {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-10px); } /* Windup */
+    40% { transform: translateX(40px); } /* Thrust */
+    50% { transform: translateX(40px); } /* Hold */
+    100% { transform: translateX(0); } /* Return */
+}
+
+.weapon-container.anim-pierce {
+    animation: attack-pierce 0.4s ease-out forwards;
+}
+
+/* SLASH (Coupe) - Cutter, Sword */
+@keyframes attack-slash {
+    0% { transform: rotate(0deg); }
+    20% { transform: rotate(-45deg); } /* Windup */
+    50% { transform: rotate(120deg) translateX(20px); } /* Swing */
+    100% { transform: rotate(0deg); } /* Return */
+}
+
+.weapon-container.anim-slash {
+    animation: attack-slash 0.4s ease-in-out forwards;
+}
+
+/* IMPACT (Coup / Bash) - Capsule/Shield Bash */
+@keyframes attack-impact {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.3) rotate(-20deg); } /* Windup */
+    50% { transform: scale(1) rotate(20deg) translateX(30px); } /* Slam */
+    100% { transform: scale(1); }
+}
+
+.weapon-container.anim-impact {
+    animation: attack-impact 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* BLOCK (Parade) */
+@keyframes action-block {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(10px) scale(1.2); }
+    100% { transform: translateX(0); }
+}
+
+.weapon-container.anim-block {
+    animation: action-block 0.5s ease-out;
 }
 
 #combat-log {
@@ -1222,6 +1364,7 @@ body.theme-cozy {
   position: absolute;
   top: 50%;
   left: 50%;
+  /* Default centering if no active overlay */
   transform: translate(-50%, -50%);
   z-index: 1000;
   background: linear-gradient(135deg, rgba(0, 20, 40, 0.98), rgba(10, 30, 60, 0.98));
@@ -1232,6 +1375,25 @@ body.theme-cozy {
   animation: slideDown 0.3s ease-out;
 }
 
+/* Fix for Parallax + Centering Override */
+.overlay.active .victory-overlay,
+.overlay.active .levelup-overlay {
+    transform: translate(calc(-50% + var(--parallax-x) * 1.2), calc(-50% + var(--parallax-y) * 1.2));
+    transition: transform 0.1s linear;
+}
+
+/* Apply Parallax to tournament overlay content */
+.tournament-overlay > * {
+    transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
+    transition: transform 0.1s linear;
+}
+
+/* Apply Parallax to tournament overlay content */
+.tournament-overlay > * {
+    transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
+    transition: transform 0.1s linear;
+}
+
 @keyframes slideDown {
   from {
     transform: translate(-50%, -60%);
@@ -1239,7 +1401,8 @@ body.theme-cozy {
   }
 
   to {
-    transform: translate(-50%, -50%);
+    /* Target the centered position, effectively handing over to the class rule after animation */
+    transform: translate(calc(-50% + var(--parallax-x) * 1.2), calc(-50% + var(--parallax-y) * 1.2));
     opacity: 1;
   }
 }
@@ -1774,4 +1937,72 @@ body.theme-cozy {
   z-index: 1;
   /* Behind mobs (z-index 10) */
   pointer-events: none;
+}
+
+/* Premium Tooltips */
+.trait-tooltip {
+  background: rgba(20, 20, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  width: 250px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  pointer-events: none;
+  z-index: 20000; /* Ensure strictly above everything */
+  animation: fadeInTooltip 0.2s ease-out;
+}
+
+@keyframes fadeInTooltip {
+  from { opacity: 0; transform: translateY(5px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.trait-tooltip h4 {
+  margin: 0 0 8px 0;
+  color: #f1c40f;
+  font-size: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 5px;
+}
+
+.trait-tooltip p {
+  margin: 5px 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #ccc;
+}
+
+.trait-tooltip .tooltip-effect {
+  color: #aeea00;
+  font-weight: bold;
+}
+
+.trait-tooltip .tooltip-stats {
+  color: #00e5ff;
+  font-family: monospace;
+  background: rgba(0,0,0,0.3);
+  padding: 4px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+/* Trait Tags Styling Update */
+.trait-tag {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 10px;
+  border-radius: 15px;
+  cursor: help;
+  transition: all 0.2s;
+  font-size: 12px;
+}
+
+.trait-tag:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #f1c40f;
+  color: #f1c40f;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
 }
