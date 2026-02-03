@@ -10,7 +10,7 @@ export interface PlatformAPI {
     deleteMob(id: string): Promise<{ success: boolean; error?: string }>
 
     renameMob(id: string, newName: string): Promise<MobActionResult>
-    updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): Promise<MobActionResult>
+    updateMobSkin(id: string, type: 'hat', value: string): Promise<MobActionResult>
     toggleSquad(id: string): Promise<MobActionResult>
 
     // Récupération des mobs
@@ -28,10 +28,6 @@ export interface PlatformAPI {
     saveTournament(data: TournamentData): Promise<SaveLoadResult>
     resetTournament(): Promise<SaveLoadResult>
     getTournamentHistory(): Promise<TournamentHistory>
-
-    // Biome
-    saveBiome(data: any[]): Promise<SaveLoadResult>
-    loadBiome(): Promise<{ success: boolean; data?: any[]; error?: string }>
 
     // Theme (Web/Android)
     getTheme?(): Promise<{ success: boolean; theme: string }>

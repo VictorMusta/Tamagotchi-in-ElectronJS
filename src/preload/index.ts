@@ -9,7 +9,7 @@ const api = {
   deleteMob: (id: string) => ipcRenderer.invoke('mob:delete', id),
   deleteAllMobs: () => ipcRenderer.invoke('mob:deleteAll'),
   renameMob: (id: string, newName: string) => ipcRenderer.invoke('mob:rename', id, newName),
-  updateMobSkin: (id: string, type: 'hat' | 'bottom', value: string) => ipcRenderer.invoke('mob:updateSkin', id, type, value),
+  updateMobSkin: (id: string, type: 'hat', value: string) => ipcRenderer.invoke('mob:updateSkin', id, type, value),
   toggleSquad: (id: string) => ipcRenderer.invoke('mob:toggleSquad', id),
 
   // Récupération des mobs
@@ -29,8 +29,6 @@ const api = {
   resetTournament: () => ipcRenderer.invoke('mob:resetTournament'),
   getTournamentHistory: () => ipcRenderer.invoke('mob:getTournamentHistory'),
   setIgnoreMouseEvents: (ignore: boolean) => ipcRenderer.send('window:set-ignore-mouse-events', ignore),
-  saveBiome: (data: any) => ipcRenderer.invoke('biome:save', data),
-  loadBiome: () => ipcRenderer.invoke('biome:load'),
   minimizeWindow: () => ipcRenderer.send('window:minimize'),
   closeWindow: () => ipcRenderer.send('window:close'),
 

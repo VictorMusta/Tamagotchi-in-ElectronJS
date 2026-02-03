@@ -1,6 +1,5 @@
 import { ipcMain } from 'electron'
 import { MobManager } from './MobService'
-import { BiomeService } from './BiomeService'
 import { PveService } from './PveService'
 import { MemorialService } from './MemorialService'
 import { InventoryService } from './InventoryService'
@@ -113,16 +112,6 @@ export function registerMobHandlers(): void {
   ipcMain.handle('mob:getTournamentHistory', () => {
     console.log('[IPC] Handling mob:getTournamentHistory')
     return MobManager.getTournamentHistory()
-  })
-
-  // Sauvegarder le biome
-  ipcMain.handle('biome:save', (_event, data) => {
-    return BiomeService.saveBiome(data)
-  })
-
-  // Charger le biome
-  ipcMain.handle('biome:load', () => {
-    return BiomeService.loadBiome()
   })
 
   // --- PvE Handlers ---

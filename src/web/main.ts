@@ -10,7 +10,6 @@ import {
 import { MobData } from '../shared/types'
 import { preloadSounds } from '../renderer/src/SoundManager'
 import { WebPlatformAPI } from './WebPlatformAPI'
-import { BiomeRenderer } from '../renderer/src/BiomeRenderer'
 import { ProfileRenderer } from '../renderer/src/ProfileRenderer'
 import { CombatUI } from '../renderer/src/combat/CombatUI'
 import { PhysicsWorld } from '../renderer/src/physics/PhysicsWorld'
@@ -23,9 +22,6 @@ const api = new WebPlatformAPI()
 
 // Map des renderers de mobs par ID
 const mobRenderers: Map<string, MobRenderer> = new Map()
-
-// Initialisation du biome
-const biomeRenderer = new BiomeRenderer('biome-container')
 
 // Initialisation du renderer de profil
 const profileRenderer = new ProfileRenderer()
@@ -137,7 +133,6 @@ async function init(): Promise<void> {
         await preloadSounds().catch(e => console.error('[Web] Sound preload failed:', e))
         setupRenameCallback()
         await initMobs().catch(e => console.error('[Web] Mob init failed:', e))
-        await initBiome().catch(e => console.error('[Web] Biome init failed:', e))
         setupActionButtons()
         setupSaveLoadButtons()
         setupMobManagementButtons()
@@ -285,7 +280,6 @@ function showNotification(message: string, type: 'success' | 'error'): void {
 function setupSaveLoadButtons(): void {
     const btnSave = document.getElementById('btn-save')
     const btnLoad = document.getElementById('btn-load')
-    const btnSaveBiome = document.getElementById('btn-save-biome')
 
     btnSave?.addEventListener('click', () => {
         saveMobs()
@@ -294,36 +288,6 @@ function setupSaveLoadButtons(): void {
     btnLoad?.addEventListener('click', () => {
         loadMobs()
     })
-
-    btnSaveBiome?.addEventListener('click', () => {
-        saveBiome()
-    })
-}
-
-async function initBiome(): Promise<void> {
-    const result = await api.loadBiome()
-    if (result.success && result.data) {
-        biomeRenderer.setObjects(result.data)
-    } else {
-        // User requested no trees by default
-        // biomeRenderer.addObject('tree', 200)
-        // biomeRenderer.addObject('flower', 400)
-        // biomeRenderer.addObject('tree', 600)
-    }
-
-    setInterval(() => {
-        biomeRenderer.growTrees()
-    }, 30000)
-}
-
-async function saveBiome(): Promise<void> {
-    const data = biomeRenderer.getObjects()
-    const result = await api.saveBiome(data)
-    if (result.success) {
-        showNotification('Biome sauvegardé !', 'success')
-    } else {
-        showNotification('Erreur sauvegarde biome', 'error')
-    }
 }
 
 async function addNewMob(): Promise<void> {
