@@ -2,16 +2,18 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 
 import {
   MobData,
-  MobStatus,
   MobActionResult,
   MobListResult,
   MobCreateResult,
   SaveLoadResult,
   UpgradeChoicesResult,
-  UpgradeChoice,
   ApplyUpgradeResult,
   TournamentResult,
-  TournamentData
+  TournamentData,
+  TournamentHistory,
+  PveEnemiesResult,
+  MemorialResult,
+  InventoryResult
 } from '../shared/types'
 
 interface CustomAPI {
@@ -49,6 +51,20 @@ interface CustomAPI {
   loadBiome: () => Promise<{ success: boolean; data?: any[]; error?: string }>
   minimizeWindow: () => void
   closeWindow: () => void
+
+  // PvE
+  getPveEnemies: (mobId: string, mobLevel: number) => Promise<PveEnemiesResult>
+  clearPveCache: (mobId: string) => Promise<{ success: boolean }>
+
+  // Memorial
+  getMemorial: () => Promise<MemorialResult>
+  addToMemorial: (mob: MobData, killedBy: string) => Promise<{ success: boolean }>
+
+  // Inventory
+  getInventory: () => Promise<InventoryResult>
+  addPotion: () => Promise<{ success: boolean }>
+  usePotion: () => Promise<{ success: boolean }>
+  getPotionCount: () => Promise<{ success: boolean; count: number }>
 }
 
 declare global {
