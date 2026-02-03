@@ -134,12 +134,17 @@ export class CombatUI {
                     <span class="stat">⚡ ${f1.stats.vitesse}</span>
                     <span class="stat">🎯 ${f1.stats.agilite}</span>
                 </div>
+                <div class="weapon-stock" id="stock-${f1.id}">
+                    ${(f1.weapons || []).map(w => {
+                        const icon = WEAPON_REGISTRY[w]?.icon || 'default.png'
+                        return `<div class="stock-icon" style="background-image: url('assets/weapons/${icon}')" title="${w}"></div>`
+                    }).join('')}
+                </div>
                 <div class="atb-bar"><div class="atb-fill" id="atb-${f1.id}" style="width: 0%"></div></div>
             </div>
             <div class="mob-wrapper">
                 <img src="${f1.imageUrl}" class="combat-mob-img" />
                 <div class="skin-layers">
-                    <div class="layer bottom-layer ${f1.skin?.bottom || 'none'}"></div>
                     <div class="layer hat-layer ${f1.skin?.hat || 'none'}"></div>
                 </div>
                 ${f1.traits.includes("Appel de l'Astico-Roi") ? `
@@ -164,12 +169,17 @@ export class CombatUI {
                     <span class="stat">⚡ ${f2.stats.vitesse}</span>
                     <span class="stat">🎯 ${f2.stats.agilite}</span>
                 </div>
+                <div class="weapon-stock" id="stock-${f2.id}">
+                    ${(f2.weapons || []).map(w => {
+                        const icon = WEAPON_REGISTRY[w]?.icon || 'default.png'
+                        return `<div class="stock-icon" style="background-image: url('assets/weapons/${icon}')" title="${w}"></div>`
+                    }).join('')}
+                </div>
                 <div class="atb-bar"><div class="atb-fill" id="atb-${f2.id}" style="width: 0%"></div></div>
             </div>
             <div class="mob-wrapper">
                 <img src="${f2.imageUrl}" class="combat-mob-img" />
                 <div class="skin-layers">
-                    <div class="layer bottom-layer ${f2.skin?.bottom || 'none'}"></div>
                     <div class="layer hat-layer ${f2.skin?.hat || 'none'}"></div>
                 </div>
                 ${f2.traits.includes("Appel de l'Astico-Roi") ? `
@@ -300,6 +310,15 @@ export class CombatUI {
                 this.animateAttack(event.attackerId, event.targetId, event.damage, false, event.weapon)
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
                 this.showPopup(event.attackerId, 'CONTRE !', 'counter')
+                break
+            case 'inventory_change':
+                const stockEl = document.getElementById(`stock-${event.id}`)
+                if (stockEl) {
+                    stockEl.innerHTML = event.inventory.map(w => {
+                        const icon = WEAPON_REGISTRY[w]?.icon || 'default.png'
+                        return `<div class="stock-icon" style="background-image: url('assets/weapons/${icon}')" title="${w}"></div>`
+                    }).join('')
+                }
                 break
             case 'weapon_steal':
                 this.showPopup(event.thiefId, `VOL D'ARME: ${event.weapon} !`, 'steal')

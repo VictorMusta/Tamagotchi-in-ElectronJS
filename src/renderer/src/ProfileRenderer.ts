@@ -27,7 +27,7 @@ export class ProfileRenderer {
             <img src="${mob.imageUrl}" class="profile-avatar" />
             <div class="skin-layers">
                 <div class="layer hat-layer ${mob.skin.hat}"></div>
-                <div class="layer bottom-layer ${mob.skin.bottom}"></div>
+
             </div>
           </div>
           <div class="profile-name-container">
@@ -108,15 +108,7 @@ export class ProfileRenderer {
                 <option value="wizard" ${mob.skin.hat === 'wizard' ? 'selected' : ''}>Sorcier</option>
               </select>
             </div>
-            <div class="custom-row">
-              <label>Bas</label>
-              <select class="skin-select" data-type="bottom">
-                <option value="none" ${mob.skin.bottom === 'none' ? 'selected' : ''}>Aucun</option>
-                <option value="shorts" ${mob.skin.bottom === 'shorts' ? 'selected' : ''}>Short</option>
-                <option value="tu-tu" ${mob.skin.bottom === 'tu-tu' ? 'selected' : ''}>Tu-tu</option>
-                <option value="boots" ${mob.skin.bottom === 'boots' ? 'selected' : ''}>Bottes</option>
-              </select>
-            </div>
+
           </div>
 
           <div class="history-section">
@@ -144,7 +136,7 @@ export class ProfileRenderer {
     this.overlay.querySelectorAll('.skin-select').forEach(select => {
       select.addEventListener('change', (e) => {
         const target = e.target as HTMLSelectElement
-        const type = target.dataset.type as 'hat' | 'bottom'
+        const type = target.dataset.type as 'hat'
         const value = target.value
 
         // Mise à jour visuelle immédiate du calque

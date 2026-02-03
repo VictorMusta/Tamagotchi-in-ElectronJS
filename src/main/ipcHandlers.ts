@@ -38,7 +38,7 @@ export function registerMobHandlers(): void {
   })
 
   // Mettre à jour le skin
-  ipcMain.handle('mob:updateSkin', (_event, id: string, type: 'hat' | 'bottom', value: string) => {
+  ipcMain.handle('mob:updateSkin', (_event, id: string, type: 'hat', value: string) => {
     const mob = MobManager.getMobById(id)
     if (!mob) return { success: false, error: 'Mob non trouvé' }
 

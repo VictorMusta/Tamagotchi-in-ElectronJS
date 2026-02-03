@@ -9,7 +9,6 @@ export interface MobStats {
 
 export interface MobSkin {
     hat: string
-    bottom: string
 }
 
 export interface CombatStats {

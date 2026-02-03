@@ -16,6 +16,7 @@ export type CombatEvent =
     | { type: 'log', message: string }
     | { type: 'state_change', id: string, state: 'berzerk' | 'stun' | 'normal', value?: boolean }
     | { type: 'weapon_change', id: string, weapon: string | undefined }
+    | { type: 'inventory_change', id: string, inventory: string[] }
     | { type: 'death', deadId: string, winnerId: string }
 
 export class CombatEngine {
@@ -191,6 +192,8 @@ export class CombatEngine {
                  
                  attacker.weapon = drawnWeapon
                  this.onEvent({ type: 'log', message: `${attacker.nom} dégaine : ${attacker.weapon} !` })
+                 this.onEvent({ type: 'weapon_change', id: attacker.id, weapon: attacker.weapon })
+                 this.onEvent({ type: 'inventory_change', id: attacker.id, inventory: [...inventory] })
              }
         }
 
@@ -250,6 +253,7 @@ export class CombatEngine {
                     if (Math.random() < dropChance) {
                         this.onEvent({ type: 'log', message: `${attacker.nom} laisse glisser son arme (${attacker.weapon}) !` })
                         attacker.weapon = undefined
+                        this.onEvent({ type: 'weapon_change', id: attacker.id, weapon: undefined })
                         // Weapon is lost (removed from inventory on draw, and now lost from hand)
                     }
                 }

@@ -20,7 +20,7 @@ interface CustomAPI {
   deleteMob: (id: string) => Promise<{ success: boolean; error?: string }>
   deleteAllMobs: () => Promise<{ success: boolean; error?: string }>
   renameMob: (id: string, newName: string) => Promise<MobActionResult>
-  updateMobSkin: (id: string, type: 'hat' | 'bottom', value: string) => Promise<MobActionResult>
+  updateMobSkin: (id: string, type: 'hat', value: string) => Promise<MobActionResult>
 
   // Récupération des mobs
   getAllMobs: () => Promise<MobListResult>

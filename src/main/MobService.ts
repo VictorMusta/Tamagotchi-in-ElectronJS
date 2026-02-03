@@ -124,11 +124,9 @@ export class Mob {
 
   generateRandomSkin(): MobSkin {
       const HATS = ['none', 'crown', 'cap', 'wizard']
-      const BOTTOMS = ['none', 'shorts', 'tu-tu', 'boots']
       
       return {
-          hat: HATS[Math.floor(Math.random() * HATS.length)],
-          bottom: BOTTOMS[Math.floor(Math.random() * BOTTOMS.length)]
+          hat: HATS[Math.floor(Math.random() * HATS.length)]
       }
   }
 
@@ -151,10 +149,7 @@ export class Mob {
       this.nom = newName
   }
 
-  setSkin(type: 'hat' | 'bottom', value: string): void {
-      if (type === 'hat') this.skin.hat = value
-      else if (type === 'bottom') this.skin.bottom = value
-  }
+
 
   getMaxHP(): number {
       return 100 + (this.stats.vitalite * 5)
@@ -260,6 +255,12 @@ export class Mob {
         this.statPoints--
       }
     }
+  }
+
+  setSkin(type: 'hat', value: string): void {
+      if (type === 'hat') {
+          this.skin.hat = value
+      }
   }
 
   /**
@@ -428,7 +429,7 @@ class MobManagerClass {
   /**
    * Met à jour le skin d'un mob
    */
-  updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): MobActionResult {
+  updateMobSkin(id: string, type: 'hat', value: string): MobActionResult {
     const mob = this.mobs.get(id)
     if (!mob) {
       return { success: false, error: 'Mob non trouvé' }
