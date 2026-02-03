@@ -81,10 +81,10 @@ body {
 
 #parallax-background {
     position: fixed;
-    top: -5%;
-    left: -5%;
-    width: 110%;
-    height: 110%;
+    top: -15%;
+    left: -15%;
+    width: 130%;
+    height: 130%;
     z-index: -10;
     pointer-events: none;
     
@@ -343,42 +343,76 @@ body.theme-cozy #parallax-background {
 }
 
 
-/* Action Panel */
-#action-panel {
+/* Action Bar - Vertical Right Bar */
+#action-bar {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  top: 50%;
+  right: -15px; /* Décalée vers la droite */
+  transform: translateY(-50%) translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  padding: 15px 30px 15px 15px; /* top right bottom left - plus large à droite */
+  background: linear-gradient(to left, rgba(20, 20, 30, 0.95), rgba(20, 20, 30, 0.7));
+  backdrop-filter: blur(10px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px 0 0 15px;
   z-index: 1000;
-  /* Factor 1.2 (Foreground UI) */
-  transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
-  transition: transform 0.1s linear; 
+  transition: transform 0.1s linear;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+#action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
 }
 
 .action-btn {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
   border: none;
   cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  gap: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   color: white;
   pointer-events: auto;
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  padding: 6px;
 }
 
 .action-btn svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.action-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  text-align: center;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .action-btn:hover {
-  transform: scale(1.1);
+  transform: scale(1.1) translateY(-4px);
+  box-shadow: 0 8px 20px rgba(108, 92, 231, 0.5);
 }
 
 .action-btn:active {
@@ -392,49 +426,13 @@ body.theme-cozy #parallax-background {
   outline-offset: 2px;
 }
 
-.action-separator {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 5px 10px;
+/* Danger button (Reset) */
+.action-btn.danger-btn {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
 }
 
-/* Bouton Styles */
-#btn-combat {
-  background: linear-gradient(135deg, #ffd700, #ff8c00);
-}
-
-#btn-damage {
-  background: linear-gradient(135deg, #e53935, #b71c1c);
-}
-
-#btn-heal {
-  background: linear-gradient(135deg, #ec407a, #c2185b);
-}
-
-
-
-#btn-revive {
-  background: linear-gradient(135deg, #64b5f6, #1976d2);
-}
-
-#btn-save {
-  background: linear-gradient(135deg, #66bb6a, #2e7d32);
-}
-
-#btn-load {
-  background: linear-gradient(135deg, #ab47bc, #7b1fa2);
-}
-
-#btn-add-mob {
-  background: linear-gradient(135deg, #26c6da, #00838f);
-}
-
-#btn-delete-mob {
-  background: linear-gradient(135deg, #78909c, #455a64);
-}
-
-#btn-theme {
-  background: linear-gradient(135deg, #FF69B4, #C71585);
+.action-btn.danger-btn:hover {
+  box-shadow: 0 8px 20px rgba(231, 76, 60, 0.5);
 }
 
 /* Overlay & Profile Card */
