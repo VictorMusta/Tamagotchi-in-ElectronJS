@@ -33,6 +33,10 @@ export interface PlatformAPI {
     saveBiome(data: any[]): Promise<SaveLoadResult>
     loadBiome(): Promise<{ success: boolean; data?: any[]; error?: string }>
 
+    // Theme (Web/Android)
+    getTheme?(): Promise<{ success: boolean; theme: string }>
+    saveTheme?(theme: string): Promise<{ success: boolean }>
+
     // Sauvegarde et chargement
     saveMobs(): Promise<SaveLoadResult>
     loadMobs(): Promise<MobListResult>
