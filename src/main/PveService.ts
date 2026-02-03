@@ -10,7 +10,9 @@ const POSSIBLE_TRAITS = [
   'Peau de Cuir',
   'Contre-attaque',
   'Appel de l\'Astico-Roi',
-  'Main de Dentelle',
+  'Essaim de Moucherons',
+  'Gardien de Racine',
+  'Esprit Saboteur',
   'Berzerk'
 ]
 
@@ -56,12 +58,12 @@ class PveServiceClass {
     const id = randomUUID()
     const name = this.generateEnemyName()
 
-    // Generate stats: Base 60 points + 4 points per level above 1
-    const totalStatPoints = 60 + ((level - 1) * 4)
+    // Generate stats: Base 55 points + 4 points per level above 1 (Player is base 60)
+    const totalStatPoints = 55 + ((level - 1) * 4)
     const stats = this.distributeStats(totalStatPoints)
 
-    // Generate traits: 1 trait per level (max 6)
-    const traitCount = Math.min(level, 6)
+    // Generate traits: (level - 1) trait (max 6)
+    const traitCount = Math.min(Math.max(0, level - 1), 6)
     const traits = this.pickRandomTraits(traitCount)
 
     // Random skin
@@ -144,7 +146,7 @@ class PveServiceClass {
   private generateWeaponsForLevel(level: number): string[] {
     // Enemies at higher levels may have weapons
     if (level < 3) return []
-    
+
     const weaponPool = ['toothpick', 'fork', 'cutter', 'cap']
     const weaponCount = Math.min(Math.floor(level / 3), 3) // 1 weapon per 3 levels, max 3
     const weapons: string[] = []
