@@ -11,7 +11,7 @@ export type CombatEvent =
     | { type: 'attack', attackerId: string, targetId: string, damage: number, isCritical: boolean, targetCurrentHp: number, targetMaxHp: number, weapon?: string, visual?: 'berzerk' | 'normal' }
     | { type: 'dodge', attackerId: string, targetId: string, targetCurrentHp: number }
     | { type: 'maggot_attack', attackerId: string, targetId: string, damage: number, targetCurrentHp: number, targetMaxHp: number }
-    | { type: 'counter_attack', attackerId: string, targetId: string, damage: number, targetCurrentHp: number, targetMaxHp: number }
+    | { type: 'counter_attack', attackerId: string, targetId: string, damage: number, targetCurrentHp: number, targetMaxHp: number, weapon?: string }
     | { type: 'weapon_steal', thiefId: string, victimId: string, weapon: string }
     | { type: 'log', message: string }
     | { type: 'state_change', id: string, state: 'berzerk' | 'stun' | 'normal', value?: boolean }
@@ -384,7 +384,8 @@ export class CombatEngine {
             isCritical,
             targetCurrentHp: defender.vie,
             targetMaxHp: maxHp,
-            visual: isAttackerBerzerk ? 'berzerk' : 'normal'
+            visual: isAttackerBerzerk ? 'berzerk' : 'normal',
+            weapon: attacker.weapon
         })
         this.onEvent({ type: 'log', message: `${attacker.nom} inflige ${damage} dégâts !` })
 
@@ -458,7 +459,8 @@ export class CombatEngine {
              targetId: target.id,
              damage: reduced,
              targetCurrentHp: target.vie,
-             targetMaxHp: maxHp
+             targetMaxHp: maxHp,
+             weapon: attacker.weapon
          })
          this.onEvent({ type: 'log', message: `${attacker.nom} CONTRE-ATTAQUE !` })
     }

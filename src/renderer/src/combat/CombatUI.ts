@@ -237,7 +237,7 @@ export class CombatUI {
                 if (event.maggot2Energy !== undefined) this.updateBar(`maggot-${this.currentFighter2.id}`, event.maggot2Energy)
                 break
             case 'attack':
-                this.animateAttack(event.attackerId, event.targetId, event.damage, event.isCritical)
+                this.animateAttack(event.attackerId, event.targetId, event.damage, event.isCritical, event.weapon)
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
                 break
             case 'dodge':
@@ -297,7 +297,7 @@ export class CombatUI {
                 }
                 break
             case 'counter_attack':
-                this.animateAttack(event.attackerId, event.targetId, event.damage, false)
+                this.animateAttack(event.attackerId, event.targetId, event.damage, false, event.weapon)
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
                 this.showPopup(event.attackerId, 'CONTRE !', 'counter')
                 break
@@ -361,7 +361,7 @@ export class CombatUI {
         if (text) text.textContent = `${Math.max(0, current)}/${max}`
     }
 
-    private animateAttack(attackerId: string, targetId: string, damage: number, crit: boolean): void {
+    private animateAttack(attackerId: string, targetId: string, damage: number, crit: boolean, weaponName?: string): void {
         const attackerContainer = document.getElementById(`fighter-${attackerId}`)
         const targetContainer = document.getElementById(`fighter-${targetId}`)
         const attackerWrapper = attackerContainer?.querySelector('.mob-wrapper') as HTMLElement
@@ -398,9 +398,9 @@ export class CombatUI {
                  // Let's modify the signature in a subsequent step if needed, but for now let's just use a generic 'swing' if we can't find it,
                  // OR BETTER: Use the MobData references `this.currentFighter1/2` to find what weapon they have!
                  
-                 let weaponName: string | undefined
-                 if (attackerId === this.currentFighter1?.id) weaponName = this.currentFighter1.weapon
-                 else if (attackerId === this.currentFighter2?.id) weaponName = this.currentFighter2.weapon
+                 // let weaponName: string | undefined
+                 // if (attackerId === this.currentFighter1?.id) weaponName = this.currentFighter1.weapon
+                 // else if (attackerId === this.currentFighter2?.id) weaponName = this.currentFighter2.weapon
                  
                  if (weaponName) {
                      const def = WEAPON_REGISTRY[weaponName]

@@ -32,7 +32,7 @@ export class Mob {
     skin: MobSkin
     combatProgress: CombatStats
     inSquad: boolean
-    weapon?: string
+    weapons: string[] = []
 
     constructor(
         nom: string,
@@ -208,7 +208,7 @@ export class Mob {
             this.statPoints--
         } else if (choice.type === 'weapon') {
             console.log(`[WebMob] ${this.nom} a obtenu: ${choice.name}`)
-            this.weapon = choice.name
+            this.weapons.push(choice.name)
             this.statPoints--
         } else if (choice.type === 'trait') {
             if (!this.traits.includes(choice.name)) {
@@ -238,7 +238,7 @@ export class Mob {
             skin: this.skin,
             combatProgress: this.combatProgress,
             inSquad: this.inSquad,
-            weapon: this.weapon
+            weapons: this.weapons
         }
     }
 
@@ -250,7 +250,11 @@ export class Mob {
             data.level, data.experience, data.statPoints
         )
         mob.status = data.status
-        mob.weapon = data.weapon
+        mob.weapons = data.weapons || []
+        // Migration logic
+        if ((data as any).weapon && mob.weapons.length === 0) {
+            mob.weapons.push((data as any).weapon)
+        }
         return mob
     }
 }
