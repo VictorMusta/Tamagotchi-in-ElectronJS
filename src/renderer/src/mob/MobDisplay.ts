@@ -90,7 +90,7 @@ export class MobDisplay {
             <img src="${data.imageUrl}" class="mob-image" draggable="false" />
             <div class="skin-layers">
                 <div class="layer hat-layer ${data.skin?.hat || 'none'}"></div>
-                <div class="layer bottom-layer ${data.skin?.bottom || 'none'}"></div>
+
             </div>
             ${displayedWeapon ? `
             <div class="hub-weapon-icon" style="

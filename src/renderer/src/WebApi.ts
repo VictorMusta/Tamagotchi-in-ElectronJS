@@ -71,7 +71,7 @@ export class WebApi {
             statPoints: 0,
             stats: stats,
             traits: this.generateRandomTraits(),
-            skin: { hat: 'none', bottom: 'none' },
+            skin: { hat: 'none' },
             combatProgress: { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 },
             inSquad: mobs.filter(m => m.inSquad).length < 10,
             weapons: [] // Empty start
@@ -104,12 +104,12 @@ export class WebApi {
         return { success: true, mob }
     }
 
-    async updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): Promise<MobActionResult> {
+    async updateMobSkin(id: string, type: 'hat', value: string): Promise<MobActionResult> {
         const mobs = this.getStorage()
         const mob = mobs.find(m => m.id === id)
         if (!mob) return { success: false, error: 'Not found' }
-        if (!mob.skin) mob.skin = { hat: 'none', bottom: 'none' }
-        mob.skin[type] = value
+        if (!mob.skin) mob.skin = { hat: 'none' }
+        if (type === 'hat') mob.skin.hat = value
         this.setStorage(mobs)
         return { success: true, mob }
     }

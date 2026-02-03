@@ -562,21 +562,7 @@ body.theme-cozy #parallax-background {
   transform: translateY(-29%) scale(0.7);
 }
 
-/* Bottoms */
-.bottom-layer.shorts {
-  background-image: url('./skins/bottom_shorts.png');
-  transform: translateY(54%) scale(1.0);
-}
 
-.bottom-layer.tu-tu {
-  background-image: url('./skins/bottom_tutu.png');
-  transform: translateY(54%) scale(1.0);
-}
-
-.bottom-layer.boots {
-  background-image: url('./skins/bottom_boots.png');
-  transform: translateY(62%) scale(0.8);
-}
 
 .profile-name-container {
   display: flex;
@@ -2005,4 +1991,27 @@ body.theme-cozy #parallax-background {
   color: #f1c40f;
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+/* Weapon Stock in Combat */
+.weapon-stock {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin: 5px 0;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.stock-icon {
+    width: 20px;
+    height: 20px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    background-color: rgba(0,0,0,0.3);
 }

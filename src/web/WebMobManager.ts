@@ -82,7 +82,7 @@ export class Mob {
         this.updateStatus()
 
         this.traits = traits || this.generateRandomTraits()
-        this.skin = skin || { hat: 'none', bottom: 'none' }
+        this.skin = skin || { hat: 'none' }
         this.combatProgress = combatProgress || { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 }
         if (typeof this.combatProgress.tournamentWins !== 'number') this.combatProgress.tournamentWins = 0
 
@@ -218,8 +218,10 @@ export class Mob {
         }
     }
 
-    setSkin(type: 'hat' | 'bottom', value: string): void {
-        this.skin[type] = value
+    setSkin(type: 'hat', value: string): void {
+        if (type === 'hat') {
+            this.skin.hat = value
+        }
     }
 
     toJSON(): MobData {
@@ -374,7 +376,7 @@ class WebMobManagerClass {
         return { success: true, mob: mob.toJSON() }
     }
 
-    updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): MobActionResult {
+    updateMobSkin(id: string, type: 'hat', value: string): MobActionResult {
         const mob = this.mobs.get(id)
         if (!mob) return { success: false, error: 'Mob non trouvé' }
         mob.setSkin(type, value)
