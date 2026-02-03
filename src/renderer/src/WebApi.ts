@@ -89,6 +89,11 @@ export class WebApi {
         return true
     }
 
+    async deleteAllMobs(): Promise<boolean> {
+        this.setStorage([])
+        return true
+    }
+
     async renameMob(id: string, newName: string): Promise<MobActionResult> {
         const mobs = this.getStorage()
         const mob = mobs.find(m => m.id === id)

@@ -55,7 +55,7 @@ export class PhysicsWorld {
         this.setupBoundaries()
 
         // Mouse Constraint
-        const mouse = Matter.Mouse.create(this.canvas) // Bind to canvas instead of body to avoid stealing UI clicks
+        const mouse = Matter.Mouse.create(document.body) // Reverting to body for global drag, UI clickability handled via Z-Index
         const mouseConstraint = Matter.MouseConstraint.create(this.engine, {
             mouse: mouse,
             constraint: {

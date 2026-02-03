@@ -18,7 +18,7 @@ interface CustomAPI {
   // Actions sur les mobs
   createMob: (nom: string, imageUrl: string) => Promise<MobCreateResult>
   deleteMob: (id: string) => Promise<{ success: boolean; error?: string }>
-  deleteMob: (id: string) => Promise<{ success: boolean; error?: string }>
+  deleteAllMobs: () => Promise<{ success: boolean; error?: string }>
   renameMob: (id: string, newName: string) => Promise<MobActionResult>
   updateMobSkin: (id: string, type: 'hat' | 'bottom', value: string) => Promise<MobActionResult>
 

@@ -32,6 +32,7 @@ export class Mob {
     skin: MobSkin
     combatProgress: CombatStats
     inSquad: boolean
+    weapon?: string
 
     constructor(
         nom: string,
@@ -207,6 +208,8 @@ export class Mob {
             this.statPoints--
         } else if (choice.type === 'weapon') {
             console.log(`[WebMob] ${this.nom} a obtenu: ${choice.name}`)
+            this.weapon = choice.name
+            this.statPoints--
         } else if (choice.type === 'trait') {
             if (!this.traits.includes(choice.name)) {
                 this.traits.push(choice.name)
@@ -234,7 +237,8 @@ export class Mob {
             traits: this.traits,
             skin: this.skin,
             combatProgress: this.combatProgress,
-            inSquad: this.inSquad
+            inSquad: this.inSquad,
+            weapon: this.weapon
         }
     }
 
@@ -246,6 +250,7 @@ export class Mob {
             data.level, data.experience, data.statPoints
         )
         mob.status = data.status
+        mob.weapon = data.weapon
         return mob
     }
 }
@@ -287,6 +292,12 @@ class WebMobManagerClass {
         const mob = this.mobs.get(id)
         if (!mob) return false
         return this.mobs.delete(id)
+    }
+
+    deleteAllMobs(): boolean {
+        this.mobs.clear()
+        this.saveMobs()
+        return true
     }
 
     getMobById(id: string): MobData | null {

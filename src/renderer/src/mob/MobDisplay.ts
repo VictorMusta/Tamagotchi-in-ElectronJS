@@ -1,170 +1,226 @@
 import { MobData } from '../../../shared/types'
+import { WEAPON_REGISTRY } from '../../../shared/WeaponRegistry'
 
 export class MobDisplay {
-  private element: HTMLElement | null = null
+    public element: HTMLElement
+    private tooltip: HTMLElement | null = null
+    private isTrackingTooltip: boolean = false
+    private rafId: number | null = null
 
-  constructor(private data: MobData) { }
+    // Elements
+    private mobInner: HTMLElement
+    private nameElement: HTMLElement
 
-  render(container: HTMLElement, onAction: () => void, onRename: (element: HTMLElement) => void): HTMLElement {
-    this.element = document.createElement('div')
-    this.element.className = 'mob'
+    constructor(data: MobData) {
+        this.element = document.createElement('div')
+        this.element.className = 'mob'
+        this.element.id = `mob-${data.id}`
 
-    // Position handled by MobMovement, but initial setup here
-    this.element.innerHTML = `
-      <img class="mob-image" src="${this.data.imageUrl}" alt="${this.data.nom}" />
-      <div class="skin-layers">
-         <div class="layer bottom-layer ${this.data.skin?.bottom || 'none'}"></div>
-         <div class="layer hat-layer ${this.data.skin?.hat || 'none'}"></div>
-      </div>
-      <div class="mob-tooltip">
-        <div class="mob-info">
-          <div class="mob-identity">
-              <span class="mob-level-badge">Level ${this.data.level || 1}</span>
-              <span class="mob-name" title="Double-cliquez pour renommer">${this.data.nom}</span>
-          </div>
-        </div>
+        // Create inner container
+        this.mobInner = document.createElement('div')
+        this.mobInner.className = 'mob-inner'
         
-        <div class="mob-xp-container">
-            <div class="mob-xp-bar">
-                <div class="mob-xp-fill" style="width: ${this.calculateXpPercentage()}%"></div>
-            </div>
-            <span class="mob-xp-text">XP ${this.data.experience || 0} / ${this.calculateNextLevelXp()}</span>
-        </div>
+        // Create Name Element
+        this.nameElement = document.createElement('div')
+        this.nameElement.className = 'mob-name'
+        this.nameElement.style.position = 'absolute'
+        this.nameElement.style.top = '-25px'
+        this.nameElement.style.left = '50%'
+        this.nameElement.style.transform = 'translateX(-50%)'
+        this.nameElement.style.color = 'white'
+        this.nameElement.style.background = 'rgba(0,0,0,0.5)'
+        this.nameElement.style.padding = '2px 6px'
+        this.nameElement.style.borderRadius = '4px'
+        this.nameElement.style.fontSize = '12px'
+        this.nameElement.style.whiteSpace = 'nowrap'
+        this.nameElement.style.pointerEvents = 'auto' // Important for clicking name
+        this.nameElement.style.cursor = 'pointer'
 
-        <div class="mob-stats-grid">
-            <div class="mob-stat-column">
-                <div class="mob-stat mob-stat-vie">
-                    <span class="mob-stat-label">Vie</span>
-                    <div class="mob-stat-bar"><div class="mob-stat-fill" style="width: ${(this.data.vie / this.getMaxHP()) * 100}%"></div></div>
-                </div>
-                <div class="mob-stat mob-stat-energie">
-                    <span class="mob-stat-label">Énergie</span>
-                    <div class="mob-stat-bar"><div class="mob-stat-fill" style="width: ${this.data.energie}%"></div></div>
-                </div>
+        this.element.appendChild(this.mobInner)
+        this.element.appendChild(this.nameElement)
+
+        this.update(data)
+        
+         // Tooltip Listeners (On the mob visual, not the name necessarily)
+        this.mobInner.addEventListener('mouseenter', () => this.showTooltip(data))
+        this.mobInner.addEventListener('mouseleave', () => this.hideTooltip())
+    }
+
+    /**
+     * Initializes the display in the DOM and sets up callbacks
+     */
+    render(
+        container: HTMLElement, 
+        onSelect: () => void, 
+        onAction: (nameEl: HTMLElement) => void
+    ): HTMLElement {
+        // Append to container
+        container.appendChild(this.element)
+
+        // Setup interaction events
+        this.element.addEventListener('click', (e) => {
+            e.stopPropagation()
+            onSelect()
+        })
+
+        // Action Trigger (Profile / Rename)
+        // Check if double click on mob OR click on name
+        this.element.addEventListener('dblclick', (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onAction(this.nameElement)
+        })
+
+        this.nameElement.addEventListener('click', (e) => {
+             e.preventDefault()
+             e.stopPropagation()
+             onAction(this.nameElement)
+        })
+
+        // Mobile Tap-Hold could also trigger action, but let's stick to name click for now + double click
+        
+        return this.element
+    }
+
+    update(data: MobData): void {
+        const weapons = Array.isArray(data.weapons) ? data.weapons : []
+        const displayedWeapon = weapons.length > 0 ? weapons[0] : undefined
+
+        this.mobInner.innerHTML = `
+            <img src="${data.imageUrl}" class="mob-image" draggable="false" />
+            <div class="skin-layers">
+                <div class="layer hat-layer ${data.skin?.hat || 'none'}"></div>
+                <div class="layer bottom-layer ${data.skin?.bottom || 'none'}"></div>
+            </div>
+            ${displayedWeapon ? `
+            <div class="hub-weapon-icon" style="
+                position: absolute;
+                bottom: 5px;
+                right: -5px;
+                width: 24px;
+                height: 24px;
+                background-image: url('./assets/weapons/${WEAPON_REGISTRY[displayedWeapon]?.icon || 'toothpick.png'}');
+                background-size: cover;
+                image-rendering: pixelated;
+                z-index: 5;
+            "></div>
+            ` : ''}
+            ${data.status === 'mort' ? '<div class="dead-marker">💀</div>' : ''}
+        `
+        
+        this.nameElement.textContent = data.nom
+
+        if (data.status === 'mort') {
+            this.element.classList.add('dead')
+        } else {
+            this.element.classList.remove('dead')
+        }
+    }
+
+    setSelected(selected: boolean): void {
+        if (selected) {
+            this.element.classList.add('selected')
+        } else {
+            this.element.classList.remove('selected')
+        }
+    }
+
+    private showTooltip(data: MobData): void {
+        if (this.tooltip) this.hideTooltip()
+
+        this.tooltip = document.createElement('div')
+        this.tooltip.className = 'trait-tooltip'
+        this.tooltip.style.position = 'absolute'
+        this.tooltip.style.pointerEvents = 'none'
+        // Ensure high z-index
+        this.tooltip.style.zIndex = '99999'
+        
+        let weaponsHtml = ''
+        const weapons = Array.isArray(data.weapons) ? data.weapons : []
+        
+        if (weapons.length > 0) {
+            weaponsHtml = `<div style="display:flex; gap:4px; margin-top:5px; flex-wrap:wrap;">`
+            weapons.forEach(w => {
+                 try {
+                    const icon = (WEAPON_REGISTRY && WEAPON_REGISTRY[w]?.icon) || 'toothpick.png'
+                    weaponsHtml += `<img src="./assets/weapons/${icon}" style="width:20px; height:20px; background:rgba(255,255,255,0.1); border-radius:3px; padding:2px;" title="${w}" />`
+                 } catch (e) {
+                     console.warn('Error loading weapon icon for', w, e)
+                 }
+            })
+            weaponsHtml += `</div>`
+        }
+
+        this.tooltip.innerHTML = `
+            <h4>${data.nom}</h4>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">
+               <span style="font-size:11px; color:#aaa;">Lvl ${data.level}</span>
             </div>
             
-            <div class="mob-attributes-column">
-                <div class="attribute-row"><span class="attr-label">FOR</span> <span class="attr-val val-force">${this.data.stats?.force || 0}</span></div>
-                <div class="attribute-row"><span class="attr-label">VIT</span> <span class="attr-val val-vitalite">${this.data.stats?.vitalite || 0}</span></div>
-                <div class="attribute-row"><span class="attr-label">AGI</span> <span class="attr-val val-agilite">${this.data.stats?.agilite || 0}</span></div>
-                <div class="attribute-row"><span class="attr-label">SPD</span> <span class="attr-val val-vitesse">${this.data.stats?.vitesse || 0}</span></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:11px;">
+                <div style="color:#ff6b6b;">STR: ${data.stats.force}</div>
+                <div style="color:#4ecdc4;">VIT: ${data.stats.vitalite}</div>
+                <div style="color:#ffe66d;">AGI: ${data.stats.agilite}</div>
+                <div style="color:#a8e6cf;">SPD: ${data.stats.vitesse}</div>
             </div>
-        </div>
-      </div>
-    `
 
-    this.element.addEventListener('click', onAction)
+            <div style="margin-top:8px; padding-top:5px; border-top:1px dashed rgba(255,255,255,0.1); display:flex; justify-content:space-between; font-size:10px; color:#aaa;">
+                <span>HP ${data.vie}/${100 + (data.stats.vitalite * 5)}</span>
+                <span>⚡ ${Math.floor(data.energie)}%</span>
+            </div>
+            
+            ${weaponsHtml}
 
-    const nameElement = this.element.querySelector('.mob-name') as HTMLElement
-    if (nameElement) {
-      nameElement.addEventListener('dblclick', (_e) => {
-        _e.stopPropagation()
-        onRename(nameElement)
-      })
+            ${data.traits.length > 0 ? `<div style="margin-top:5px; font-size:10px; color:#a29bfe;">${data.traits.length} Mutations</div>` : ''}
+        `
+
+        document.body.appendChild(this.tooltip)
+        this.updateTooltipPosition()
+        
+        this.isTrackingTooltip = true
+        this.trackTooltip()
     }
 
-    const imageElement = this.element.querySelector('.mob-image') as HTMLElement
-    if (imageElement) {
-      imageElement.addEventListener('dblclick', (_e) => {
-        onRename(nameElement)
-      })
+    private hideTooltip(): void {
+        this.isTrackingTooltip = false
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId)
+            this.rafId = null
+        }
+        if (this.tooltip) {
+            this.tooltip.remove()
+            this.tooltip = null
+        }
     }
 
-    container.appendChild(this.element)
-    this.update(this.data)
-
-    return this.element
-  }
-
-  update(data: MobData): void {
-    this.data = data
-    if (!this.element) return
-
-    this.element.classList.toggle('dead', data.status === 'mort')
-
-    const vieBar = this.element.querySelector('.mob-stat-vie .mob-stat-fill') as HTMLElement
-    const energieBar = this.element.querySelector('.mob-stat-energie .mob-stat-fill') as HTMLElement
-
-    if (vieBar) vieBar.style.width = `${data.vie}%`
-    if (energieBar) energieBar.style.width = `${data.energie}%`
-
-
-    const nameEl = this.element.querySelector('.mob-name') as HTMLElement
-    if (nameEl) {
-      nameEl.textContent = data.nom
+    private trackTooltip(): void {
+        if (!this.isTrackingTooltip) return
+        this.updateTooltipPosition()
+        this.rafId = requestAnimationFrame(() => this.trackTooltip())
     }
 
-    // Update skins
-    const hatLayer = this.element.querySelector('.hat-layer') as HTMLElement
-    const bottomLayer = this.element.querySelector('.bottom-layer') as HTMLElement
+    private updateTooltipPosition(): void {
+        if (!this.tooltip || !this.element) return
+        
+        const rect = this.element.getBoundingClientRect()
+        const tooltipWidth = this.tooltip.offsetWidth || 200
+        
+        // Center above mob
+        let left = rect.left + (rect.width / 2) - (tooltipWidth / 2)
+        // Position above the mob visual (not including name)
+        let top = rect.top - this.tooltip.offsetHeight - 10
+        
+        // Bounds
+        if (left < 10) left = 10
+        if (left + tooltipWidth > window.innerWidth - 10) left = window.innerWidth - tooltipWidth - 10
+        if (top < 10) top = rect.bottom + 10
 
-    if (hatLayer) hatLayer.className = `layer hat-layer ${data.skin?.hat || 'none'}`
-    if (bottomLayer) bottomLayer.className = `layer bottom-layer ${data.skin?.bottom || 'none'}`
-
-    // Update RPG Stats
-    const valForce = this.element.querySelector('.val-force')
-    const valVit = this.element.querySelector('.val-vitalite')
-    const valAgi = this.element.querySelector('.val-agilite')
-    const valSpd = this.element.querySelector('.val-vitesse')
-
-    if (valForce) valForce.textContent = String(data.stats?.force || 0)
-    if (valVit) valVit.textContent = String(data.stats?.vitalite || 0)
-    if (valAgi) valAgi.textContent = String(data.stats?.agilite || 0)
-    if (valSpd) valSpd.textContent = String(data.stats?.vitesse || 0)
-
-    // Update Level & XP
-    const levelBadge = this.element.querySelector('.mob-level-badge') as HTMLElement
-    const xpFill = this.element.querySelector('.mob-xp-fill') as HTMLElement
-    const xpText = this.element.querySelector('.mob-xp-text')
-
-    if (levelBadge) {
-      const lvl = data.level || 1
-      levelBadge.textContent = `Level ${lvl}`
-
-      // Clear previous level classes
-      levelBadge.classList.remove('lvl-1', 'lvl-2-3', 'lvl-4plus')
-
-      // Apply new color class
-      if (lvl === 1) levelBadge.classList.add('lvl-1')
-      else if (lvl <= 3) levelBadge.classList.add('lvl-2-3')
-      else levelBadge.classList.add('lvl-4plus')
+        this.tooltip.style.left = `${left}px`
+        this.tooltip.style.top = `${top}px`
     }
-    if (xpFill) xpFill.style.width = `${this.calculateXpPercentage()}%`
-    if (xpText) xpText.textContent = `XP ${data.experience || 0} / ${this.calculateNextLevelXp()}`
 
-    // Update HP bar (recalc based on MaxHP)
-    if (vieBar) vieBar.style.width = `${(data.vie / this.getMaxHP()) * 100}%`
-  }
-
-  private calculateNextLevelXp(): number {
-    const level = this.data.level || 1
-    return Math.floor(100 * Math.pow(1.5, level - 1))
-  }
-
-  private calculateXpPercentage(): number {
-    const xp = this.data.experience || 0
-    const target = this.calculateNextLevelXp()
-    return Math.min(100, Math.max(0, (xp / target) * 100))
-  }
-
-  private getMaxHP(): number {
-    const vitalite = this.data.stats?.vitalite || 0
-    return 100 + (vitalite * 5)
-  }
-
-  getElement(): HTMLElement | null {
-    return this.element
-  }
-
-  setSelected(selected: boolean): void {
-    if (!this.element) return
-    this.element.classList.toggle('selected', selected)
-  }
-
-  destroy(): void {
-    if (this.element) {
-      this.element.remove()
-      this.element = null
+    destroy(): void {
+        this.hideTooltip()
+        this.element.remove()
     }
-  }
 }

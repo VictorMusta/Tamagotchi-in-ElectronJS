@@ -1,5 +1,6 @@
 import { MobData } from '../../../shared/types'
 import { CombatEngine, CombatEvent } from './CombatEngine'
+import { WEAPON_REGISTRY } from '../../../shared/WeaponRegistry'
 
 export class CombatUI {
     private selectionOverlay: HTMLElement | null = null
@@ -141,7 +142,10 @@ export class CombatUI {
                     <div class="layer bottom-layer ${f1.skin?.bottom || 'none'}"></div>
                     <div class="layer hat-layer ${f1.skin?.hat || 'none'}"></div>
                 </div>
+                ${f1.traits.includes("Appel de l'Astico-Roi") ? `
                 <div class="maggot-companion">🪱</div>
+                <div class="maggot-bar"><div class="maggot-fill" id="maggot-${f1.id}" style="width: 0%"></div></div>
+                ` : ''}
             </div>
         </div>
 
@@ -168,7 +172,10 @@ export class CombatUI {
                     <div class="layer bottom-layer ${f2.skin?.bottom || 'none'}"></div>
                     <div class="layer hat-layer ${f2.skin?.hat || 'none'}"></div>
                 </div>
+                ${f2.traits.includes("Appel de l'Astico-Roi") ? `
                 <div class="maggot-companion">🪱</div>
+                <div class="maggot-bar"><div class="maggot-fill" id="maggot-${f2.id}" style="width: 0%"></div></div>
+                ` : ''}
             </div>
         </div>
         
@@ -226,6 +233,8 @@ export class CombatUI {
             case 'tick':
                 this.updateBar(`atb-${this.currentFighter1.id}`, event.fighter1Energy)
                 this.updateBar(`atb-${this.currentFighter2.id}`, event.fighter2Energy)
+                if (event.maggot1Energy !== undefined) this.updateBar(`maggot-${this.currentFighter1.id}`, event.maggot1Energy)
+                if (event.maggot2Energy !== undefined) this.updateBar(`maggot-${this.currentFighter2.id}`, event.maggot2Energy)
                 break
             case 'attack':
                 this.animateAttack(event.attackerId, event.targetId, event.damage, event.isCritical)
@@ -267,6 +276,62 @@ export class CombatUI {
                     combatLog.appendChild(p)
                     combatLog.scrollTop = combatLog.scrollHeight // Scroll to bottom
                 }
+                
+                // Visual Block Feedback
+                if (event.message.includes('BLOQUE')) {
+                    // Try to find who blocked. Message format: "${defender.nom} BLOQUE..."
+                    // A bit hacky but works for visual flair
+                    const name = event.message.split(' BLOQUE')[0]
+                    const f1 = this.currentFighter1?.nom === name ? this.currentFighter1 : null
+                    const f2 = this.currentFighter2?.nom === name ? this.currentFighter2 : null
+                    const blocker = f1 || f2
+                    
+                    if (blocker) {
+                        const blockerEl = document.getElementById(`fighter-${blocker.id}`)
+                        const weaponEl = blockerEl?.querySelector('.weapon-container') as HTMLElement
+                        if (weaponEl) {
+                            weaponEl.classList.add('anim-block')
+                            setTimeout(() => weaponEl.classList.remove('anim-block'), 500)
+                        }
+                    }
+                }
+                break
+            case 'counter_attack':
+                this.animateAttack(event.attackerId, event.targetId, event.damage, false)
+                this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
+                this.showPopup(event.attackerId, 'CONTRE !', 'counter')
+                break
+            case 'weapon_steal':
+                this.showPopup(event.thiefId, `VOL D'ARME: ${event.weapon} !`, 'steal')
+                break
+            case 'weapon_change':
+                const fighterContainer = document.getElementById(`fighter-${event.id}`)
+                const mobWrapper = fighterContainer?.querySelector('.mob-wrapper')
+                
+                if (mobWrapper) {
+                    // Remove existing pivot
+                    const existingPivot = mobWrapper.querySelector('.weapon-pivot')
+                    if (existingPivot) existingPivot.remove()
+
+                    // Add new one if weapon exists
+                    if (event.weapon) {
+                        const pivot = document.createElement('div')
+                        pivot.className = 'weapon-pivot'
+                        pivot.innerHTML = `
+                            <div class="weapon-container">
+                                <img src="./assets/weapons/${WEAPON_REGISTRY[event.weapon]?.icon || 'toothpick.png'}" class="weapon-icon" />
+                            </div>
+                        `
+                        mobWrapper.appendChild(pivot)
+                    }
+                }
+                break
+            case 'state_change':
+                if (event.state === 'berzerk' && event.value) {
+                    const el = document.getElementById(`fighter-${event.id}`)
+                    el?.classList.add('berzerk-mode')
+                    this.showPopup(event.id, 'BERZERK !!!', 'berzerk-text')
+                }
                 break
             case 'death':
                 // Calculate MaxHP for the dead fighter
@@ -276,6 +341,7 @@ export class CombatUI {
                 const deadFighter = document.getElementById(`fighter-${event.deadId}`)
                 if (deadFighter) {
                     deadFighter.classList.add('dead')
+                    deadFighter.classList.remove('berzerk-mode')
                 }
                 break
         }
@@ -300,9 +366,50 @@ export class CombatUI {
         const targetContainer = document.getElementById(`fighter-${targetId}`)
         const attackerWrapper = attackerContainer?.querySelector('.mob-wrapper') as HTMLElement
         const targetWrapper = targetContainer?.querySelector('.mob-wrapper') as HTMLElement
+        const weaponEl = attackerWrapper?.querySelector('.weapon-container') as HTMLElement
+
+        // WEAPON ANIMATION
+        if (weaponEl) {
+            // Find weapon type based on what is currently rendered (we can infer from engine or check registry if we had the mob data handy)
+            // But we don't have easy access to the exact weapon instance here easily without looking up mob data.
+            // However, we can check the ID of the weapon image or just pass it in event? 
+            // Better: Perform a quick lookup via registry if we can get the weapon name. 
+            // Or simpler: Pass weapon name in the event!
+            // The event 'attack' has `weapon?: string`. PERFECT.
+            
+            // Wait, I need to check if event has weapon name. 
+            // Looking at files, CombatEvent for attack has: weapon?: string.
+            
+            // Let's retrieve the animation type.
+            // We need to access the event data in this function, or pass it.
+            // The signature is animateAttack(attackerId, targetId, damage, crit).
+            // I should update signature or just do a best guess if not passed? 
+            // Wait, I am editing the function right now. I can just change the signature or use a global lookup?
+            // Actually I should update the method signature in the class to accept weaponName.
+        }
 
         if (attackerContainer && targetContainer && attackerWrapper && targetWrapper) {
             this.performDash(attackerContainer, targetWrapper)
+
+            // Trigger Weapon specific animation
+            if (weaponEl) {
+                 // Try to deduce animation from the weapon currently in DOM? 
+                 // Or we rely on the fact that `animateAttack` should theoretically know the weapon.
+                 // Let's modify the signature in a subsequent step if needed, but for now let's just use a generic 'swing' if we can't find it,
+                 // OR BETTER: Use the MobData references `this.currentFighter1/2` to find what weapon they have!
+                 
+                 let weaponName: string | undefined
+                 if (attackerId === this.currentFighter1?.id) weaponName = this.currentFighter1.weapon
+                 else if (attackerId === this.currentFighter2?.id) weaponName = this.currentFighter2.weapon
+                 
+                 if (weaponName) {
+                     const def = WEAPON_REGISTRY[weaponName]
+                     const animType = def?.animationType || 'slash' // Default to slash
+                     
+                     weaponEl.classList.add(`anim-${animType}`)
+                     setTimeout(() => weaponEl.classList.remove(`anim-${animType}`), 500)
+                 }
+            }
 
             targetWrapper.classList.add('hit')
             setTimeout(() => targetWrapper.classList.remove('hit'), 300)
@@ -385,7 +492,24 @@ export class CombatUI {
             })
         })
 
-        // Check for level-ups
+        // 1. Process Results (XP / Rewards)
+        try {
+            const result = await window.api.processCombatResult(winner, loser)
+            console.log('[CombatUI] Combat processed:', result)
+            
+            // Show reward if any
+            if (result.reward) {
+                 // TODO: Better reward UI
+                 alert(`Récompense obtenue: ${result.reward}`)
+            }
+
+            // Update local references to use the fresh data (stats, level, etc)
+            // But handleLevelUps re-fetches anyway.
+        } catch (e) {
+            console.error('[CombatUI] Error processing combat result:', e)
+        }
+
+        // 2. Check for level-ups (Now that XP is added)
         try {
             await this.handleLevelUps([winner, loser])
         } catch (e) {
