@@ -3,7 +3,7 @@ import { playSound } from '../SoundManager'
 export class MobAnimation {
     constructor(private element: HTMLElement) { }
 
-    playSoundEffect(sound: 'punch' | 'death' | 'heal' | 'revive'): void {
+    playSoundEffect(sound: 'punch' | 'death' | 'revive'): void {
         playSound(sound)
         this.showSoundVisualFeedback(sound)
     }
@@ -12,7 +12,7 @@ export class MobAnimation {
         const colors: Record<string, string> = {
             punch: '#ff4444',
             death: '#000000',
-            heal: '#44ff44',
+
 
             revive: '#44ffff'
         }

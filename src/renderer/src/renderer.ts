@@ -503,6 +503,15 @@ function setupActionButtons(): void {
   btnParty?.addEventListener('click', () => {
     partyUI.toggle()
   })
+
+  // Mobile Menu Toggle
+  const btnMenuToggle = document.getElementById('btn-menu-toggle')
+  if (btnMenuToggle) {
+    btnMenuToggle.addEventListener('click', () => {
+      const actionList = document.getElementById('action-list')
+      actionList?.classList.toggle('expanded')
+    })
+  }
 }
 
 /**

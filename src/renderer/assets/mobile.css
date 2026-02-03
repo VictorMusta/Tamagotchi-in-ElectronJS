@@ -1,0 +1,64 @@
+
+/* Mobile / Android Adaptation */
+#btn-menu-toggle {
+  display: none; /* Hide toggle on desktop */
+  background: linear-gradient(135deg, #424242, #212121);
+  z-index: 1001;
+}
+
+#action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  /* Global Scaling */
+  html {
+    zoom: 0.65; /* Scale down the whole UI */
+  }
+
+  /* Hide Window Controls (handled by OS on Android) */
+  #window-controls {
+    display: none !important;
+  }
+
+  /* Action Panel Restructuring */
+  #action-panel {
+    bottom: 20px;
+    right: 20px;
+    align-items: flex-end;
+  }
+
+  #btn-menu-toggle {
+    display: flex; /* Show toggle on mobile */
+  }
+
+  #action-list {
+    display: none; /* Hide list by default */
+    flex-direction: column-reverse; /* Grow upwards */
+    margin-bottom: 15px;
+    gap: 15px;
+  }
+
+  #action-list.expanded {
+    display: flex;
+    animation: fadeInSlideUp 0.3s ease-out;
+  }
+
+  /* Hide separators in mobile menu for cleaner look */
+  .action-separator {
+    display: none;
+  }
+}
+
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
