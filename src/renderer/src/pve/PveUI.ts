@@ -1,5 +1,5 @@
 import { MobData } from '../../../shared/types'
-import potatoImage from '../../assets/Potato still.png'
+const potatoImage = 'assets/Potato still.png'
 
 export class PveUI {
   private overlay: HTMLElement | null = null
@@ -75,7 +75,7 @@ export class PveUI {
 
   private renderEnemyCard(enemy: MobData, index: number): string {
     const traitList = enemy.traits.length > 0 ? enemy.traits.slice(0, 3).join(', ') : 'Aucun'
-    
+
     return `
       <div class="pve-enemy-card" data-index="${index}">
         <div class="pve-enemy-avatar">

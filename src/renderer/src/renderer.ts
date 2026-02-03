@@ -17,7 +17,7 @@ import {
   setOnMobClick,
   setOnProfileOpen
 } from './Mob'
-import potatoImage from '../assets/Potato still.png'
+const potatoImage = 'assets/Potato still.png'
 import { PhysicsWorld } from './physics/PhysicsWorld'
 
 // Map des renderers de mobs par ID
@@ -258,16 +258,16 @@ async function loadMobs(idToSelect?: string): Promise<void> {
     // Enforce strict limit of 10 mobs for the squad view
     const squadMobs = result.mobs.filter((m: MobData) => m.inSquad).slice(0, 10)
     console.log('[Renderer] Squad mobs to render (limited to 10):', squadMobs.length)
-    
+
     squadMobs.forEach((data: MobData, index: number) => {
       try {
-          console.log(`[Renderer] Rendering mob ${index}: ${data.nom} (${data.id})`)
-          const imageUrl = (data.imageUrl && data.imageUrl.includes('Potato')) ? potatoImage : (data.imageUrl || potatoImage)
-          const renderer = new MobRenderer({ ...data, imageUrl })
-          renderer.render(mobContainer, physicsWorld)
-          mobRenderers.set(data.id, renderer)
+        console.log(`[Renderer] Rendering mob ${index}: ${data.nom} (${data.id})`)
+        const imageUrl = (data.imageUrl && data.imageUrl.includes('Potato')) ? potatoImage : (data.imageUrl || potatoImage)
+        const renderer = new MobRenderer({ ...data, imageUrl })
+        renderer.render(mobContainer, physicsWorld)
+        mobRenderers.set(data.id, renderer)
       } catch (err) {
-          console.error(`[Renderer] Failed to render mob ${data.nom}:`, err)
+        console.error(`[Renderer] Failed to render mob ${data.nom}:`, err)
       }
     })
 
@@ -393,41 +393,41 @@ function setupMobManagementButtons(): void {
   // Delete All Button
   const btnDeleteAll = document.getElementById('btn-delete-all')
   if (btnDeleteAll) {
-      console.log('[Renderer] Delete All button found, attaching listener.')
-      btnDeleteAll.addEventListener('click', async () => {
-        console.log('[Renderer] Delete All clicked.')
-        
-        if (!window.api.deleteAllMobs) {
-            console.error('[Renderer] deleteAllMobs API is missing!')
-            showNotification('Erreur: API non supportée (redémarrez ?)', 'error')
-            return
-        }
+    console.log('[Renderer] Delete All button found, attaching listener.')
+    btnDeleteAll.addEventListener('click', async () => {
+      console.log('[Renderer] Delete All clicked.')
 
-        if (confirm('⚠️ ATTENTION ⚠️\nVoulez-vous vraiment supprimer TOUTES les patates ?\nCette action est irréversible et supprimera toute votre progression.')) {
-            if (confirm('Vraiment sûr ? Tout effacer ?')) {
-                try {
-                    console.log('[Renderer] Calling deleteAllMobs...')
-                    await window.api.deleteAllMobs()
-                    console.log('[Renderer] deleteAllMobs success.')
-                    
-                    // Clear UI
-                    mobRenderers.forEach(r => r.destroy())
-                    mobRenderers.clear()
-                    setSelectedMob(null)
-                    showNotification('Toutes les patates ont été supprimées.', 'success')
-                    
-                    setTimeout(() => {
-                        initMobs()
-                    }, 1000)
-                } catch (e) {
-                    console.error('[Renderer] Error executing deleteAllMobs:', e)
-                    showNotification('Erreur lors de la suppression: ' + String(e), 'error')
-                }
-            }
+      if (!window.api.deleteAllMobs) {
+        console.error('[Renderer] deleteAllMobs API is missing!')
+        showNotification('Erreur: API non supportée (redémarrez ?)', 'error')
+        return
+      }
+
+      if (confirm('⚠️ ATTENTION ⚠️\nVoulez-vous vraiment supprimer TOUTES les patates ?\nCette action est irréversible et supprimera toute votre progression.')) {
+        if (confirm('Vraiment sûr ? Tout effacer ?')) {
+          try {
+            console.log('[Renderer] Calling deleteAllMobs...')
+            await window.api.deleteAllMobs()
+            console.log('[Renderer] deleteAllMobs success.')
+
+            // Clear UI
+            mobRenderers.forEach(r => r.destroy())
+            mobRenderers.clear()
+            setSelectedMob(null)
+            showNotification('Toutes les patates ont été supprimées.', 'success')
+
+            setTimeout(() => {
+              initMobs()
+            }, 1000)
+          } catch (e) {
+            console.error('[Renderer] Error executing deleteAllMobs:', e)
+            showNotification('Erreur lors de la suppression: ' + String(e), 'error')
+          }
         }
-      })
+      }
+    })
   } else {
-      console.error('[Renderer] Delete All button NOT found in DOM.')
+    console.error('[Renderer] Delete All button NOT found in DOM.')
   }
 }
 
@@ -449,11 +449,11 @@ function setupWindowControls(): void {
  */
 function setupPveAndMemorialButtons(): void {
   console.log('[Renderer] Setting up PvE and Memorial buttons...')
-  
+
   // PvE Button
   const btnPve = document.getElementById('btn-pve')
   console.log('[Renderer] btn-pve element:', btnPve)
-  
+
   btnPve?.addEventListener('click', () => {
     console.log('[Renderer] PvE button clicked!')
     const selectedMob = getSelectedMob()
@@ -472,7 +472,7 @@ function setupPveAndMemorialButtons(): void {
       pveUI.showEnemySelection(result.mob, async (enemy) => {
         // Start PvE combat
         console.log('[Renderer] Starting PvE combat:', result.mob!.nom, 'vs', enemy.nom)
-        
+
         combatUI.renderCombatScene(result.mob!, enemy, async (winner, _loser) => {
           // Check if player won
           const playerWon = winner.id === result.mob!.id
@@ -480,13 +480,13 @@ function setupPveAndMemorialButtons(): void {
           if (playerWon) {
             // Player survives - grant XP and maybe potion
             console.log('[Renderer] Player won PvE!')
-            
+
             // 5% chance for potion drop
             if (Math.random() < 0.05) {
               await window.api.addPotion()
               showNotification('🧪 Potion de Réanimation obtenue !', 'success')
             }
-            
+
             // Save and refresh
             await window.api.saveMobs()
             await loadMobs(winner.id)
@@ -494,12 +494,12 @@ function setupPveAndMemorialButtons(): void {
           } else {
             // Player lost - check for potion
             console.log('[Renderer] Player lost PvE!')
-            
+
             const potionResult = await window.api.getPotionCount()
             if (potionResult.success && potionResult.count > 0) {
               // Has potion - ask to use
               const usePotion = confirm(`💀 ${result.mob!.nom} est mort(e) !\n\n🧪 Vous avez ${potionResult.count} Potion(s) de Réanimation.\n\nVoulez-vous en utiliser une pour ressusciter ?`)
-              
+
               if (usePotion) {
                 const used = await window.api.usePotion()
                 if (used.success) {
@@ -514,16 +514,16 @@ function setupPveAndMemorialButtons(): void {
                 }
               }
             }
-            
+
             // No potion or declined - permadeath
             showNotification(`💀 ${result.mob!.nom} est mort(e) définitivement...`, 'error')
-            
+
             // Add to memorial
             await window.api.addToMemorial(result.mob!, enemy.nom)
-            
+
             // Delete the mob
             await window.api.deleteMob(result.mob!.id)
-            
+
             // Refresh UI
             mobRenderers.get(result.mob!.id)?.destroy()
             mobRenderers.delete(result.mob!.id)
@@ -541,12 +541,12 @@ function setupPveAndMemorialButtons(): void {
   // Memorial Button
   const btnMemorial = document.getElementById('btn-memorial')
   console.log('[Renderer] btn-memorial element:', btnMemorial)
-  
+
   btnMemorial?.addEventListener('click', () => {
     console.log('[Renderer] Memorial button clicked!')
     memorialUI.show()
   })
-  
+
   console.log('[Renderer] PvE and Memorial buttons setup complete.')
 }
 
@@ -726,29 +726,29 @@ function participantToMobData(p: any): any {
 
 // Parallax Effect
 function setupParallax(): void {
-    let bg = document.getElementById('parallax-background')
-    if (!bg) {
-        bg = document.createElement('div')
-        bg.id = 'parallax-background'
-        document.body.prepend(bg)
-    }
+  let bg = document.getElementById('parallax-background')
+  if (!bg) {
+    bg = document.createElement('div')
+    bg.id = 'parallax-background'
+    document.body.prepend(bg)
+  }
 
-    // Initialize variables
-    document.body.style.setProperty('--parallax-x', '0px')
-    document.body.style.setProperty('--parallax-y', '0px')
+  // Initialize variables
+  document.body.style.setProperty('--parallax-x', '0px')
+  document.body.style.setProperty('--parallax-y', '0px')
 
-    // Mouse Move Listener
-    document.addEventListener('mousemove', (e) => {
-        const x = (e.clientX / window.innerWidth - 0.5) * 2 // -1 to 1
-        const y = (e.clientY / window.innerHeight - 0.5) * 2 // -1 to 1
-        
-        // Base Unit: 10px (halved from original 20px request)
-        const baseX = x * -10 
-        const baseY = y * -10
-        
-        document.body.style.setProperty('--parallax-x', `${baseX}px`)
-        document.body.style.setProperty('--parallax-y', `${baseY}px`)
-    })
+  // Mouse Move Listener
+  document.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth - 0.5) * 2 // -1 to 1
+    const y = (e.clientY / window.innerHeight - 0.5) * 2 // -1 to 1
+
+    // Base Unit: 10px (halved from original 20px request)
+    const baseX = x * -10
+    const baseY = y * -10
+
+    document.body.style.setProperty('--parallax-x', `${baseX}px`)
+    document.body.style.setProperty('--parallax-y', `${baseY}px`)
+  })
 }
 
 // Lancer l'initialisation quand le DOM est prêt (ou s'il l'est déjà)

@@ -8,8 +8,23 @@ export class CombatUI {
     private selectedFighters: MobData[] = []
     private currentFighter1: MobData | null = null
     private currentFighter2: MobData | null = null
+    private currentSpeed: number = 1
 
-    constructor() { }
+    constructor() {
+        this.loadSpeed()
+    }
+
+    private loadSpeed(): void {
+        const savedSpeed = localStorage.getItem('combat-speed')
+        if (savedSpeed) {
+            this.currentSpeed = parseFloat(savedSpeed)
+        }
+    }
+
+    private saveSpeed(speed: number): void {
+        this.currentSpeed = speed
+        localStorage.setItem('combat-speed', speed.toString())
+    }
 
     /**
      * Affiche le menu de sélection des combattants
@@ -141,9 +156,9 @@ export class CombatUI {
                 </div>
                 <div class="weapon-stock" id="stock-${f1.id}">
                     ${(f1.weapons || []).map(w => {
-                        const icon = WEAPON_REGISTRY[w]?.icon || 'default.png'
-                        return `<div class="stock-icon" style="background-image: url('assets/weapons/${icon}')" title="${w}"></div>`
-                    }).join('')}
+            const icon = WEAPON_REGISTRY[w]?.icon || 'default.png'
+            return `<div class="stock-icon" style="background-image: url('assets/weapons/${icon}')" title="${w}"></div>`
+        }).join('')}
                 </div>
                 <div class="atb-bar"><div class="atb-fill" id="atb-${f1.id}" style="width: 0%"></div></div>
             </div>
@@ -176,9 +191,9 @@ export class CombatUI {
                 </div>
                 <div class="weapon-stock" id="stock-${f2.id}">
                     ${(f2.weapons || []).map(w => {
-                        const icon = WEAPON_REGISTRY[w]?.icon || 'default.png'
-                        return `<div class="stock-icon" style="background-image: url('assets/weapons/${icon}')" title="${w}"></div>`
-                    }).join('')}
+            const icon = WEAPON_REGISTRY[w]?.icon || 'default.png'
+            return `<div class="stock-icon" style="background-image: url('assets/weapons/${icon}')" title="${w}"></div>`
+        }).join('')}
                 </div>
                 <div class="atb-bar"><div class="atb-fill" id="atb-${f2.id}" style="width: 0%"></div></div>
             </div>
@@ -207,15 +222,27 @@ export class CombatUI {
 
         document.body.appendChild(this.combatOverlay)
 
+        // Initialiser l'engine avec la vitesse persistée
         const engine = new CombatEngine(f1, f2, (event) => {
             this.handleCombatEvent(event)
         })
+        engine.setSpeed(this.currentSpeed)
 
-        // Gestion des boutons de vitesse
+        // Mettre à jour les boutons UI selon la vitesse persistée
         this.combatOverlay.querySelectorAll('.speed-btn').forEach(btn => {
+            const btnSpeed = parseFloat((btn as HTMLElement).dataset.speed || '1')
+            if (btnSpeed === this.currentSpeed) {
+                btn.classList.add('active')
+            } else {
+                btn.classList.remove('active')
+            }
+
             btn.addEventListener('click', (e) => {
                 const target = e.target as HTMLElement
                 const speed = parseFloat(target.dataset.speed || '1')
+
+                // Sauvegarder la nouvelle vitesse
+                this.saveSpeed(speed)
 
                 // Update UI
                 this.combatOverlay?.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'))
@@ -225,15 +252,14 @@ export class CombatUI {
                 engine.setSpeed(speed)
 
                 // Update CSS Variables for animations
-                // Base animation duration is ~0.2s or 0.3s. 
-                // We want to reduce it as speed increases.
-                // 1 -> 0.2s
-                // 2 -> 0.1s
-                // 5 -> 0.04s
                 const animDuration = Math.max(0.04, 0.2 / speed)
                 document.documentElement.style.setProperty('--combat-speed', `${animDuration}s`)
             })
         })
+
+        // Appliquer la variable CSS initiale
+        const initialAnimDuration = Math.max(0.04, 0.2 / this.currentSpeed)
+        document.documentElement.style.setProperty('--combat-speed', `${initialAnimDuration}s`)
 
         engine.start().then(({ winner, loser }) => {
             // Don't auto-close, show victory screen instead
@@ -291,7 +317,7 @@ export class CombatUI {
                     combatLog.appendChild(p)
                     combatLog.scrollTop = combatLog.scrollHeight // Scroll to bottom
                 }
-                
+
                 // Visual Block Feedback
                 if (event.message.includes('BLOQUE')) {
                     // Try to find who blocked. Message format: "${defender.nom} BLOQUE..."
@@ -300,7 +326,7 @@ export class CombatUI {
                     const f1 = this.currentFighter1?.nom === name ? this.currentFighter1 : null
                     const f2 = this.currentFighter2?.nom === name ? this.currentFighter2 : null
                     const blocker = f1 || f2
-                    
+
                     if (blocker) {
                         const blockerEl = document.getElementById(`fighter-${blocker.id}`)
                         const weaponEl = blockerEl?.querySelector('.weapon-container') as HTMLElement
@@ -331,7 +357,7 @@ export class CombatUI {
             case 'weapon_change':
                 const fighterContainer = document.getElementById(`fighter-${event.id}`)
                 const mobWrapper = fighterContainer?.querySelector('.mob-wrapper')
-                
+
                 if (mobWrapper) {
                     // Remove existing pivot
                     const existingPivot = mobWrapper.querySelector('.weapon-pivot')
@@ -343,7 +369,7 @@ export class CombatUI {
                         pivot.className = 'weapon-pivot'
                         pivot.innerHTML = `
                             <div class="weapon-container">
-                                <img src="./assets/weapons/${WEAPON_REGISTRY[event.weapon]?.icon || 'toothpick.png'}" class="weapon-icon" />
+                                <img src="assets/weapons/${WEAPON_REGISTRY[event.weapon]?.icon || 'toothpick.png'}" class="weapon-icon" />
                             </div>
                         `
                         mobWrapper.appendChild(pivot)
@@ -400,10 +426,10 @@ export class CombatUI {
             // Better: Perform a quick lookup via registry if we can get the weapon name. 
             // Or simpler: Pass weapon name in the event!
             // The event 'attack' has `weapon?: string`. PERFECT.
-            
+
             // Wait, I need to check if event has weapon name. 
             // Looking at files, CombatEvent for attack has: weapon?: string.
-            
+
             // Let's retrieve the animation type.
             // We need to access the event data in this function, or pass it.
             // The signature is animateAttack(attackerId, targetId, damage, crit).
@@ -417,22 +443,22 @@ export class CombatUI {
 
             // Trigger Weapon specific animation
             if (weaponEl) {
-                 // Try to deduce animation from the weapon currently in DOM? 
-                 // Or we rely on the fact that `animateAttack` should theoretically know the weapon.
-                 // Let's modify the signature in a subsequent step if needed, but for now let's just use a generic 'swing' if we can't find it,
-                 // OR BETTER: Use the MobData references `this.currentFighter1/2` to find what weapon they have!
-                 
-                 // let weaponName: string | undefined
-                 // if (attackerId === this.currentFighter1?.id) weaponName = this.currentFighter1.weapon
-                 // else if (attackerId === this.currentFighter2?.id) weaponName = this.currentFighter2.weapon
-                 
-                 if (weaponName) {
-                     const def = WEAPON_REGISTRY[weaponName]
-                     const animType = def?.animationType || 'slash' // Default to slash
-                     
-                     weaponEl.classList.add(`anim-${animType}`)
-                     setTimeout(() => weaponEl.classList.remove(`anim-${animType}`), 500)
-                 }
+                // Try to deduce animation from the weapon currently in DOM? 
+                // Or we rely on the fact that `animateAttack` should theoretically know the weapon.
+                // Let's modify the signature in a subsequent step if needed, but for now let's just use a generic 'swing' if we can't find it,
+                // OR BETTER: Use the MobData references `this.currentFighter1/2` to find what weapon they have!
+
+                // let weaponName: string | undefined
+                // if (attackerId === this.currentFighter1?.id) weaponName = this.currentFighter1.weapon
+                // else if (attackerId === this.currentFighter2?.id) weaponName = this.currentFighter2.weapon
+
+                if (weaponName) {
+                    const def = WEAPON_REGISTRY[weaponName]
+                    const animType = def?.animationType || 'slash' // Default to slash
+
+                    weaponEl.classList.add(`anim-${animType}`)
+                    setTimeout(() => weaponEl.classList.remove(`anim-${animType}`), 500)
+                }
             }
 
             targetWrapper.classList.add('hit')
@@ -520,11 +546,11 @@ export class CombatUI {
         try {
             const result = await window.api.processCombatResult(winner, loser)
             console.log('[CombatUI] Combat processed:', result)
-            
+
             // Show reward if any
             if (result.reward) {
-                 // TODO: Better reward UI
-                 alert(`Récompense obtenue: ${result.reward}`)
+                // TODO: Better reward UI
+                alert(`Récompense obtenue: ${result.reward}`)
             }
 
             // Update local references to use the fresh data (stats, level, etc)

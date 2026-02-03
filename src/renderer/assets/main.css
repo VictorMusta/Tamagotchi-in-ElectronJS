@@ -101,15 +101,15 @@ body {
 }
 
 body.theme-forest #parallax-background {
-  background-image: url('./backgrounds/bg-forest.png');
+  background-image: url('../public/assets/backgrounds/bg-forest.png');
 }
 
 body.theme-cyberpunk #parallax-background {
-  background-image: url('./backgrounds/bg-cyberpunk.png');
+  background-image: url('../public/assets/backgrounds/bg-cyberpunk.png');
 }
 
 body.theme-cozy #parallax-background {
-  background-image: url('./backgrounds/bg-cozy.png');
+  background-image: url('../public/assets/backgrounds/bg-cozy.png');
 }
 
 #app {
@@ -477,17 +477,17 @@ body.theme-cozy #parallax-background {
 
 /* Hats */
 .hat-layer.crown {
-  background-image: url('./skins/hat_crown.png');
+  background-image: url('../public/assets/skins/hat_crown.png');
   transform: translateY(-25%) scale(0.6);
 }
 
 .hat-layer.cap {
-  background-image: url('./skins/hat_cap.png');
+  background-image: url('../public/assets/skins/hat_cap.png');
   transform: translateY(-21%) scale(0.55);
 }
 
 .hat-layer.wizard {
-  background-image: url('./skins/hat_wizard.png');
+  background-image: url('../public/assets/skins/hat_wizard.png');
   transform: translateY(-29%) scale(0.7);
 }
 

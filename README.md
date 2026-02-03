@@ -58,27 +58,30 @@ sudo dpkg -i potato_rotato_*_amd64.deb
 ## 🎮 Fonctionnalités
 
 ### Gestion des Mobs
-
 | Action | Description |
 |--------|-------------|
-| ➕ **Créer** | Ajoute une nouvelle patate avec des stats par défaut |
-| 🗑️ **Supprimer** | Supprime un mob mort sélectionné |
-| ✏️ **Renommer** | Double-clic sur le mob pour éditer son nom |
+| ➕ **Créer** | Ajoute une nouvelle patate (Hub) |
+| 🗑️ **Supprimer** | Supprime un mob mort (Hub) |
+| ✏️ **Renommer** | Éditez le nom depuis le profil |
+| 👕 **Customiser** | Changez le chapeau dans le profil |
 
-### Actions
+### ⚔️ Boucle de Gameplay & Combat
+- **Hub de Bureau** : Gérez votre équipe, personnalisez vos patates et lancez des activités.
+- **Duel (BASTON)** : Mode PvP local entre deux patates de votre équipe.
+- **PvE & Survie** : Affrontez des ennemis de plus en plus forts. 
+  - ⚠️ **Mort Permanente** : Si une patate perd en PvE, elle meurt définitivement.
+  - 🧪 **Potions** : Utilisez une Potion de Réanimation pour sauver une patate tombée au combat.
+  - 🏛️ **Mémorial** : Honorez vos compagnons tombés au combat dans la section dédiée.
+- **Progression** : Gagnez de l'XP pour monter de niveau et débloquer des Stats, Armes et Mutations.
 
-| Bouton | Effet | Condition |
-|--------|-------|-----------|
-| ⚔️ **Attaquer** | Inflige 20 dégâts | - |
-| 💚 **Soigner** | Restaure 20 PV | Mob vivant uniquement |
-| 🍕 **Nourrir** | Réduit la faim de 20 | Mob vivant uniquement |
-| ✨ **Réanimer** | Ressuscite avec 50% de stats | Mob mort uniquement |
+### 🏺 Le Bocal (Mode Physique)
+- Simulation basée sur **Matter-js** où vos économies deviennent des pièces physiques.
+- **Fusion** : Atteignez des dénominations supérieures en fusionnant vos pièces.
+- **Météo** : Le vent et la pluie influencent la physique interne du bocal.
 
 ### Système de sauvegarde
-
-- 💾 **Sauvegarde manuelle** - Bouton pour sauvegarder l'état actuel
-- 📂 **Chargement** - Restaure la dernière sauvegarde
-- 🔄 **Auto-load** - Charge automatiquement au démarrage
+- 💾 **Persistance** : Vos patates, leur arsenal et leur progression sont sauvegardés localement.
+- 🔄 **Auto-load** : Tout est restauré automatiquement au lancement de l'application.
 
 ---
 
@@ -161,19 +164,20 @@ tests/
 
 ```
 src/
-├── main/                 # Process principal (backend)
-│   ├── index.ts          # Point d'entrée Electron
-│   ├── MobService.ts     # Logique métier des mobs
-│   └── ipcHandlers.ts    # Handlers IPC
-├── preload/              # Scripts de préchargement
-│   ├── index.ts          # Bridge IPC
-│   └── index.d.ts        # Types TypeScript
-└── renderer/             # Interface utilisateur (frontend)
-    ├── index.html
-    └── src/
-        ├── renderer.ts   # Logique UI
-        ├── Mob.ts        # Rendu des mobs
-        └── SoundManager.ts
+├── main/                 # Processus principal (Backend Electron)
+│   ├── MobModel.ts       # Logique métier et stats des patates
+│   ├── MobService.ts     # CRUD et gestion de la collection
+│   ├── PveService.ts     # Gestion des combats PvE
+│   └── TournamentService.ts # Logique des tournois
+├── preload/              # Pont sécurisé (Bridge IPC)
+│   └── index.ts          # Exposition des fonctions au Renderer
+└── renderer/             # Interface utilisateur (Frontend Vite/TS)
+    ├── src/
+    │   ├── combat/       # UI et Moteur de combat
+    │   ├── physics/      # Intégration Matter-js (Bocal)
+    │   ├── mob/          # Animations et comportements visuels
+    │   ├── renderer.ts   # Point d'entrée UI
+    │   └── WebApi.ts     # Wrapper pour les appels IPC
 ```
 
 ### Communication IPC
