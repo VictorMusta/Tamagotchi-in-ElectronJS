@@ -34,56 +34,65 @@
 
     <!-- Panneau d'actions -->
     <div id="action-panel">
-      <button class="action-btn" id="btn-combat" title="BASTON !">
+      <div id="action-list" class="hidden-mobile">
+        <button class="action-btn" id="btn-combat" title="BASTON !">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z" />
+          </svg>
+        </button>
+        <button class="action-btn" id="btn-tournament" title="TOURNOI">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 004.61-4.96C19.08 10.63 21 8.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.1-.84 2.1-2 2.82V7h2v1z" />
+          </svg>
+        </button>
+        <button class="action-btn" id="btn-party" title="Gestion d'équipe (PC)">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M4 6h16v12H4zM2 4c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V4zm2 16h16V4H4v16zM6 8h2v2H6V8zm0 4h2v2H6v-2zm0 4h2v2H6v-2zm4-8h8v2h-8V8zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" />
+          </svg>
+        </button>
+        <div class="action-separator"></div>
+        <button class="action-btn" id="btn-add-mob" title="Ajouter un mob">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+          </svg>
+        </button>
+        <button class="action-btn" id="btn-delete-mob" title="Supprimer le mob">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+          </svg>
+        </button>
+        <div class="action-separator"></div>
+        <button class="action-btn save-btn" id="btn-save" title="Sauvegarder">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z" />
+          </svg>
+        </button>
+        <button class="action-btn load-btn" id="btn-load" title="Charger">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
+          </svg>
+        </button>
+        <button class="action-btn" id="btn-save-biome" title="Sauvegarder Biome (Arbres)">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M10 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM4 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+          </svg>
+        </button>
+        <button class="action-btn" id="btn-theme" title="Changer de thème">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Menu Toggle for Mobile -->
+      <button class="action-btn" id="btn-menu-toggle" title="Menu">
         <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z" />
-        </svg>
-      </button>
-      <button class="action-btn" id="btn-tournament" title="TOURNOI">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 004.61-4.96C19.08 10.63 21 8.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.1-.84 2.1-2 2.82V7h2v1z" />
-        </svg>
-      </button>
-      <button class="action-btn" id="btn-party" title="Gestion d'équipe (PC)">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M4 6h16v12H4zM2 4c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V4zm2 16h16V4H4v16zM6 8h2v2H6V8zm0 4h2v2H6v-2zm0 4h2v2H6v-2zm4-8h8v2h-8V8zm0 4h8v2h-8v-2zm0 4h8v2h-8v-2z" />
-        </svg>
-      </button>
-      <div class="action-separator"></div>
-      <button class="action-btn" id="btn-add-mob" title="Ajouter un mob">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-        </svg>
-      </button>
-      <button class="action-btn" id="btn-delete-mob" title="Supprimer le mob">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
-        </svg>
-      </button>
-      <div class="action-separator"></div>
-      <button class="action-btn save-btn" id="btn-save" title="Sauvegarder">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z" />
-        </svg>
-      </button>
-      <button class="action-btn load-btn" id="btn-load" title="Charger">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
-        </svg>
-      </button>
-      <button class="action-btn" id="btn-save-biome" title="Sauvegarder Biome (Arbres)">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M10 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM4 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-        </svg>
-      </button>
-      <button class="action-btn" id="btn-theme" title="Changer de thème">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+          <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
         </svg>
       </button>
     </div>

@@ -125,7 +125,7 @@ export class MobRenderer {
     }
   }
 
-  playSoundEffect(sound: 'punch' | 'death' | 'heal' | 'revive'): void {
+  playSoundEffect(sound: 'punch' | 'death' | 'revive'): void {
     this.animation?.playSoundEffect(sound)
   }
 
