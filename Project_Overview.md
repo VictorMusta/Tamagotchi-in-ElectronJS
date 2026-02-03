@@ -8,21 +8,26 @@ This document provides a technical overview of the application, its features, ar
 
 ### 🐾 Mob Management
 - **Creation**: Generate new virtual creatures (Mobs) with unique names and default stats.
-- **Persistence**: Save and load Mobs to/from a local JSON file (`mobs-save.json`), including automatic loading on startup.
-- **Customization**: Rename Mobs via double-click and identify them with unique icons.
-- **Selection**: Interactive selection system with visual highlighting.
+- **Persistence**: Save and load Mobs to/from a local JSON file (`mobs-save.json`).
+- **Customization**: Rename Mobs and equip them with hats via the profile overlay.
+- **Evolution**: Gain XP through combat to level up, unlocking stat points, weapons, and traits.
 
-### ⚔️ Interactive Actions
-- **Damage (💥)**: Reduce Mob health; lethal damage results in Mob death.
-- **Heal (❤️)**: Restore Mob health (up to 100%).
-- **Feed (🍖)**: Reduce Mob hunger levels.
-- **Revive (⚡)**: Resurrect dead Mobs with partial health and energy.
-- **Action Modes**: Dedicated cursors and UI feedback for each interaction mode.
+### ⚔️ Combat System
+- **Real-time Arena**: Animated combat scene with HP bars, energy (ATB), and visual damage popups.
+- **PvE Survival**: Challenging encounters where defeat means **Permadeath**.
+- **Resurrection**: Dead mobs can only be revived using a **Potion de Réanimation** (5% drop chance in PvE).
+- **Memorial**: A dedicated view to track and honor mobs that died permanently.
+- **Arsenal & Mutations**: Equipment and genetic traits (max 6) that drastically affect combat logic.
+
+### 🏺 Bocal (Physics Sandbox)
+- **Matter-js Engine**: High-fidelity physics simulation for coins and items.
+- **Merging**: Merge identical coins to reach higher denominations.
+- **Atmospheric Effects**: Dynamic weather (rain, wind, snow) affecting the physics environment.
 
 ### 🎮 Visuals & Audio
-- **Animations**: Dynamic "squash & stretch" jumping animations and horizontal flipping based on movement direction.
-- **Feedback**: Color-coded stat bars (Life, Hunger, Energy) and real-time notifications.
-- **Sound System**: Spatial-aware audio triggers for all interactions (punch, heal, feed, death, revive).
+- **Dynamic Rendering**: `MobDisplay.ts` handles complex layered Rendering (Skin + Base).
+- **Advanced Animations**: Combat-specific animations (dash, hit, special moves).
+- **Audio Scape**: Centralized `SoundManager.ts` managing contextual SFX.
 
 ---
 

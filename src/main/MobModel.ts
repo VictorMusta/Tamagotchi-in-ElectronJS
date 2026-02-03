@@ -186,7 +186,7 @@ export class Mob {
   generateUpgradeChoices(): any[] {
       const choices: any[] = []
       
-      // 1. Random Stat Upgrade
+      // 1. Guaranteed Stat Upgrade
       const stats: (keyof MobStats)[] = ['force', 'vitalite', 'vitesse', 'agilite']
       const randomStat = stats[Math.floor(Math.random() * stats.length)]
       choices.push({
@@ -196,33 +196,58 @@ export class Mob {
           amount: 1
       })
 
-      // 2. Random Weapon (if lucky)
-      if (Math.random() < 0.4) { // 40% chance for weapon choice
-          const weaponKeys = Object.keys(WEAPON_REGISTRY)
-          const randomWeapon = weaponKeys[Math.floor(Math.random() * weaponKeys.length)]
-          // Don't offer if already owns it? No, having duplicates in stock is fine (repair/spare) or we can restrict.
-          // Let's restrict unique weapons for now to avoid confusion unless we implement durability.
-          if (!this.weapons.includes(randomWeapon)) {
-             choices.push({
-                type: 'weapon',
-                label: `Arme: ${randomWeapon}`,
-                name: randomWeapon,
-                description: `Ajoute ${randomWeapon} à l'arsenal.`
-             })
-          }
+      // 2. Guaranteed Weapon Choice (if available)
+      const weaponKeys = Object.keys(WEAPON_REGISTRY)
+      const availableWeapons = weaponKeys.filter(w => !this.weapons.includes(w))
+      
+      if (availableWeapons.length > 0) {
+          const randomWeapon = availableWeapons[Math.floor(Math.random() * availableWeapons.length)]
+          choices.push({
+              type: 'weapon',
+              label: `Arme: ${randomWeapon}`,
+              name: randomWeapon,
+              description: `Ajoute ${randomWeapon} à l'arsenal.`
+          })
+      } else {
+          // Fallback to another stat if no weapons left
+          const otherStats = stats.filter(s => s !== randomStat)
+          const secondStat = otherStats[Math.floor(Math.random() * otherStats.length)]
+          choices.push({
+              type: 'stat',
+              label: `+1 ${secondStat.toUpperCase()}`,
+              stat: secondStat,
+              amount: 1
+          })
       }
 
-      // 3. New Trait (if lucky and not maxed)
-      if (Math.random() < 0.3 && this.traits.length < 6) {
-          const available = POSSIBLE_TRAITS.filter(t => !this.traits.includes(t))
-          if (available.length > 0) {
-              const randomTrait = available[Math.floor(Math.random() * available.length)]
+      // 3. Guaranteed Trait Choice (if available and space left)
+      if (this.traits.length < 6) {
+          const availableTraits = POSSIBLE_TRAITS.filter(t => !this.traits.includes(t))
+          if (availableTraits.length > 0) {
+              const randomTrait = availableTraits[Math.floor(Math.random() * availableTraits.length)]
               choices.push({
                   type: 'trait',
                   label: `Mutation: ${randomTrait}`,
                   name: randomTrait,
                   description: "Nouvelle mutation génétique."
               })
+          }
+      }
+
+      // Final fill if we still don't have 3 choices (unlikely but safe)
+      while (choices.length < 3) {
+          const currentStatLabels = choices.filter(c => c.type === 'stat').map(c => c.stat)
+          const remainingStats = stats.filter(s => !currentStatLabels.includes(s))
+          if (remainingStats.length > 0) {
+              const fillStat = remainingStats[0]
+              choices.push({
+                  type: 'stat',
+                  label: `+1 ${fillStat.toUpperCase()}`,
+                  stat: fillStat,
+                  amount: 1
+              })
+          } else {
+              break; // Should never happen with 4 stats and max 3 slots
           }
       }
 

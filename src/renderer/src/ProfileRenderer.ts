@@ -66,9 +66,9 @@ export class ProfileRenderer {
             <div style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">Arsenal (${mob.weapons.length})</div>
             <div class="arsenal-grid" style="display: flex; gap: 8px; flex-wrap: wrap;">
                 ${mob.weapons.map(w => {
-                    const def = WEAPON_REGISTRY[w]
-                    const icon = def?.icon || 'toothpick.png'
-                    return `
+      const def = WEAPON_REGISTRY[w]
+      const icon = def?.icon || 'toothpick.png'
+      return `
                     <div class="weapon-item" data-weapon="${w}" style="
                         width: 48px; height: 48px; 
                         background: rgba(255,255,255,0.05); 
@@ -79,10 +79,10 @@ export class ProfileRenderer {
                         position: relative;
                         transition: all 0.2s;
                     ">
-                        <img src="./assets/weapons/${icon}" style="width: 32px; height: 32px; image-rendering: pixelated; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));" />
+                        <img src="assets/weapons/${icon}" style="width: 32px; height: 32px; image-rendering: pixelated; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));" />
                     </div>
                     `
-                }).join('')}
+    }).join('')}
             </div>
           </div>
           ` : ''}
@@ -91,8 +91,8 @@ export class ProfileRenderer {
             <h3>Mutations</h3>
             <div class="traits-list">
               ${mob.traits.map(trait => {
-                return `<span class="trait-tag" data-trait="${trait}">${trait}</span>`
-                }).join('')}
+      return `<span class="trait-tag" data-trait="${trait}">${trait}</span>`
+    }).join('')}
             </div>
           </div>
 
@@ -155,22 +155,22 @@ export class ProfileRenderer {
 
     // Helper for tooltip positioning
     const positionTooltip = (target: HTMLElement, content: string) => {
-         tooltipEl.innerHTML = content
-         tooltipEl.style.display = 'block'
-         
-         const rect = target.getBoundingClientRect()
-         const tooltipWidth = tooltipEl.offsetWidth
-         const tooltipHeight = tooltipEl.offsetHeight
+      tooltipEl.innerHTML = content
+      tooltipEl.style.display = 'block'
 
-         let left = rect.left + (rect.width / 2) - (tooltipWidth / 2)
-         let top = rect.top - tooltipHeight - 10
+      const rect = target.getBoundingClientRect()
+      const tooltipWidth = tooltipEl.offsetWidth
+      const tooltipHeight = tooltipEl.offsetHeight
 
-         if (left < 10) left = 10
-         if (left + tooltipWidth > window.innerWidth - 10) left = window.innerWidth - tooltipWidth - 10
-         if (top < 10) top = rect.bottom + 10
+      let left = rect.left + (rect.width / 2) - (tooltipWidth / 2)
+      let top = rect.top - tooltipHeight - 10
 
-         tooltipEl.style.left = `${left}px`
-         tooltipEl.style.top = `${top}px`
+      if (left < 10) left = 10
+      if (left + tooltipWidth > window.innerWidth - 10) left = window.innerWidth - tooltipWidth - 10
+      if (top < 10) top = rect.bottom + 10
+
+      tooltipEl.style.left = `${left}px`
+      tooltipEl.style.top = `${top}px`
     }
 
     // Trait Tooltip Events
@@ -197,13 +197,13 @@ export class ProfileRenderer {
 
     // Weapon Tooltip Events
     this.overlay.querySelectorAll('.weapon-item').forEach(item => {
-        item.addEventListener('mouseenter', (e) => {
-            const target = e.target as HTMLElement
-            const weaponName = target.dataset.weapon
-            const def = weaponName ? WEAPON_REGISTRY[weaponName] : null
-            
-            if (def) {
-                const html = `
+      item.addEventListener('mouseenter', (e) => {
+        const target = e.target as HTMLElement
+        const weaponName = target.dataset.weapon
+        const def = weaponName ? WEAPON_REGISTRY[weaponName] : null
+
+        if (def) {
+          const html = `
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:5px;">
                         <img src="./assets/weapons/${def.icon}" style="width:24px; height:24px;" />
                         <h4 style="margin:0;">${def.name}</h4>
@@ -222,13 +222,13 @@ export class ProfileRenderer {
                     </div>
                     ` : ''}
                 `
-                positionTooltip(target, html)
-            }
-        })
-        
-        item.addEventListener('mouseleave', () => {
-             tooltipEl.style.display = 'none'
-        })
+          positionTooltip(target, html)
+        }
+      })
+
+      item.addEventListener('mouseleave', () => {
+        tooltipEl.style.display = 'none'
+      })
     })
 
     // Renommage
@@ -294,25 +294,25 @@ export class ProfileRenderer {
   private getStatBarHtml(value: number, baseColor: string): string {
     const MAX_PER_BAR = 30
     const TIERS = [
-        baseColor,
-        '#00d2d3', // Cyan
-        '#a29bfe', // Purple
-        '#ff9f43', // Orange
-        '#ff7675'  // Salmon
+      baseColor,
+      '#00d2d3', // Cyan
+      '#a29bfe', // Purple
+      '#ff9f43', // Orange
+      '#ff7675'  // Salmon
     ]
-    
+
     // 0-30 -> Tier 0
     let tier = Math.floor((value - 0.1) / MAX_PER_BAR)
     if (tier < 0) tier = 0
-    
+
     // Colors
     const fgColor = TIERS[tier] || TIERS[TIERS.length - 1]
-    const bgColor = tier > 0 ? TIERS[tier - 1] : 'rgba(255,255,255,0.1)' 
-    
+    const bgColor = tier > 0 ? TIERS[tier - 1] : 'rgba(255,255,255,0.1)'
+
     // Width
     const remainder = value - (tier * MAX_PER_BAR)
     const widthPct = Math.min(100, (remainder / MAX_PER_BAR) * 100)
-    
+
     return `<div class="stat-bar" style="background: ${bgColor}; box-shadow: inset 0 0 5px rgba(0,0,0,0.5);">
               <div class="stat-fill" style="width: ${widthPct}%; background: ${fgColor}; box-shadow: 0 0 10px ${fgColor};"></div>
             </div>`

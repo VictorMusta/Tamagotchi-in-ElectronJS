@@ -19,7 +19,7 @@ export class MobDisplay {
         // Create inner container
         this.mobInner = document.createElement('div')
         this.mobInner.className = 'mob-inner'
-        
+
         // Create Name Element
         this.nameElement = document.createElement('div')
         this.nameElement.className = 'mob-name'
@@ -40,8 +40,8 @@ export class MobDisplay {
         this.element.appendChild(this.nameElement)
 
         this.update(data)
-        
-         // Tooltip Listeners (On the mob visual, not the name necessarily)
+
+        // Tooltip Listeners (On the mob visual, not the name necessarily)
         this.mobInner.addEventListener('mouseenter', () => this.showTooltip(data))
         this.mobInner.addEventListener('mouseleave', () => this.hideTooltip())
     }
@@ -50,8 +50,8 @@ export class MobDisplay {
      * Initializes the display in the DOM and sets up callbacks
      */
     render(
-        container: HTMLElement, 
-        onSelect: () => void, 
+        container: HTMLElement,
+        onSelect: () => void,
         onAction: (nameEl: HTMLElement) => void
     ): HTMLElement {
         // Append to container
@@ -72,13 +72,13 @@ export class MobDisplay {
         })
 
         this.nameElement.addEventListener('click', (e) => {
-             e.preventDefault()
-             e.stopPropagation()
-             onAction(this.nameElement)
+            e.preventDefault()
+            e.stopPropagation()
+            onAction(this.nameElement)
         })
 
         // Mobile Tap-Hold could also trigger action, but let's stick to name click for now + double click
-        
+
         return this.element
     }
 
@@ -99,7 +99,7 @@ export class MobDisplay {
                 right: -5px;
                 width: 24px;
                 height: 24px;
-                background-image: url('./assets/weapons/${WEAPON_REGISTRY[displayedWeapon]?.icon || 'toothpick.png'}');
+                background-image: url('assets/weapons/${WEAPON_REGISTRY[displayedWeapon]?.icon || 'toothpick.png'}');
                 background-size: cover;
                 image-rendering: pixelated;
                 z-index: 5;
@@ -107,7 +107,7 @@ export class MobDisplay {
             ` : ''}
             ${data.status === 'mort' ? '<div class="dead-marker">💀</div>' : ''}
         `
-        
+
         this.nameElement.textContent = data.nom
 
         if (data.status === 'mort') {
@@ -134,19 +134,19 @@ export class MobDisplay {
         this.tooltip.style.pointerEvents = 'none'
         // Ensure high z-index
         this.tooltip.style.zIndex = '99999'
-        
+
         let weaponsHtml = ''
         const weapons = Array.isArray(data.weapons) ? data.weapons : []
-        
+
         if (weapons.length > 0) {
             weaponsHtml = `<div style="display:flex; gap:4px; margin-top:5px; flex-wrap:wrap;">`
             weapons.forEach(w => {
-                 try {
+                try {
                     const icon = (WEAPON_REGISTRY && WEAPON_REGISTRY[w]?.icon) || 'toothpick.png'
-                    weaponsHtml += `<img src="./assets/weapons/${icon}" style="width:20px; height:20px; background:rgba(255,255,255,0.1); border-radius:3px; padding:2px;" title="${w}" />`
-                 } catch (e) {
-                     console.warn('Error loading weapon icon for', w, e)
-                 }
+                    weaponsHtml += `<img src="assets/weapons/${icon}" style="width:20px; height:20px; background:rgba(255,255,255,0.1); border-radius:3px; padding:2px;" title="${w}" />`
+                } catch (e) {
+                    console.warn('Error loading weapon icon for', w, e)
+                }
             })
             weaponsHtml += `</div>`
         }
@@ -176,7 +176,7 @@ export class MobDisplay {
 
         document.body.appendChild(this.tooltip)
         this.updateTooltipPosition()
-        
+
         this.isTrackingTooltip = true
         this.trackTooltip()
     }
@@ -201,15 +201,15 @@ export class MobDisplay {
 
     private updateTooltipPosition(): void {
         if (!this.tooltip || !this.element) return
-        
+
         const rect = this.element.getBoundingClientRect()
         const tooltipWidth = this.tooltip.offsetWidth || 200
-        
+
         // Center above mob
         let left = rect.left + (rect.width / 2) - (tooltipWidth / 2)
         // Position above the mob visual (not including name)
         let top = rect.top - this.tooltip.offsetHeight - 10
-        
+
         // Bounds
         if (left < 10) left = 10
         if (left + tooltipWidth > window.innerWidth - 10) left = window.innerWidth - tooltipWidth - 10

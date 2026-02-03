@@ -7,10 +7,10 @@ Ce document liste toutes les fonctionnalités du jeu, les interactions possibles
 ## 📋 Table des matières
 
 1. [Gestion des Mobs](#gestion-des-mobs)
-2. [Actions sur les Mobs](#actions-sur-les-mobs)
-3. [Système de Mode d'Action](#système-de-mode-daction)
+2. [Système de Combat (PvP & Tournois)](#système-de-combat-pvp--tournois)
+3. [PvE & Mode Survie](#pve--mode-survie)
 4. [Mouvement et Animation](#mouvement-et-animation)
-5. [Système de Sons](#système-de-sons)
+5. [Le Bocal (Mode Physique)](#le-bocal-mode-physique)
 6. [Sauvegarde et Chargement](#sauvegarde-et-chargement)
 7. [Interface Utilisateur](#interface-utilisateur)
 
@@ -58,68 +58,35 @@ Ce document liste toutes les fonctionnalités du jeu, les interactions possibles
 
 ---
 
-## ⚔️ Actions sur les Mobs
+## ⚔️ Système de Combat (PvP & Tournois)
 
-### Attaquer (Damage)
-| Élément | Description |
-|---------|-------------|
-| **Bouton** | 💥 (rouge) |
-| **Effet** | Inflige **20 points de dégâts** au mob cliqué |
-| **Test - Vie > 20** | La vie diminue de 20 |
-| **Test - Vie ≤ 20** | La vie tombe à 0, le mob meurt |
-| **Test - Mob mort** | Le mob devient grisé, arrête de bouger |
+### 🥊 Duel (BASTON)
+- **Déclencheur** : Bouton `BASTON !` dans le Hub.
+- **Principe** : Combat au tour par tour (système ATB) entre deux patates de votre équipe.
+- **Armes** : Chaque arme possède des stats propres (Dégâts, Block, Stun, Counter).
+- **Victoire** : Gain de 50 XP. Les deux patates sont soignées après le duel (Safe Zone).
 
-### Soigner (Heal)
-| Élément | Description |
-|---------|-------------|
-| **Bouton** | ❤️ (rose) |
-| **Effet** | Restaure **20 points de vie** au mob cliqué |
-| **Maximum** | 100 PV |
-| **Test - Mob vivant** | La vie augmente de 20 (max 100) |
-| **Test - Mob mort** | Aucun effet (ne peut pas soigner un mort) |
-
-### Nourrir (Feed)
-| Élément | Description |
-|---------|-------------|
-| **Bouton** | 🍖 (orange) |
-| **Effet** | Diminue la **faim de 20 points** |
-| **Minimum** | 0 |
-| **Test - Faim > 0** | La faim diminue de 20 (min 0) |
-| **Test - Mob mort** | Aucun effet |
-
-### Réanimer (Revive)
-| Élément | Description |
-|---------|-------------|
-| **Bouton** | ⚡ (bleu) |
-| **Effet** | Ressuscite le mob avec des stats réduites |
-| **Stats après réanimation** | Vie: 50, Énergie: 50, Faim: 50 |
-| **Test - Mob mort** | Le mob revient à la vie et recommence à sauter |
-| **Test - Mob vivant** | Aucun effet |
+### 🏆 Tournois
+- **Condition** : Minimum 8 patates dans l'équipe.
+- **Déroulement** : Tableau de tournoi automatique.
+- **Progression** : Gagnez des badges et des skins (ex: Couronne) pour le grand gagnant.
 
 ---
 
-## 🎯 Système de Mode d'Action
+## 💀 PvE & Mode Survie
 
-### Activation d'un mode
-| Interaction | Effet |
-|-------------|-------|
-| Cliquer sur un bouton d'action | Active le mode correspondant |
-| Re-cliquer sur le même bouton | Désactive le mode |
-| Appuyer sur `Échap` | Désactive le mode actif |
+### ⚔️ Combats Sauvages
+- **Déclencheur** : Bouton `Exploration PvE` (Cible).
+- **Difficulté** : Ennemis générés avec des niveaux progressifs.
+- **Récompenses** : XP et 5% de chance de trouver une **Potion de Réanimation**.
 
-### Curseurs personnalisés
-| Mode | Curseur |
-|------|---------|
-| Damage | ❌ Croix rouge |
-| Heal | ❤️ Cœur rose |
-| Feed | 🍔 Burger orange |
-| Revive | ⚡ Éclair bleu |
+### ⚠️ Permadeath (Mort Permanente)
+- **Défaite** : Si votre patate tombe à 0 PV en PvE, elle est marquée comme morte.
+- **Mémorial** : Une patate morte en PvE rejoint le mémorial et quitte définitivement l'équipe active.
 
-### Effets visuels
-| État | Effet |
-|------|-------|
-| Bouton actif | Agrandi avec contour blanc lumineux |
-| Survol mob en mode actif | Lueur colorée selon le mode |
+### 🧪 Résurrection (Potions)
+- **Action** : En cas de défaite, si vous possédez une **Potion de Réanimation**, vous pouvez l'utiliser pour annuler la mort et reprendre le combat à 100% PV.
+- **Stock** : Les potions ne peuvent être obtenues qu'en gagnant des combats PvE.
 
 ---
 
@@ -214,8 +181,6 @@ Pour personnaliser les sons, remplacez les fichiers `placeholder_*.mp3` par vos 
 
 ---
 
-## 🖥️ Interface Utilisateur
-
 ### Panneau d'actions
 | Position | Description |
 |----------|-------------|
@@ -226,13 +191,13 @@ Pour personnaliser les sons, remplacez les fichiers `placeholder_*.mp3` par vos 
 | Bouton | Couleur | Fonction |
 |--------|---------|----------|
 | ➕ | Cyan | Ajouter un mob |
-| 🗑️ | Gris/Rouge | Supprimer un mob mort |
-| 💥 | Rouge | Mode attaque |
-| ❤️ | Rose | Mode soin |
-| 🍔 | Orange | Mode nourrir |
-| ⚡ | Bleu | Mode réanimer |
-| 💾 | Vert | Sauvegarder |
-| 📁 | Violet | Charger |
+| 🗑️ | Gris/Rouge | Supprimer un mob |
+| 🥊 | Rouge | Mode BASTON (PvP Local) |
+| 🎯 | Bleu | Mode PvE (Survie) |
+| 🏺 | Orange | Accéder au Bocal |
+| 🏛️ | Gris | Mémorial |
+| 💾 | Vert | Sauvegarder les données |
+| 📁 | Violet | Charger la sauvegarde |
 
 ### Tooltip du mob
 | Élément | Description |
@@ -272,11 +237,22 @@ Pour personnaliser les sons, remplacez les fichiers `placeholder_*.mp3` par vos 
 ### Structure des données d'un Mob
 ```typescript
 interface MobData {
-  nom: string        // Nom unique du mob
-  imageUrl: string   // URL de l'image
-  vie: number        // 0-100
-  energie: number    // 0-100
-  faim: number       // 0-100
+  id: string
+  nom: string
+  imageUrl: string
+  vie: number
+  stats: {
+    force: number
+    vitalite: number
+    vitesse: number
+    agilite: number
+  }
+  level: number
+  experience: number
+  statPoints: number
+  traits: string[]
+  skin: { hat: string }
+  weapons: string[]
   status: 'vivant' | 'mort'
 }
 ```
@@ -294,5 +270,5 @@ interface MobData {
 
 ---
 
-*Dernière mise à jour : Décembre 2025*
+*Dernière mise à jour : Février 2026*
 
