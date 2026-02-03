@@ -46,9 +46,6 @@ interface CustomAPI {
   // Utilitaires
   setIgnoreMouseEvents?: (ignore: boolean) => void
 
-  // Biome
-  saveBiome: (data: any[]) => Promise<{ success: boolean; path?: string; error?: string }>
-  loadBiome: () => Promise<{ success: boolean; data?: any[]; error?: string }>
   minimizeWindow: () => void
   closeWindow: () => void
 

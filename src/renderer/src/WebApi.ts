@@ -290,12 +290,6 @@ export class WebApi {
 
     async resetTournament() { localStorage.removeItem('tournament'); return { success: true } }
     async setIgnoreMouseEvents() { /* No-op */ }
-    async saveBiome(data: any) { localStorage.setItem('biome', JSON.stringify(data)); return { success: true } }
-    async loadBiome() {
-        const data = localStorage.getItem('biome')
-        return { success: true, data: data ? JSON.parse(data) : null }
-    }
-
     async getTheme() {
         const theme = localStorage.getItem('theme') || 'forest'
         return { success: true, theme }

@@ -25,7 +25,7 @@ export class CombatUI {
         }
 
         if (result.mobs.length === 0) {
-            console.warn('[CombatUI] No mobs in the biome!')
+            console.warn('[CombatUI] No mobs available for selection!')
         }
 
         this.selectedFighters = []

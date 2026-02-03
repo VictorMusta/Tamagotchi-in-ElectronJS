@@ -24,7 +24,7 @@ export class WebPlatformAPI implements PlatformAPI {
         return WebMobManager.renameMob(id, newName)
     }
 
-    async updateMobSkin(id: string, type: 'hat' | 'bottom', value: string): Promise<MobActionResult> {
+    async updateMobSkin(id: string, type: 'hat', value: string): Promise<MobActionResult> {
         return WebMobManager.updateMobSkin(id, type, value)
     }
 
@@ -87,14 +87,6 @@ export class WebPlatformAPI implements PlatformAPI {
 
     async getTournamentHistory(): Promise<TournamentHistory> {
         return WebMobManager.getTournamentHistory()
-    }
-
-    async saveBiome(data: any[]): Promise<SaveLoadResult> {
-        return WebMobManager.saveBiome(data)
-    }
-
-    async loadBiome(): Promise<{ success: boolean; data?: any[] }> {
-        return WebMobManager.loadBiome()
     }
 
     async getTheme(): Promise<{ success: boolean; theme: string }> {

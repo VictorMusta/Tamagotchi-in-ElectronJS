@@ -122,75 +122,6 @@ body.theme-cozy #parallax-background {
   pointer-events: auto;
 }
 
-/* Biome Styles */
-#biome-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 600px;
-  /* Factor 0.6 (Midground) */
-  transform: translate(calc(var(--parallax-x) * 0.6), calc(var(--parallax-y) * 0.6));
-  transition: transform 0.1s linear; /* Smooth mouse movement */
-
-  z-index: 5;
-}
-
-.biome-object {
-  position: absolute;
-  bottom: 0px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-
-}
-
-.tree {
-  font-size: 40px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-  transform-origin: bottom center;
-  transition: font-size 1s ease-in-out, transform 0.3s ease;
-}
-
-.tree.level-0 {
-  font-size: 20px;
-  opacity: 0.6;
-}
-
-.tree.level-1 {
-  font-size: 50px;
-}
-
-.tree.level-2 {
-  font-size: 100px;
-}
-
-.tree.level-3 {
-  font-size: 200px;
-}
-
-.flower {
-  font-size: 24px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-}
-
-@keyframes grow {
-  from {
-    transform: scale(0.1);
-    opacity: 0;
-  }
-
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.biome-object.new {
-  animation: grow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
 /* Mob Styles */
 #mob-container {
   position: fixed;
@@ -203,7 +134,7 @@ body.theme-cozy #parallax-background {
   pointer-events: none;
   /* Let clicks pass through empty space */
   z-index: 10;
-  /* Factor 0.6 (Midground - same as Biome) */
+  /* Factor 0.6 (Midground) */
   transform: translate(calc(var(--parallax-x) * 0.6), calc(var(--parallax-y) * 0.6));
   transition: transform 0.1s linear; 
 }

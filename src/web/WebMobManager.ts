@@ -1,7 +1,6 @@
 import { MobData, MobActionResult, MobListResult, SaveLoadResult, MobStatus, MobStats, MobSkin, CombatStats, TournamentResult, TournamentData, TournamentHistory } from '../shared/types'
 
 const STORAGE_KEY = 'tamagotchi_mobs_save'
-const BIOME_STORAGE_KEY = 'tamagotchi_biome_save'
 const TOURNAMENT_STORAGE_KEY = 'tamagotchi_tournament_save'
 const TOURNAMENT_HISTORY_KEY = 'tamagotchi_tournament_history'
 
@@ -491,19 +490,6 @@ class WebMobManagerClass {
         } catch (e) { return { success: false, error: String(e) } }
     }
 
-    saveBiome(data: any[]): SaveLoadResult {
-        try {
-            localStorage.setItem(BIOME_STORAGE_KEY, JSON.stringify(data))
-            return { success: true, path: 'localStorage/biome' }
-        } catch (e) { return { success: false, error: String(e) } }
-    }
-
-    loadBiome(): { success: boolean, data?: any[] } {
-        try {
-            const data = localStorage.getItem(BIOME_STORAGE_KEY)
-            return { success: true, data: data ? JSON.parse(data) : undefined }
-        } catch (e) { return { success: false } }
-    }
 }
 
 export const WebMobManager = new WebMobManagerClass()

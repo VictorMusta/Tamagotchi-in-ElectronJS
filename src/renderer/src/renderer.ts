@@ -1,4 +1,3 @@
-import { BiomeRenderer } from './BiomeRenderer'
 import { ProfileRenderer } from './ProfileRenderer'
 import { CombatUI } from './combat/CombatUI'
 import { MobData } from '../../shared/types'
@@ -51,9 +50,6 @@ function toggleTheme(): void {
 
 // Initialisation
 loadTheme()
-
-// Initialisation du biome
-const biomeRenderer = new BiomeRenderer('biome-container')
 
 // Initialisation du renderer de profil
 const profileRenderer = new ProfileRenderer()
@@ -127,7 +123,6 @@ async function init(): Promise<void> {
     // 2. Data/Content Setup (Async)
     await preloadSounds().catch(e => console.error('[Renderer] Sound preload failed:', e))
     await initMobs().catch(e => console.error('[Renderer] Mob init failed:', e))
-    await initBiome().catch(e => console.error('[Renderer] Biome init failed:', e))
 
     // 3. System Setup
     console.log('[Renderer] Initialization finished successfully')
@@ -311,44 +306,7 @@ function setupSaveLoadButtons(): void {
     loadMobs()
   })
 
-  // Bouton Sauvegarder Biome
-  const btnSaveBiome = document.getElementById('btn-save-biome')
-  btnSaveBiome?.addEventListener('click', () => {
-    saveBiome()
-  })
-
   document.getElementById('btn-theme')?.addEventListener('click', toggleTheme)
-}
-
-async function initBiome(): Promise<void> {
-  // Force clear biome objects
-  biomeRenderer.setObjects([])
-  
-  // const result = await window.api.loadBiome()
-  // if (result.success && result.data) {
-  //   biomeRenderer.setObjects(result.data)
-  // } else {
-    // Biome par défaut s'il n'y a rien
-    // biomeRenderer.addObject('tree', 200)
-    // biomeRenderer.addObject('flower', 400)
-    // biomeRenderer.addObject('tree', 600)
-
-
-  // Interval de croissance (Zen Garden style)
-  // Interval de croissance (Zen Garden style) disable
-  // setInterval(() => {
-  //   biomeRenderer.growTrees()
-  // }, 30000) // Toutes les 30 secondes pour la démo (on pourrait faire plus long)
-}
-
-async function saveBiome(): Promise<void> {
-  const data = biomeRenderer.getObjects()
-  const result = await window.api.saveBiome(data)
-  if (result.success) {
-    showNotification('Biome sauvegardé !', 'success')
-  } else {
-    showNotification('Erreur sauvegarde biome', 'error')
-  }
 }
 
 /**
