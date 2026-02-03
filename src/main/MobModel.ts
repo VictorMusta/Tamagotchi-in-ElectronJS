@@ -7,7 +7,6 @@ export const POSSIBLE_TRAITS = [
   'Peau de Cuir',
   'Contre-attaque',
   'Appel de l\'Astico-Roi',
-  'Main de Dentelle',
   'Berzerk'
 ]
 
@@ -94,7 +93,7 @@ export class Mob {
     }
 
     // Recalcul des PV Max en fonction de la vitalité
-    const maxHP = 100 + (this.stats.vitalite * 5)
+    const maxHP = 100 + (this.stats.vitalite * 10)
 
     // Always full health in Hub
     this.vie = maxHP
@@ -113,68 +112,68 @@ export class Mob {
 
     // Squad logic
     this.inSquad = inSquad
-    
+
     // Weapon Stock
     this.weapons = weapons || []
   }
 
   generateRandomSkin(): MobSkin {
-      const HATS = ['none', 'crown', 'cap', 'wizard']
-      
-      return {
-          hat: HATS[Math.floor(Math.random() * HATS.length)]
-      }
+    const HATS = ['none', 'crown', 'cap', 'wizard']
+
+    return {
+      hat: HATS[Math.floor(Math.random() * HATS.length)]
+    }
   }
 
   generateRandomTraits(): string[] {
     const traits: string[] = []
     const available = [...POSSIBLE_TRAITS]
-    
+
     // 3 traits max initially
-    for(let i=0; i<3; i++) {
-        if (Math.random() < 0.3 && available.length > 0) {
-            const index = Math.floor(Math.random() * available.length)
-            traits.push(available[index])
-            available.splice(index, 1) // Avoid duplicates
-        }
+    for (let i = 0; i < 3; i++) {
+      if (Math.random() < 0.3 && available.length > 0) {
+        const index = Math.floor(Math.random() * available.length)
+        traits.push(available[index])
+        available.splice(index, 1) // Avoid duplicates
+      }
     }
     return traits
   }
 
   rename(newName: string): void {
-      this.nom = newName
+    this.nom = newName
   }
 
   setSkin(type: 'hat', value: string): void {
-      if (type === 'hat') {
-          this.skin.hat = value
-      }
+    if (type === 'hat') {
+      this.skin.hat = value
+    }
   }
 
   getMaxHP(): number {
-      return 100 + (this.stats.vitalite * 5)
+    return 100 + (this.stats.vitalite * 5)
   }
 
   updateStatus(): void {
-      if (this.vie <= 0) {
-          this.vie = 0
-          this.status = 'mort'
-      } else {
-          this.status = 'vivant'
-      }
+    if (this.vie <= 0) {
+      this.vie = 0
+      this.status = 'mort'
+    } else {
+      this.status = 'vivant'
+    }
   }
 
   gainExperience(amount: number): void {
-      this.experience += amount
-      // Level Up Logic (Simple: every 100 * level XP)
-      const threshold = this.level * 100
-      while (this.experience >= threshold) {
-          this.experience -= threshold
-          this.level++
-          this.statPoints++ // Gain 1 stat point per level
-          console.log(`[Mob] ${this.nom} Level Up! Now level ${this.level}`)
-          // Threshold increases
-      }
+    this.experience += amount
+    // Level Up Logic (Simple: every 100 * level XP)
+    const threshold = this.level * 100
+    while (this.experience >= threshold) {
+      this.experience -= threshold
+      this.level++
+      this.statPoints++ // Gain 1 stat point per level
+      console.log(`[Mob] ${this.nom} Level Up! Now level ${this.level}`)
+      // Threshold increases
+    }
   }
 
   upgradeStat(stat: keyof MobStats, amount: number = 1): void {
@@ -184,74 +183,74 @@ export class Mob {
   }
 
   generateUpgradeChoices(): any[] {
-      const choices: any[] = []
-      
-      // 1. Guaranteed Stat Upgrade
-      const stats: (keyof MobStats)[] = ['force', 'vitalite', 'vitesse', 'agilite']
-      const randomStat = stats[Math.floor(Math.random() * stats.length)]
+    const choices: any[] = []
+
+    // 1. Guaranteed Stat Upgrade
+    const stats: (keyof MobStats)[] = ['force', 'vitalite', 'vitesse', 'agilite']
+    const randomStat = stats[Math.floor(Math.random() * stats.length)]
+    choices.push({
+      type: 'stat',
+      label: `+1 ${randomStat.toUpperCase()}`,
+      stat: randomStat,
+      amount: 1
+    })
+
+    // 2. Guaranteed Weapon Choice (if available)
+    const weaponKeys = Object.keys(WEAPON_REGISTRY)
+    const availableWeapons = weaponKeys.filter(w => !this.weapons.includes(w))
+
+    if (availableWeapons.length > 0) {
+      const randomWeapon = availableWeapons[Math.floor(Math.random() * availableWeapons.length)]
       choices.push({
-          type: 'stat',
-          label: `+1 ${randomStat.toUpperCase()}`,
-          stat: randomStat,
-          amount: 1
+        type: 'weapon',
+        label: `Arme: ${randomWeapon}`,
+        name: randomWeapon,
+        description: `Ajoute ${randomWeapon} à l'arsenal.`
       })
+    } else {
+      // Fallback to another stat if no weapons left
+      const otherStats = stats.filter(s => s !== randomStat)
+      const secondStat = otherStats[Math.floor(Math.random() * otherStats.length)]
+      choices.push({
+        type: 'stat',
+        label: `+1 ${secondStat.toUpperCase()}`,
+        stat: secondStat,
+        amount: 1
+      })
+    }
 
-      // 2. Guaranteed Weapon Choice (if available)
-      const weaponKeys = Object.keys(WEAPON_REGISTRY)
-      const availableWeapons = weaponKeys.filter(w => !this.weapons.includes(w))
-      
-      if (availableWeapons.length > 0) {
-          const randomWeapon = availableWeapons[Math.floor(Math.random() * availableWeapons.length)]
-          choices.push({
-              type: 'weapon',
-              label: `Arme: ${randomWeapon}`,
-              name: randomWeapon,
-              description: `Ajoute ${randomWeapon} à l'arsenal.`
-          })
+    // 3. Guaranteed Trait Choice (if available and space left)
+    if (this.traits.length < 6) {
+      const availableTraits = POSSIBLE_TRAITS.filter(t => !this.traits.includes(t))
+      if (availableTraits.length > 0) {
+        const randomTrait = availableTraits[Math.floor(Math.random() * availableTraits.length)]
+        choices.push({
+          type: 'trait',
+          label: `Mutation: ${randomTrait}`,
+          name: randomTrait,
+          description: "Nouvelle mutation génétique."
+        })
+      }
+    }
+
+    // Final fill if we still don't have 3 choices (unlikely but safe)
+    while (choices.length < 3) {
+      const currentStatLabels = choices.filter(c => c.type === 'stat').map(c => c.stat)
+      const remainingStats = stats.filter(s => !currentStatLabels.includes(s))
+      if (remainingStats.length > 0) {
+        const fillStat = remainingStats[0]
+        choices.push({
+          type: 'stat',
+          label: `+1 ${fillStat.toUpperCase()}`,
+          stat: fillStat,
+          amount: 1
+        })
       } else {
-          // Fallback to another stat if no weapons left
-          const otherStats = stats.filter(s => s !== randomStat)
-          const secondStat = otherStats[Math.floor(Math.random() * otherStats.length)]
-          choices.push({
-              type: 'stat',
-              label: `+1 ${secondStat.toUpperCase()}`,
-              stat: secondStat,
-              amount: 1
-          })
+        break; // Should never happen with 4 stats and max 3 slots
       }
+    }
 
-      // 3. Guaranteed Trait Choice (if available and space left)
-      if (this.traits.length < 6) {
-          const availableTraits = POSSIBLE_TRAITS.filter(t => !this.traits.includes(t))
-          if (availableTraits.length > 0) {
-              const randomTrait = availableTraits[Math.floor(Math.random() * availableTraits.length)]
-              choices.push({
-                  type: 'trait',
-                  label: `Mutation: ${randomTrait}`,
-                  name: randomTrait,
-                  description: "Nouvelle mutation génétique."
-              })
-          }
-      }
-
-      // Final fill if we still don't have 3 choices (unlikely but safe)
-      while (choices.length < 3) {
-          const currentStatLabels = choices.filter(c => c.type === 'stat').map(c => c.stat)
-          const remainingStats = stats.filter(s => !currentStatLabels.includes(s))
-          if (remainingStats.length > 0) {
-              const fillStat = remainingStats[0]
-              choices.push({
-                  type: 'stat',
-                  label: `+1 ${fillStat.toUpperCase()}`,
-                  stat: fillStat,
-                  amount: 1
-              })
-          } else {
-              break; // Should never happen with 4 stats and max 3 slots
-          }
-      }
-
-      return choices
+    return choices
   }
 
   /**
@@ -264,12 +263,12 @@ export class Mob {
     } else if (choice.type === 'weapon') {
       const weaponDef = WEAPON_REGISTRY[choice.name]
       if (weaponDef) {
-          // Add to stock instead of replacing
-          this.weapons.push(choice.name)
-          if (weaponDef.statBonus) {
-              this.upgradeStat(weaponDef.statBonus.stat as keyof MobStats, weaponDef.statBonus.amount)
-          }
-          console.log(`[Mob] ${this.nom} a gagné une nouvelle arme: ${choice.name}`)
+        // Add to stock instead of replacing
+        this.weapons.push(choice.name)
+        if (weaponDef.statBonus) {
+          this.upgradeStat(weaponDef.statBonus.stat as keyof MobStats, weaponDef.statBonus.amount)
+        }
+        console.log(`[Mob] ${this.nom} a gagné une nouvelle arme: ${choice.name}`)
       }
     } else if (choice.type === 'trait') {
       if (!this.traits.includes(choice.name)) {
@@ -309,7 +308,7 @@ export class Mob {
     // Legacy migration: if 'weapon' exists but 'weapons' doesn't, migrate it.
     let migratedWeapons = data.weapons || []
     if (data.weapon && migratedWeapons.length === 0) {
-        migratedWeapons.push(data.weapon)
+      migratedWeapons.push(data.weapon)
     }
 
     const mob = new Mob(
@@ -332,10 +331,10 @@ export class Mob {
     mob.vie = mob.getMaxHP()
     mob.energie = 100
     mob.status = 'vivant'
-    
+
     // Sanitize Traits (deduplicate)
     mob.traits = Array.from(new Set(mob.traits))
-    
+
     return mob
   }
 }

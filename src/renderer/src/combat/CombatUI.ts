@@ -123,8 +123,8 @@ export class CombatUI {
         this.currentFighter2 = f2
 
         // Calculate Max HP for each fighter
-        const f1MaxHP = 100 + ((f1.stats?.vitalite || 0) * 5)
-        const f2MaxHP = 100 + ((f2.stats?.vitalite || 0) * 5)
+        const f1MaxHP = 100 + ((f1.stats?.vitalite || 0) * 10)
+        const f2MaxHP = 100 + ((f2.stats?.vitalite || 0) * 10)
 
         // Calculate initial HP percentages
         const f1HpPercent = (f1.vie / f1MaxHP) * 100
