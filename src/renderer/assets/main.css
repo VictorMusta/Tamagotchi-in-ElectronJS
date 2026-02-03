@@ -75,29 +75,32 @@ body {
   color: white;
   user-select: none;
   font-family: var(--font-main);
-  touch-action: none; /* Crucial for dragging vs scrolling */
+  touch-action: none;
+  /* Crucial for dragging vs scrolling */
   overflow: hidden;
 }
 
 #parallax-background {
-    position: fixed;
-    top: -15%;
-    left: -15%;
-    width: 130%;
-    height: 130%;
-    z-index: -10;
-    pointer-events: none;
-    
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    /* Factor 0.2 (Deepest - subtle) */
-    transform: translate(calc(var(--parallax-x) * 0.2), calc(var(--parallax-y) * 0.2)); 
+  position: fixed;
+  top: -15%;
+  left: -15%;
+  width: 130%;
+  height: 130%;
+  z-index: -10;
+  pointer-events: none;
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Factor 0.2 (Deepest - subtle) */
+  transform: translate(calc(var(--parallax-x) * 0.2), calc(var(--parallax-y) * 0.2));
 }
 
 /* Allow scrolling in modals */
-.selection-list, .party-list, .history-section {
-    touch-action: pan-y !important;
+.selection-list,
+.party-list,
+.history-section {
+  touch-action: pan-y !important;
 }
 
 body.theme-forest #parallax-background {
@@ -136,7 +139,7 @@ body.theme-cozy #parallax-background {
   z-index: 10;
   /* Factor 0.6 (Midground) */
   transform: translate(calc(var(--parallax-x) * 0.6), calc(var(--parallax-y) * 0.6));
-  transition: transform 0.1s linear; 
+  transition: transform 0.1s linear;
 }
 
 .mob {
@@ -278,13 +281,15 @@ body.theme-cozy #parallax-background {
 #action-bar {
   position: fixed;
   top: 50%;
-  right: -15px; /* Décalée vers la droite */
+  right: -15px;
+  /* Décalée vers la droite */
   transform: translateY(-50%) translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 15px 30px 15px 15px; /* top right bottom left - plus large à droite */
+  padding: 15px 30px 15px 15px;
+  /* top right bottom left - plus large à droite */
   background: linear-gradient(to left, rgba(20, 20, 30, 0.95), rgba(20, 20, 30, 0.7));
   backdrop-filter: blur(10px);
   border-left: 1px solid rgba(255, 255, 255, 0.1);
@@ -390,9 +395,9 @@ body.theme-cozy #parallax-background {
 }
 
 /* Apply Parallax to all modal content (Foreground UI) */
-.overlay.active > * {
-    transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
-    transition: transform 0.1s linear;
+.overlay.active>* {
+  transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
+  transition: transform 0.1s linear;
 }
 
 .profile-card {
@@ -739,58 +744,66 @@ body.theme-cozy #parallax-background {
 /* WEAPON ANIMATIONS & STYLES */
 /* WEAPON ANIMATIONS & STYLES */
 .weapon-pivot {
-    position: absolute;
-    top: 50%;
-    right: -10px;
-    width: 60px;
-    height: 60px;
-    z-index: 20;
-    pointer-events: none;
-    transform-origin: center center;
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  width: 60px;
+  height: 60px;
+  z-index: 20;
+  pointer-events: none;
+  transform-origin: center center;
 }
 
 .weapon-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    /* Animation handles transform, so we don't set it here */
-    filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+  width: 100%;
+  height: 100%;
+  position: relative;
+  /* Animation handles transform, so we don't set it here */
+  filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.5));
 }
 
 /* Float Animation */
 @keyframes weapon-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
 .weapon-container {
-    animation: weapon-float 2s infinite ease-in-out;
+  animation: weapon-float 2s infinite ease-in-out;
 }
 
 .weapon-icon {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /* Left Fighter Pivot */
 .fighter-container.left .weapon-pivot {
-    right: -20px;
-    transform: scaleX(1);
+  right: -20px;
+  transform: scaleX(1);
 }
 
 /* Right Fighter Pivot - FLIP HERE */
 .fighter-container.right .weapon-pivot {
-    left: -20px; 
-    right: auto;
-    transform: scaleX(-1); /* Flips entire pivot, including attack direction */
+  left: -20px;
+  right: auto;
+  transform: scaleX(-1);
+  /* Flips entire pivot, including attack direction */
 }
 
 /* Right Fighter Maggot Companion flip */
 .fighter-container.right .maggot-companion {
-    transform: scaleX(-1);
-    left: auto;
-    right: 10px; 
+  transform: scaleX(-1);
+  left: auto;
+  right: 10px;
 }
 
 
@@ -798,50 +811,105 @@ body.theme-cozy #parallax-background {
 
 /* PIERCE (Estoc) - Fork, Toothpick */
 @keyframes attack-pierce {
-    0% { transform: translateX(0); }
-    20% { transform: translateX(-10px); } /* Windup */
-    40% { transform: translateX(40px); } /* Thrust */
-    50% { transform: translateX(40px); } /* Hold */
-    100% { transform: translateX(0); } /* Return */
+  0% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-10px);
+  }
+
+  /* Windup */
+  40% {
+    transform: translateX(40px);
+  }
+
+  /* Thrust */
+  50% {
+    transform: translateX(40px);
+  }
+
+  /* Hold */
+  100% {
+    transform: translateX(0);
+  }
+
+  /* Return */
 }
 
 .weapon-container.anim-pierce {
-    animation: attack-pierce 0.4s ease-out forwards;
+  animation: attack-pierce 0.4s ease-out forwards;
 }
 
 /* SLASH (Coupe) - Cutter, Sword */
 @keyframes attack-slash {
-    0% { transform: rotate(0deg); }
-    20% { transform: rotate(-45deg); } /* Windup */
-    50% { transform: rotate(120deg) translateX(20px); } /* Swing */
-    100% { transform: rotate(0deg); } /* Return */
+  0% {
+    transform: rotate(0deg);
+  }
+
+  20% {
+    transform: rotate(-45deg);
+  }
+
+  /* Windup */
+  50% {
+    transform: rotate(120deg) translateX(20px);
+  }
+
+  /* Swing */
+  100% {
+    transform: rotate(0deg);
+  }
+
+  /* Return */
 }
 
 .weapon-container.anim-slash {
-    animation: attack-slash 0.4s ease-in-out forwards;
+  animation: attack-slash 0.4s ease-in-out forwards;
 }
 
 /* IMPACT (Coup / Bash) - Capsule/Shield Bash */
 @keyframes attack-impact {
-    0% { transform: scale(1); }
-    30% { transform: scale(1.3) rotate(-20deg); } /* Windup */
-    50% { transform: scale(1) rotate(20deg) translateX(30px); } /* Slam */
-    100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  30% {
+    transform: scale(1.3) rotate(-20deg);
+  }
+
+  /* Windup */
+  50% {
+    transform: scale(1) rotate(20deg) translateX(30px);
+  }
+
+  /* Slam */
+  100% {
+    transform: scale(1);
+  }
 }
 
 .weapon-container.anim-impact {
-    animation: attack-impact 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: attack-impact 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 /* BLOCK (Parade) */
 @keyframes action-block {
-    0% { transform: translateX(0); }
-    50% { transform: translateX(10px) scale(1.2); }
-    100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(10px) scale(1.2);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .weapon-container.anim-block {
-    animation: action-block 0.5s ease-out;
+  animation: action-block 0.5s ease-out;
 }
 
 #combat-log {
@@ -957,6 +1025,37 @@ body.theme-cozy #parallax-background {
   bottom: -20px;
   font-size: 40px;
   animation: bounce 0.5s infinite alternate;
+  z-index: 10;
+}
+
+.maggot-companion.essaim {
+  font-size: 30px;
+  bottom: -10px;
+}
+
+.maggot-companion.gardien {
+  font-size: 45px;
+  bottom: -15px;
+}
+
+.maggot-companion.esprit {
+  font-size: 35px;
+  bottom: -12px;
+}
+
+.guardian-hp {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #55efc4;
+  font-weight: bold;
+  border: 1px solid #00b894;
+  white-space: nowrap;
 }
 
 @keyframes bounce {
@@ -1083,6 +1182,11 @@ body.theme-cozy #parallax-background {
 
 .combat-popup.maggot {
   color: #2ecc71;
+}
+
+.combat-popup.sabotage {
+  color: #9b59b6;
+  font-size: 28px;
 }
 
 /* Death Animation */
@@ -1293,20 +1397,20 @@ body.theme-cozy #parallax-background {
 /* Fix for Parallax + Centering Override */
 .overlay.active .victory-overlay,
 .overlay.active .levelup-overlay {
-    transform: translate(calc(-50% + var(--parallax-x) * 1.2), calc(-50% + var(--parallax-y) * 1.2));
-    transition: transform 0.1s linear;
+  transform: translate(calc(-50% + var(--parallax-x) * 1.2), calc(-50% + var(--parallax-y) * 1.2));
+  transition: transform 0.1s linear;
 }
 
 /* Apply Parallax to tournament overlay content */
-.tournament-overlay > * {
-    transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
-    transition: transform 0.1s linear;
+.tournament-overlay>* {
+  transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
+  transition: transform 0.1s linear;
 }
 
 /* Apply Parallax to tournament overlay content */
-.tournament-overlay > * {
-    transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
-    transition: transform 0.1s linear;
+.tournament-overlay>* {
+  transform: translate(calc(var(--parallax-x) * 1.2), calc(var(--parallax-y) * 1.2));
+  transition: transform 0.1s linear;
 }
 
 @keyframes slideDown {
@@ -1861,17 +1965,25 @@ body.theme-cozy #parallax-background {
   border-radius: 8px;
   padding: 12px;
   width: 250px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   color: #fff;
   pointer-events: none;
-  z-index: 20000; /* Ensure strictly above everything */
+  z-index: 20000;
+  /* Ensure strictly above everything */
   animation: fadeInTooltip 0.2s ease-out;
 }
 
 @keyframes fadeInTooltip {
-  from { opacity: 0; transform: translateY(5px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .trait-tooltip h4 {
@@ -1897,7 +2009,7 @@ body.theme-cozy #parallax-background {
 .trait-tooltip .tooltip-stats {
   color: #00e5ff;
   font-family: monospace;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   padding: 4px;
   border-radius: 4px;
   margin-top: 8px;
@@ -1919,451 +2031,459 @@ body.theme-cozy #parallax-background {
   border-color: #f1c40f;
   color: #f1c40f;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
 }
 
 /* Weapon Stock in Combat */
 .weapon-stock {
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    margin: 5px 0;
-    height: 24px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    padding: 2px;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin: 5px 0;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 2px;
 }
 
 .stock-icon {
-    width: 20px;
-    height: 20px;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 4px;
-    background-color: rgba(0,0,0,0.3);
+  width: 20px;
+  height: 20px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 /* ===============================
    PvE Modal Styles
    =============================== */
 .pve-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    animation: fadeIn 0.3s ease-out;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .pve-modal {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border: 2px solid #e74c3c;
-    border-radius: 16px;
-    padding: 24px;
-    max-width: 700px;
-    width: 90%;
-    max-height: 85vh;
-    overflow-y: auto;
-    box-shadow: 0 0 40px rgba(231, 76, 60, 0.3);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #e74c3c;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 0 40px rgba(231, 76, 60, 0.3);
 }
 
 .pve-header {
-    text-align: center;
-    margin-bottom: 20px;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .pve-header h2 {
-    color: #e74c3c;
-    font-size: 2em;
-    margin: 0;
-    text-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+  color: #e74c3c;
+  font-size: 2em;
+  margin: 0;
+  text-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
 }
 
 .pve-warning {
-    color: #f39c12;
-    font-size: 0.9em;
-    margin-top: 8px;
-    padding: 8px;
-    background: rgba(243, 156, 18, 0.1);
-    border-radius: 8px;
-    border: 1px solid rgba(243, 156, 18, 0.3);
+  color: #f39c12;
+  font-size: 0.9em;
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(243, 156, 18, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(243, 156, 18, 0.3);
 }
 
 .pve-player-section {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
 .pve-player-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(46, 204, 113, 0.1);
-    border: 2px solid #2ecc71;
-    border-radius: 12px;
-    padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(46, 204, 113, 0.1);
+  border: 2px solid #2ecc71;
+  border-radius: 12px;
+  padding: 12px;
 }
 
 .pve-mob-image {
-    width: 60px;
-    height: 60px;
-    image-rendering: pixelated;
-    border-radius: 8px;
+  width: 60px;
+  height: 60px;
+  image-rendering: pixelated;
+  border-radius: 8px;
 }
 
 .pve-mob-info {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .pve-mob-name {
-    color: #fff;
-    font-weight: bold;
-    font-size: 1.1em;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1em;
 }
 
 .pve-mob-level {
-    color: #2ecc71;
-    font-size: 0.9em;
+  color: #2ecc71;
+  font-size: 0.9em;
 }
 
 .pve-vs {
-    color: #e74c3c;
-    font-size: 1.5em;
-    font-weight: bold;
-    text-shadow: 0 0 10px #e74c3c;
+  color: #e74c3c;
+  font-size: 1.5em;
+  font-weight: bold;
+  text-shadow: 0 0 10px #e74c3c;
 }
 
 .pve-enemies-section h3 {
-    color: #fff;
-    text-align: center;
-    margin-bottom: 16px;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 16px;
 }
 
 .pve-enemies-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .pve-enemy-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid #e74c3c;
-    border-radius: 12px;
-    padding: 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid #e74c3c;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .pve-enemy-card:hover {
-    background: rgba(231, 76, 60, 0.1);
-    transform: translateX(5px);
-    box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+  background: rgba(231, 76, 60, 0.1);
+  transform: translateX(5px);
+  box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
 }
 
 .pve-enemy-avatar {
-    position: relative;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pve-enemy-placeholder {
-    font-size: 2.5em;
+  font-size: 2.5em;
 }
 
 .pve-hat-layer {
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 32px;
-    height: 32px;
-    background-size: contain;
-    background-repeat: no-repeat;
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 32px;
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 
-.pve-hat-layer.crown { background-image: url('../assets/hats/crown.png'); }
-.pve-hat-layer.cap { background-image: url('../assets/hats/cap.png'); }
-.pve-hat-layer.wizard { background-image: url('../assets/hats/wizard.png'); }
+.pve-hat-layer.crown {
+  background-image: url('../assets/hats/crown.png');
+}
+
+.pve-hat-layer.cap {
+  background-image: url('../assets/hats/cap.png');
+}
+
+.pve-hat-layer.wizard {
+  background-image: url('../assets/hats/wizard.png');
+}
 
 .pve-enemy-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .pve-enemy-name {
-    color: #fff;
-    font-weight: bold;
-    font-size: 1.1em;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1em;
 }
 
 .pve-enemy-level {
-    color: #e74c3c;
-    font-size: 0.9em;
+  color: #e74c3c;
+  font-size: 0.9em;
 }
 
 .pve-enemy-stats {
-    display: flex;
-    gap: 8px;
-    font-size: 0.8em;
-    color: #74b9ff;
-    font-family: monospace;
+  display: flex;
+  gap: 8px;
+  font-size: 0.8em;
+  color: #74b9ff;
+  font-family: monospace;
 }
 
 .pve-enemy-traits {
-    color: #a29bfe;
-    font-size: 0.8em;
+  color: #a29bfe;
+  font-size: 0.8em;
 }
 
 .pve-trait-label {
-    color: #dfe6e9;
+  color: #dfe6e9;
 }
 
 .pve-enemy-weapons {
-    color: #f39c12;
-    font-size: 0.8em;
+  color: #f39c12;
+  font-size: 0.8em;
 }
 
 .pve-fight-btn {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-    border: none;
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  border: none;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
 }
 
 .pve-fight-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
 }
 
 .pve-footer {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 .pve-cancel-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    color: #fff;
-    padding: 10px 30px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 10px 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .pve-cancel-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* ===============================
    Memorial Modal Styles
    =============================== */
 .memorial-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    animation: fadeIn 0.3s ease-out;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .memorial-modal {
-    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
-    border: 2px solid #6c5ce7;
-    border-radius: 16px;
-    padding: 24px;
-    max-width: 700px;
-    width: 90%;
-    max-height: 85vh;
-    overflow-y: auto;
-    box-shadow: 0 0 40px rgba(108, 92, 231, 0.3);
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+  border: 2px solid #6c5ce7;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 0 40px rgba(108, 92, 231, 0.3);
 }
 
 .memorial-header {
-    text-align: center;
-    margin-bottom: 20px;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .memorial-header h2 {
-    color: #6c5ce7;
-    font-size: 2em;
-    margin: 0;
+  color: #6c5ce7;
+  font-size: 2em;
+  margin: 0;
 }
 
 .memorial-subtitle {
-    color: #dfe6e9;
-    font-size: 0.9em;
-    margin-top: 8px;
+  color: #dfe6e9;
+  font-size: 0.9em;
+  margin-top: 8px;
 }
 
 .memorial-content {
-    min-height: 200px;
+  min-height: 200px;
 }
 
 .memorial-empty {
-    text-align: center;
-    color: #dfe6e9;
-    font-size: 1.2em;
-    padding: 40px;
+  text-align: center;
+  color: #dfe6e9;
+  font-size: 1.2em;
+  padding: 40px;
 }
 
 .memorial-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .memorial-card {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px;
-    background: rgba(108, 92, 231, 0.1);
-    border: 1px solid rgba(108, 92, 231, 0.3);
-    border-radius: 12px;
-    padding: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  background: rgba(108, 92, 231, 0.1);
+  border: 1px solid rgba(108, 92, 231, 0.3);
+  border-radius: 12px;
+  padding: 16px;
 }
 
 .memorial-avatar {
-    position: relative;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    filter: grayscale(80%);
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: grayscale(80%);
 }
 
 .memorial-placeholder {
-    font-size: 2.5em;
-    opacity: 0.6;
+  font-size: 2.5em;
+  opacity: 0.6;
 }
 
 .memorial-skull {
-    position: absolute;
-    bottom: -5px;
-    right: -5px;
-    font-size: 1.2em;
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  font-size: 1.2em;
 }
 
 .memorial-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .memorial-name {
-    color: #fff;
-    font-weight: bold;
-    font-size: 1.1em;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1em;
 }
 
 .memorial-level {
-    color: #6c5ce7;
-    font-size: 0.9em;
+  color: #6c5ce7;
+  font-size: 0.9em;
 }
 
 .memorial-date {
-    color: #b2bec3;
-    font-size: 0.8em;
-    font-style: italic;
+  color: #b2bec3;
+  font-size: 0.8em;
+  font-style: italic;
 }
 
 .memorial-killer {
-    color: #e74c3c;
-    font-size: 0.8em;
+  color: #e74c3c;
+  font-size: 0.8em;
 }
 
 .memorial-stats {
-    display: flex;
-    gap: 16px;
+  display: flex;
+  gap: 16px;
 }
 
 .memorial-stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 8px 12px;
-    border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 12px;
+  border-radius: 8px;
 }
 
 .memorial-stat-label {
-    color: #b2bec3;
-    font-size: 0.7em;
+  color: #b2bec3;
+  font-size: 0.7em;
 }
 
 .memorial-stat-value {
-    color: #fff;
-    font-size: 1.2em;
-    font-weight: bold;
+  color: #fff;
+  font-size: 1.2em;
+  font-weight: bold;
 }
 
 .memorial-traits {
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .memorial-trait {
-    background: rgba(162, 155, 254, 0.2);
-    color: #a29bfe;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.8em;
+  background: rgba(162, 155, 254, 0.2);
+  color: #a29bfe;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8em;
 }
 
 .memorial-no-traits {
-    color: #636e72;
-    font-size: 0.8em;
-    font-style: italic;
+  color: #636e72;
+  font-size: 0.8em;
+  font-style: italic;
 }
 
 .memorial-footer {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 .memorial-close-btn {
-    background: linear-gradient(135deg, #6c5ce7 0%, #5b4cdb 100%);
-    border: none;
-    color: #fff;
-    padding: 12px 40px;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
+  background: linear-gradient(135deg, #6c5ce7 0%, #5b4cdb 100%);
+  border: none;
+  color: #fff;
+  padding: 12px 40px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
