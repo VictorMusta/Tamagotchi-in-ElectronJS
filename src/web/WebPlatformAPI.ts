@@ -61,6 +61,18 @@ export class WebPlatformAPI implements PlatformAPI {
         return WebMobManager.processTournamentWin(id)
     }
 
+    async damageMob(id: string, amount: number): Promise<MobActionResult> {
+        return WebMobManager.damageMob(id, amount)
+    }
+
+    async healMob(id: string, amount: number): Promise<MobActionResult & { changed: boolean }> {
+        return WebMobManager.healMob(id, amount)
+    }
+
+    async reviveMob(id: string): Promise<MobActionResult & { changed: boolean }> {
+        return WebMobManager.reviveMob(id)
+    }
+
     async getTournament(): Promise<TournamentResult> {
         return WebMobManager.getTournament()
     }
@@ -83,6 +95,16 @@ export class WebPlatformAPI implements PlatformAPI {
 
     async loadBiome(): Promise<{ success: boolean; data?: any[] }> {
         return WebMobManager.loadBiome()
+    }
+
+    async getTheme(): Promise<{ success: boolean; theme: string }> {
+        const theme = localStorage.getItem('theme') || 'forest'
+        return { success: true, theme }
+    }
+
+    async saveTheme(theme: string): Promise<{ success: boolean }> {
+        localStorage.setItem('theme', theme)
+        return { success: true }
     }
 
     async saveMobs(): Promise<SaveLoadResult> {

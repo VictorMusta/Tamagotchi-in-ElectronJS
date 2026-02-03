@@ -13,6 +13,7 @@ import { WebPlatformAPI } from './WebPlatformAPI'
 import { BiomeRenderer } from '../renderer/src/BiomeRenderer'
 import { ProfileRenderer } from '../renderer/src/ProfileRenderer'
 import { CombatUI } from '../renderer/src/combat/CombatUI'
+import { PhysicsWorld } from '../renderer/src/physics/PhysicsWorld'
 import { generateRandomName } from '../renderer/src/utils/NameGenerator'
 import potatoImage from '../renderer/assets/Potato still.png'
 
@@ -31,6 +32,9 @@ const profileRenderer = new ProfileRenderer()
 
 // Initialisation du système de combat (UI)
 const combatUI = new CombatUI()
+
+// Physics World
+const physicsWorld = new PhysicsWorld(document.getElementById('app') || document.body)
 
 // Mode d'action actuel
 type ActionMode = 'none' | 'damage' | 'heal' | 'revive'
@@ -85,7 +89,7 @@ async function applyActionToMob(mobRenderer: MobRenderer): Promise<void> {
         case 'heal': {
             const result = await api.healMob(id, 20)
             if (result.success && result.mob) {
-                if (result.changed) mobRenderer.playSoundEffect('heal')
+                // if (result.changed) mobRenderer.playSoundEffect('heal')
                 mobRenderer.updateFromData(result.mob)
             }
             break
@@ -155,7 +159,7 @@ async function initMobs(): Promise<void> {
         const result = await api.createMob('Potato', potatoImage)
         if (result.success && result.mob) {
             const renderer = new MobRenderer(result.mob)
-            renderer.render(mobContainer)
+            renderer.render(mobContainer, physicsWorld)
             mobRenderers.set(result.mob.id, renderer)
             setSelectedMob(renderer)
         }
@@ -173,7 +177,7 @@ async function loadMobsOnStartup(mobContainer: HTMLElement): Promise<boolean> {
         result.mobs.forEach((data: MobData) => {
             const imageUrl = data.imageUrl.includes('Potato') ? potatoImage : data.imageUrl
             const renderer = new MobRenderer({ ...data, imageUrl })
-            renderer.render(mobContainer)
+            renderer.render(mobContainer, physicsWorld)
             mobRenderers.set(data.id, renderer)
         })
 
@@ -222,7 +226,7 @@ async function loadMobs(): Promise<void> {
         result.mobs.forEach((data: MobData) => {
             const imageUrl = data.imageUrl.includes('Potato') ? potatoImage : data.imageUrl
             const renderer = new MobRenderer({ ...data, imageUrl })
-            renderer.render(mobContainer)
+            renderer.render(mobContainer, physicsWorld)
             mobRenderers.set(data.id, renderer)
         })
 
@@ -304,7 +308,7 @@ async function addNewMob(): Promise<void> {
     const result = await api.createMob(randomName, potatoImage)
     if (result.success && result.mob) {
         const renderer = new MobRenderer(result.mob)
-        renderer.render(mobContainer)
+        renderer.render(mobContainer, physicsWorld)
         mobRenderers.set(result.mob.id, renderer)
         setSelectedMob(renderer)
         showNotification(`${result.mob.nom} créé !`, 'success')
@@ -363,19 +367,20 @@ function setupActionButtons(): void {
     const btnHeal = document.getElementById('btn-heal')
     const btnRevive = document.getElementById('btn-revive')
     const btnCombat = document.getElementById('btn-combat')
-    const btnToggle = document.getElementById('btn-toggle-menu')
-    const actionMenu = document.getElementById('action-menu')
+    
+    const btnToggle = document.getElementById('btn-menu-toggle')
+    const actionList = document.getElementById('action-list')
 
     btnToggle?.addEventListener('click', () => {
-        actionMenu?.classList.toggle('hidden')
+        actionList?.classList.toggle('expanded')
     })
-
+                    
     const toggleActionMode = (mode: ActionMode): void => {
         if (currentActionMode === mode) {
             setActionMode('none')
         } else {
             setActionMode(mode)
-            actionMenu?.classList.add('hidden')
+            // actionMenu?.classList.add('hidden') // removed as we use expanded style logic now
         }
     }
 

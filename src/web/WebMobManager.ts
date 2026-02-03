@@ -377,6 +377,30 @@ class WebMobManagerClass {
         return { success: true, mob: mob.toJSON() }
     }
 
+    damageMob(id: string, amount: number): MobActionResult {
+        const mob = this.mobs.get(id)
+        if (!mob) return { success: false, error: 'Mob non trouvé' }
+        const died = mob.takeDamage(amount)
+        this.saveMobs()
+        return { success: true, mob: mob.toJSON(), error: died ? 'died' : undefined }
+    }
+
+    healMob(id: string, amount: number): MobActionResult & { changed: boolean } {
+        const mob = this.mobs.get(id)
+        if (!mob) return { success: false, error: 'Mob non trouvé', changed: false }
+        const changed = mob.heal(amount)
+        this.saveMobs()
+        return { success: true, mob: mob.toJSON(), changed }
+    }
+
+    reviveMob(id: string): MobActionResult & { changed: boolean } {
+        const mob = this.mobs.get(id)
+        if (!mob) return { success: false, error: 'Mob non trouvé', changed: false }
+        const changed = mob.revive()
+        this.saveMobs()
+        return { success: true, mob: mob.toJSON(), changed }
+    }
+
     getTournament(): TournamentResult {
         try {
             const data = localStorage.getItem(TOURNAMENT_STORAGE_KEY)
