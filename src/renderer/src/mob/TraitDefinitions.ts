@@ -10,7 +10,7 @@ export const TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
     'Appel de l\'Astico-Roi': {
         description: "Invoque un fidèle compagnon asticot.",
         effect: "L'asticot a sa propre barre d'action et attaque indépendamment.",
-        stats: "Vitesse: 80% du maître | Dégâts: 5-10"
+        stats: "Vitesse: 60% du maître | Dégâts: 5-10"
     },
     'Coup Critique': {
         description: "Maîtrise l'art de frapper les points vitaux.",
@@ -29,17 +29,12 @@ export const TRAIT_DEFINITIONS: Record<string, TraitDefinition> = {
     },
     'Contre-attaque': {
         description: "L'art de retourner la force de l'adversaire contre lui.",
-        effect: "Chance de riposter immédiatement après avoir été ciblé.",
-        stats: "Chance: 20% (Sur Hit ou Esquive)"
-    },
-    'Main de Dentelle': {
-        description: "Un tour de passe-passe digne des plus grands voleurs.",
-        effect: "Vole l'arme de l'adversaire au premier contact !",
-        stats: "Vol d'arme: 100% au 1er hit"
+        effect: "L'esquive ou l'encaissement d'un coup peut déclencher une riposte.",
+        stats: "Chance: 10% (Per Hit) | Dégâts: 100%"
     },
     'Berzerk': {
         description: "La douleur nourrit sa rage.",
         effect: "Après 3 coups subis consécutifs, déchaîne une furie de coups.",
-        stats: "3 Hits reçus -> 3 Attaques rendues"
+        stats: "Furie: 2 hits (70% DMG) si 3 hits reçus"
     }
 }

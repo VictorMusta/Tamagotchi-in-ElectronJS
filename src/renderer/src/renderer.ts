@@ -711,7 +711,7 @@ function participantToMobData(p: any): any {
     id: p.id,
     nom: p.nom,
     imageUrl: p.imageUrl || potatoImage,
-    vie: 100 + (p.stats.vitalite * 5),
+    vie: 100 + (p.stats.vitalite * 10),
     energie: 100,
     status: 'vivant',
     stats: p.stats,
