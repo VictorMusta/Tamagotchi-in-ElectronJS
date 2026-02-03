@@ -14,8 +14,23 @@
 
 @media (max-width: 768px) {
   /* Global Scaling */
-  html {
-    zoom: 0.65; /* Scale down the whole UI */
+  /* Do NOT use zoom on html, it breaks physics mouse mapping */
+  /* html { zoom: 0.65; } */
+
+  /* Scale down UI elements specifically */
+  .action-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .action-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Scale the Mob Visuals will be handled by CSS classes or JS size injection */
+  .mob {
+     transform: scale(0.7); /* Visual scale only */
   }
 
   /* Hide Window Controls (handled by OS on Android) */

@@ -27,8 +27,14 @@ export class MobMovement {
         this.element.style.top = '0'
         this.element.style.bottom = 'auto'
 
-        this.body = Matter.Bodies.rectangle(startX, startY, 80, 100, {
-            chamfer: { radius: 20 }, // Rounded corners
+        // Responsive sizing
+        const isMobile = window.innerWidth < 768
+        const width = isMobile ? 50 : 80
+        const height = isMobile ? 60 : 100
+        const chamfer = isMobile ? 10 : 20
+
+        this.body = Matter.Bodies.rectangle(startX, startY, width, height, {
+            chamfer: { radius: chamfer }, // Rounded corners
             restitution: 0.3, // Bounciness
             friction: 0.5,
             frictionAir: 0.02, // Damping

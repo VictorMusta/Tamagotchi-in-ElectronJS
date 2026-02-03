@@ -289,6 +289,21 @@ export class WebApi {
         const data = localStorage.getItem('biome')
         return { success: true, data: data ? JSON.parse(data) : null }
     }
+
+    async getTheme() {
+        const theme = localStorage.getItem('theme') || 'forest'
+        return { success: true, theme }
+    }
+
+    async saveTheme(theme: string) {
+        localStorage.setItem('theme', theme)
+        return { success: true }
+    }
+
+    async openExternal(url: string) {
+        window.open(url, '_blank')
+    }
+
     async minimizeWindow() { console.log('minimize') }
     async closeWindow() { console.log('close') }
 }
