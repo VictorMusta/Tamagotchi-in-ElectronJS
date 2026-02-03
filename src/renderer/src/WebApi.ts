@@ -73,7 +73,8 @@ export class WebApi {
             traits: this.generateRandomTraits(),
             skin: { hat: 'none', bottom: 'none' },
             combatProgress: { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 },
-            inSquad: mobs.filter(m => m.inSquad).length < 10
+            inSquad: mobs.filter(m => m.inSquad).length < 10,
+            weapons: [] // Empty start
         }
 
         mobs.push(newMob)

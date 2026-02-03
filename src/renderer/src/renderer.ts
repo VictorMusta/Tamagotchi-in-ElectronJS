@@ -490,7 +490,7 @@ function setupActionButtons(): void {
         console.error('Combat error: One or both fighters are missing stats.', { f1, f2 });
         return;
       }
-      combatUI.renderCombatScene(f1, f2, async (winner, loser) => {
+      combatUI.renderCombatScene(f1, f2, async (winner, _loser) => {
         // Gérer la fin du combat (récompenses, mise à jour des stats, mort de l'autre)
         console.log('Combat terminé, vainqueur:', winner.nom)
 
