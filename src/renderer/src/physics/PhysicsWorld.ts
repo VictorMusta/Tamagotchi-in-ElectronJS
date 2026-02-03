@@ -23,7 +23,8 @@ export class PhysicsWorld {
         this.canvas.style.position = 'absolute'
         this.canvas.style.top = '0'
         this.canvas.style.left = '0'
-        this.canvas.style.pointerEvents = 'none' // Allow clicks to pass through to UI
+        this.canvas.style.pointerEvents = 'auto' // Allow interactions with canvas
+        this.canvas.style.zIndex = '0' // Ensure it's behind UI but interactive
         this.canvas.style.background = 'transparent' // Ensure canvas is transparent
 
         // Actually, we need the canvas to catch mouse events for Matter.js MouseConstraint
@@ -54,7 +55,7 @@ export class PhysicsWorld {
         this.setupBoundaries()
 
         // Mouse Constraint
-        const mouse = Matter.Mouse.create(document.body) // Bind to body to catch all events
+        const mouse = Matter.Mouse.create(this.canvas) // Bind to canvas instead of body to avoid stealing UI clicks
         const mouseConstraint = Matter.MouseConstraint.create(this.engine, {
             mouse: mouse,
             constraint: {
