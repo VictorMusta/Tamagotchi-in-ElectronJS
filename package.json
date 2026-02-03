@@ -1,10 +1,10 @@
 {
   "name": "potato_rotato",
-  "version": "1.3.0",
-  "description": "A minimal Electron application with TypeScript",
+  "version": "1.4.0",
+  "description": "A fun tamagotchi fighting game in ElectronJS",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "VictorGrabowski",
+  "homepage": "https://github.com/VictorMusta/Tamagotchi-in-ElectronJS",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/VictorMusta/Tamagotchi-in-ElectronJS.git"
