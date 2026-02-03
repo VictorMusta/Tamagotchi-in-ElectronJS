@@ -7,10 +7,13 @@ interface CombatMob extends MobData {
 }
 
 export type CombatEvent =
-    | { type: 'tick', fighter1Energy: number, fighter2Energy: number, maggot1Energy?: number, maggot2Energy?: number }
+    | { type: 'tick', fighter1Energy: number, fighter2Energy: number, maggot1Energy?: number, maggot2Energy?: number, essaim1Energy?: number, essaim2Energy?: number, spirit1Energy?: number, spirit2Energy?: number }
     | { type: 'attack', attackerId: string, targetId: string, damage: number, isCritical: boolean, targetCurrentHp: number, targetMaxHp: number, weapon?: string, visual?: 'berzerk' | 'normal' }
     | { type: 'dodge', attackerId: string, targetId: string, targetCurrentHp: number }
     | { type: 'maggot_attack', attackerId: string, targetId: string, damage: number, targetCurrentHp: number, targetMaxHp: number }
+    | { type: 'essaim_attack', attackerId: string, targetId: string, damage: number, targetCurrentHp: number, targetMaxHp: number, blinded: boolean }
+    | { type: 'spirit_action', attackerId: string, targetId: string, action: 'swap' | 'drop' | 'miss' }
+    | { type: 'guardian_absorb', ownerId: string, damageAbsorbed: number, guardianHp: number }
     | { type: 'counter_attack', attackerId: string, targetId: string, damage: number, targetCurrentHp: number, targetMaxHp: number, weapon?: string }
     | { type: 'weapon_steal', thiefId: string, victimId: string, weapon: string }
     | { type: 'log', message: string }
@@ -27,14 +30,22 @@ export class CombatEngine {
     private energy2: number = 0
     private maggotEnergy1: number = 0
     private maggotEnergy2: number = 0
+    private essaimEnergy1: number = 0
+    private essaimEnergy2: number = 0
+    private spiritEnergy1: number = 0
+    private spiritEnergy2: number = 0
 
-    // Combat State
+    // Companion State
+    private guardianHp1: number = 0
+    private guardianHp2: number = 0
+    private blindDuration1: number = 0 // Number of actions blinded
+    private blindDuration2: number = 0
+
+    // Core Combat State
     private consecutiveHitsTaken1: number = 0
     private consecutiveHitsTaken2: number = 0
-
     private isBerzerk1: boolean = false
     private isBerzerk2: boolean = false
-
     private isStunned1: boolean = false
     private isStunned2: boolean = false
 
@@ -57,6 +68,14 @@ export class CombatEngine {
 
         this.f2Inventory = [...(this.f2.weapons || [])]
         this.f2.weapon = undefined
+
+        // Initialize Guardian HP
+        if (this.hasTrait(this.f1, 'Gardien de Racine')) {
+            this.guardianHp1 = Math.floor((100 + this.f1.stats.vitalite * 10) * 0.5)
+        }
+        if (this.hasTrait(this.f2, 'Gardien de Racine')) {
+            this.guardianHp2 = Math.floor((100 + this.f2.stats.vitalite * 10) * 0.5)
+        }
     }
 
     private speedMultiplier: number = 1
@@ -77,15 +96,17 @@ export class CombatEngine {
                 this.energy1 += (this.getSpeed(this.f1) / 10) // Scaled
                 this.energy2 += (this.getSpeed(this.f2) / 10)
 
-                if (this.hasTrait(this.f1, 'Appel de l\'Astico-Roi')) {
-                    this.maggotEnergy1 += (this.getSpeed(this.f1) / 10) * 0.6
-                }
-                if (this.hasTrait(this.f2, 'Appel de l\'Astico-Roi')) {
-                    this.maggotEnergy2 += (this.getSpeed(this.f2) / 10) * 0.6
-                }
+                if (this.hasTrait(this.f1, 'Appel de l\'Astico-Roi')) this.maggotEnergy1 += (this.getSpeed(this.f1) / 10) * 0.4
+                if (this.hasTrait(this.f2, 'Appel de l\'Astico-Roi')) this.maggotEnergy2 += (this.getSpeed(this.f2) / 10) * 0.4
+                if (this.hasTrait(this.f1, 'Essaim de Moucherons')) this.essaimEnergy1 += (this.getSpeed(this.f1) / 10) * 1.5
+                if (this.hasTrait(this.f2, 'Essaim de Moucherons')) this.essaimEnergy2 += (this.getSpeed(this.f2) / 10) * 1.5
+                if (this.hasTrait(this.f1, 'Esprit Saboteur')) this.spiritEnergy1 += (this.getSpeed(this.f1) / 10) * 1.5
+                if (this.hasTrait(this.f2, 'Esprit Saboteur')) this.spiritEnergy2 += (this.getSpeed(this.f2) / 10) * 1.5
 
                 if (this.energy1 >= this.MAX_ENERGY || this.energy2 >= this.MAX_ENERGY ||
-                    this.maggotEnergy1 >= this.MAX_ENERGY || this.maggotEnergy2 >= this.MAX_ENERGY) {
+                    this.maggotEnergy1 >= this.MAX_ENERGY || this.maggotEnergy2 >= this.MAX_ENERGY ||
+                    this.essaimEnergy1 >= this.MAX_ENERGY || this.essaimEnergy2 >= this.MAX_ENERGY ||
+                    this.spiritEnergy1 >= this.MAX_ENERGY || this.spiritEnergy2 >= this.MAX_ENERGY) {
                     actionReady = true
                 }
             }
@@ -95,7 +116,11 @@ export class CombatEngine {
                 fighter1Energy: this.energy1,
                 fighter2Energy: this.energy2,
                 maggot1Energy: this.maggotEnergy1,
-                maggot2Energy: this.maggotEnergy2
+                maggot2Energy: this.maggotEnergy2,
+                essaim1Energy: this.essaimEnergy1,
+                essaim2Energy: this.essaimEnergy2,
+                spirit1Energy: this.spiritEnergy1,
+                spirit2Energy: this.spiritEnergy2
             })
 
             if (this.energy1 >= this.MAX_ENERGY) {
@@ -122,6 +147,18 @@ export class CombatEngine {
             } else if (this.maggotEnergy2 >= this.MAX_ENERGY) {
                 await this.performMaggotAction(this.f2, this.f1)
                 this.maggotEnergy2 -= this.MAX_ENERGY
+            } else if (this.essaimEnergy1 >= this.MAX_ENERGY) {
+                await this.performEssaimAction(this.f1, this.f2)
+                this.essaimEnergy1 -= this.MAX_ENERGY
+            } else if (this.essaimEnergy2 >= this.MAX_ENERGY) {
+                await this.performEssaimAction(this.f2, this.f1)
+                this.essaimEnergy2 -= this.MAX_ENERGY
+            } else if (this.spiritEnergy1 >= this.MAX_ENERGY) {
+                await this.performSpiritAction(this.f1, this.f2)
+                this.spiritEnergy1 -= this.MAX_ENERGY
+            } else if (this.spiritEnergy2 >= this.MAX_ENERGY) {
+                await this.performSpiritAction(this.f2, this.f1)
+                this.spiritEnergy2 -= this.MAX_ENERGY
             }
 
             await new Promise(resolve => setTimeout(resolve, 100 / this.speedMultiplier))
@@ -248,7 +285,13 @@ export class CombatEngine {
     }
 
     private calculateHit(attacker: CombatMob, defender: CombatMob) {
-        const dodge = 0.1 + (defender.stats.agilite - attacker.stats.agilite) * 0.02
+        const blindDebuff = (attacker.id === this.f1.id ? this.blindDuration1 : this.blindDuration2) > 0 ? 5 : 0
+        const dodge = 0.1 + (defender.stats.agilite - (attacker.stats.agilite - blindDebuff)) * 0.02
+
+        if (blindDebuff > 0) {
+            if (attacker.id === this.f1.id) this.blindDuration1--; else this.blindDuration2--
+        }
+
         if (Math.random() < Math.max(0.05, dodge)) return { isHit: false, damage: 0, isCritical: false }
 
         let damage = attacker.stats.force + Math.floor(Math.random() * 5)
@@ -280,10 +323,29 @@ export class CombatEngine {
     }
 
     private applyDamage(attacker: CombatMob, defender: CombatMob, damage: number, isCritical: boolean) {
-        defender.vie -= damage
+        let finalDamage = damage
+
+        // Root Guardian Interception
+        const gHp = defender.id === this.f1.id ? this.guardianHp1 : this.guardianHp2
+        if (gHp > 0) {
+            const absorbed = Math.floor(finalDamage * 0.15)
+            const actualAbsorbed = Math.min(absorbed, gHp)
+            finalDamage -= actualAbsorbed
+            if (defender.id === this.f1.id) this.guardianHp1 -= actualAbsorbed; else this.guardianHp2 -= actualAbsorbed
+
+            this.onEvent({
+                type: 'guardian_absorb',
+                ownerId: defender.id,
+                damageAbsorbed: actualAbsorbed,
+                guardianHp: defender.id === this.f1.id ? this.guardianHp1 : this.guardianHp2
+            })
+            this.onEvent({ type: 'log', message: `Le Gardien de ${defender.nom} intercepte ${actualAbsorbed} dégâts !` })
+        }
+
+        defender.vie -= finalDamage
         const maxHp = 100 + (defender.stats.vitalite * 10)
-        this.onEvent({ type: 'attack', attackerId: attacker.id, targetId: defender.id, damage, isCritical, targetCurrentHp: defender.vie, targetMaxHp: maxHp, visual: this.isBerzerk(attacker) ? 'berzerk' : 'normal', weapon: attacker.weapon })
-        this.onEvent({ type: 'log', message: `${attacker.nom} inflige ${damage} dégâts !` })
+        this.onEvent({ type: 'attack', attackerId: attacker.id, targetId: defender.id, damage: finalDamage, isCritical, targetCurrentHp: defender.vie, targetMaxHp: maxHp, visual: this.isBerzerk(attacker) ? 'berzerk' : 'normal', weapon: attacker.weapon })
+        this.onEvent({ type: 'log', message: `${attacker.nom} inflige ${finalDamage} dégâts !` })
 
         const w = WEAPON_REGISTRY[attacker.weapon || '']
         if (w?.effects?.stunChance && !this.isBerzerk(attacker) && Math.random() < w.effects.stunChance) {
@@ -354,5 +416,57 @@ export class CombatEngine {
 
     private isBerzerk(mob: CombatMob): boolean {
         return mob.id === this.f1.id ? this.isBerzerk1 : this.isBerzerk2
+    }
+
+    private async performEssaimAction(owner: CombatMob, target: CombatMob) {
+        const damage = 2 + Math.floor(Math.random() * 2) // 2-3 damage
+        const actual = this.calculateDamageReduction(target, damage)
+        target.vie -= actual
+
+        let blinded = false
+        if (Math.random() < 0.30) {
+            blinded = true
+            if (target.id === this.f1.id) this.blindDuration1++; else this.blindDuration2++
+            this.onEvent({ type: 'log', message: `L'Essaim aveugle ${target.nom} !` })
+        }
+
+        const maxHp = 100 + (target.stats.vitalite * 10)
+        this.onEvent({ type: 'essaim_attack', attackerId: owner.id, targetId: target.id, damage: actual, targetCurrentHp: target.vie, targetMaxHp: maxHp, blinded })
+        await this.handleOnHitEvents(target, owner)
+    }
+
+    private async performSpiritAction(owner: CombatMob, target: CombatMob) {
+        const rand = Math.random()
+        const inventory = this.getInventory(target.id)
+
+        if (rand < 0.50 && target.weapon) {
+            // Drop weapon
+            target.weapon = undefined
+            this.onEvent({ type: 'weapon_change', id: target.id, weapon: undefined })
+            this.onEvent({ type: 'log', message: `L'Esprit Saboteur fait lâcher son arme à ${target.nom} !` })
+            this.onEvent({ type: 'spirit_action', attackerId: owner.id, targetId: target.id, action: 'drop' })
+        } else if (inventory.length > 0) {
+            // Swap weapon
+            const index = Math.floor(Math.random() * inventory.length)
+            const oldWeapon = target.weapon
+            target.weapon = inventory[index]
+            inventory.splice(index, 1)
+            if (oldWeapon) inventory.push(oldWeapon)
+
+            this.onEvent({ type: 'weapon_change', id: target.id, weapon: target.weapon })
+            this.onEvent({ type: 'inventory_change', id: target.id, inventory: [...inventory] })
+            this.onEvent({ type: 'log', message: `L'Esprit Saboteur échange l'arme de ${target.nom} !` })
+            this.onEvent({ type: 'spirit_action', attackerId: owner.id, targetId: target.id, action: 'swap' })
+        } else {
+            // Fallback Slap (2-3 dmg scaled)
+            const damage = 2 + Math.floor(Math.random() * 2)
+            const actual = this.calculateDamageReduction(target, damage)
+            target.vie -= actual
+            const maxHp = 100 + (target.stats.vitalite * 10)
+            this.onEvent({ type: 'log', message: `L'Esprit Saboteur gifle ${target.nom} !` })
+            this.onEvent({ type: 'attack', attackerId: owner.id, targetId: target.id, damage: actual, isCritical: false, targetCurrentHp: target.vie, targetMaxHp: maxHp })
+            this.onEvent({ type: 'spirit_action', attackerId: owner.id, targetId: target.id, action: 'miss' })
+        }
+        await this.handleOnHitEvents(target, owner)
     }
 }

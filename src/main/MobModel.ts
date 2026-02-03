@@ -7,6 +7,9 @@ export const POSSIBLE_TRAITS = [
   'Peau de Cuir',
   'Contre-attaque',
   'Appel de l\'Astico-Roi',
+  'Essaim de Moucherons',
+  'Gardien de Racine',
+  'Esprit Saboteur',
   'Berzerk'
 ]
 
@@ -151,7 +154,7 @@ export class Mob {
   }
 
   getMaxHP(): number {
-    return 100 + (this.stats.vitalite * 5)
+    return 100 + (this.stats.vitalite * 10)
   }
 
   updateStatus(): void {

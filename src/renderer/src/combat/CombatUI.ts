@@ -9,6 +9,8 @@ export class CombatUI {
     private currentFighter1: MobData | null = null
     private currentFighter2: MobData | null = null
     private currentSpeed: number = 1
+    private eventQueue: CombatEvent[] = []
+    private isProcessingQueue: boolean = false
 
     constructor() {
         this.loadSpeed()
@@ -171,6 +173,18 @@ export class CombatUI {
                 <div class="maggot-companion">🪱</div>
                 <div class="maggot-bar"><div class="maggot-fill" id="maggot-${f1.id}" style="width: 0%"></div></div>
                 ` : ''}
+                ${f1.traits.includes("Essaim de Moucherons") ? `
+                <div class="maggot-companion essaim">🦟</div>
+                <div class="maggot-bar"><div class="maggot-fill" id="essaim-${f1.id}" style="width: 0%"></div></div>
+                ` : ''}
+                ${f1.traits.includes("Gardien de Racine") ? `
+                <div class="maggot-companion gardien">🛡️</div>
+                <div class="guardian-hp" id="guardian-hp-${f1.id}">${Math.floor((100 + f1.stats.vitalite * 10) * 0.5)} HP</div>
+                ` : ''}
+                ${f1.traits.includes("Esprit Saboteur") ? `
+                <div class="maggot-companion esprit">👻</div>
+                <div class="maggot-bar"><div class="maggot-fill" id="spirit-${f1.id}" style="width: 0%"></div></div>
+                ` : ''}
             </div>
         </div>
 
@@ -205,6 +219,18 @@ export class CombatUI {
                 ${f2.traits.includes("Appel de l'Astico-Roi") ? `
                 <div class="maggot-companion">🪱</div>
                 <div class="maggot-bar"><div class="maggot-fill" id="maggot-${f2.id}" style="width: 0%"></div></div>
+                ` : ''}
+                ${f2.traits.includes("Essaim de Moucherons") ? `
+                <div class="maggot-companion essaim">🦟</div>
+                <div class="maggot-bar"><div class="maggot-fill" id="essaim-${f2.id}" style="width: 0%"></div></div>
+                ` : ''}
+                ${f2.traits.includes("Gardien de Racine") ? `
+                <div class="maggot-companion gardien">🛡️</div>
+                <div class="guardian-hp" id="guardian-hp-${f2.id}">${Math.floor((100 + f2.stats.vitalite * 10) * 0.5)} HP</div>
+                ` : ''}
+                ${f2.traits.includes("Esprit Saboteur") ? `
+                <div class="maggot-companion esprit">👻</div>
+                <div class="maggot-bar"><div class="maggot-fill" id="spirit-${f2.id}" style="width: 0%"></div></div>
                 ` : ''}
             </div>
         </div>
@@ -252,22 +278,49 @@ export class CombatUI {
                 engine.setSpeed(speed)
 
                 // Update CSS Variables for animations
-                const animDuration = Math.max(0.04, 0.2 / speed)
+                const animDuration = Math.max(0.1, 0.4 / speed)
                 document.documentElement.style.setProperty('--combat-speed', `${animDuration}s`)
             })
         })
 
         // Appliquer la variable CSS initiale
-        const initialAnimDuration = Math.max(0.04, 0.2 / this.currentSpeed)
+        const initialAnimDuration = Math.max(0.1, 0.4 / this.currentSpeed)
         document.documentElement.style.setProperty('--combat-speed', `${initialAnimDuration}s`)
 
-        engine.start().then(({ winner, loser }) => {
-            // Don't auto-close, show victory screen instead
+        engine.start().then(async ({ winner, loser }) => {
+            // Wait for all animations in the queue to finish before showing victory
+            await this.waitForQueue()
             this.showVictoryScreen(winner, loser, onFinish)
         })
     }
 
+    private async waitForQueue(): Promise<void> {
+        // Wait as long as the queue is being processed or has items
+        while (this.isProcessingQueue || this.eventQueue.length > 0) {
+            await new Promise(r => setTimeout(r, 50))
+        }
+        // Small extra delay for the last animation to settle
+        await new Promise(r => setTimeout(r, 300 / this.currentSpeed))
+    }
+
     private handleCombatEvent(event: CombatEvent): void {
+        this.eventQueue.push(event)
+        this.processQueue()
+    }
+
+    private async processQueue(): Promise<void> {
+        if (this.isProcessingQueue || this.eventQueue.length === 0) return
+        this.isProcessingQueue = true
+
+        while (this.eventQueue.length > 0) {
+            const event = this.eventQueue.shift()!
+            await this.executeEvent(event)
+        }
+
+        this.isProcessingQueue = false
+    }
+
+    private async executeEvent(event: CombatEvent): Promise<void> {
         if (!this.currentFighter1 || !this.currentFighter2) return
 
         switch (event.type) {
@@ -276,9 +329,13 @@ export class CombatUI {
                 this.updateBar(`atb-${this.currentFighter2.id}`, event.fighter2Energy)
                 if (event.maggot1Energy !== undefined) this.updateBar(`maggot-${this.currentFighter1.id}`, event.maggot1Energy)
                 if (event.maggot2Energy !== undefined) this.updateBar(`maggot-${this.currentFighter2.id}`, event.maggot2Energy)
+                if (event.essaim1Energy !== undefined) this.updateBar(`essaim-${this.currentFighter1.id}`, event.essaim1Energy)
+                if (event.essaim2Energy !== undefined) this.updateBar(`essaim-${this.currentFighter2.id}`, event.essaim2Energy)
+                if (event.spirit1Energy !== undefined) this.updateBar(`spirit-${this.currentFighter1.id}`, event.spirit1Energy)
+                if (event.spirit2Energy !== undefined) this.updateBar(`spirit-${this.currentFighter2.id}`, event.spirit2Energy)
                 break
             case 'attack':
-                this.animateAttack(event.attackerId, event.targetId, event.damage, event.isCritical, event.weapon)
+                await this.animateAttack(event.attackerId, event.targetId, event.damage, event.isCritical, event.weapon)
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
                 break
             case 'dodge':
@@ -286,28 +343,61 @@ export class CombatUI {
                 const dodgeAttacker = document.getElementById(`fighter-${event.attackerId}`)
                 const dodgeTarget = document.querySelector(`#fighter-${event.targetId} .mob-wrapper`) as HTMLElement
                 if (dodgeAttacker && dodgeTarget) {
-                    this.performDash(dodgeAttacker, dodgeTarget)
+                    await this.performDash(dodgeAttacker, dodgeTarget)
                 }
 
                 // Dodging animation for the target
                 const dodgingMobWrapper = document.querySelector(`#fighter-${event.targetId} .mob-wrapper`) as HTMLElement
                 if (dodgingMobWrapper) {
                     dodgingMobWrapper.classList.add('dodging')
-                    setTimeout(() => dodgingMobWrapper.classList.remove('dodging'), 500)
+                    await new Promise(r => setTimeout(r, 500 / this.currentSpeed))
+                    dodgingMobWrapper.classList.remove('dodging')
                 }
                 this.showPopup(event.targetId, 'ESQUIVE !', 'dodge')
                 break
             case 'maggot_attack':
                 const attackerContainer = document.getElementById(`fighter-${event.attackerId}`)
                 const targetWrapper = document.querySelector(`#fighter-${event.targetId} .mob-wrapper`) as HTMLElement
-                const maggotEl = attackerContainer?.querySelector('.maggot-companion') as HTMLElement
+                const maggotEl = attackerContainer?.querySelector('.maggot-companion:not(.essaim):not(.esprit):not(.gardien)') as HTMLElement
 
                 if (maggotEl && targetWrapper) {
-                    this.performDash(maggotEl, targetWrapper)
+                    await this.performDash(maggotEl, targetWrapper)
                 }
 
                 this.showPopup(event.targetId, `🪱 -${event.damage}`, 'maggot')
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
+                break
+            case 'essaim_attack':
+                const essaimAttacker = document.getElementById(`fighter-${event.attackerId}`)
+                const essaimTarget = document.querySelector(`#fighter-${event.targetId} .mob-wrapper`) as HTMLElement
+                const essaimEl = essaimAttacker?.querySelector('.essaim') as HTMLElement
+
+                if (essaimEl && essaimTarget) {
+                    await this.performDash(essaimEl, essaimTarget)
+                }
+
+                this.showPopup(event.targetId, `🦟 -${event.damage}${event.blinded ? ' 🎯' : ''}`, 'maggot')
+                this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
+                if (event.blinded) this.showPopup(event.targetId, 'AVEUGLE !', 'dodge')
+                break
+            case 'spirit_action':
+                const spiritAttacker = document.getElementById(`fighter-${event.attackerId}`)
+                const spiritTarget = document.querySelector(`#fighter-${event.targetId} .mob-wrapper`) as HTMLElement
+                const spiritEl = spiritAttacker?.querySelector('.esprit') as HTMLElement
+
+                if (spiritEl && spiritTarget) {
+                    await this.performDash(spiritEl, spiritTarget)
+                }
+
+                if (event.action !== 'miss') {
+                    this.showPopup(event.targetId, event.action === 'swap' ? 'SWAP !' : 'DROP !', 'sabotage')
+                } else {
+                    this.showPopup(event.attackerId, 'PROUT', 'miss')
+                }
+                break
+            case 'guardian_absorb':
+                this.updateGuardianHp(event.ownerId, event.guardianHp)
+                this.showPopup(event.ownerId, `🛡️ -${event.damageAbsorbed}`, 'dodge')
                 break
             case 'log':
                 const combatLog = document.getElementById('combat-log')
@@ -338,7 +428,7 @@ export class CombatUI {
                 }
                 break
             case 'counter_attack':
-                this.animateAttack(event.attackerId, event.targetId, event.damage, false, event.weapon)
+                await this.animateAttack(event.attackerId, event.targetId, event.damage, false, event.weapon)
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
                 this.showPopup(event.attackerId, 'CONTRE !', 'counter')
                 break
@@ -411,67 +501,39 @@ export class CombatUI {
         if (text) text.textContent = `${Math.max(0, current)}/${max}`
     }
 
-    private animateAttack(attackerId: string, targetId: string, damage: number, crit: boolean, weaponName?: string): void {
+    private async animateAttack(attackerId: string, targetId: string, damage: number, crit: boolean, weaponName?: string, isCompanion: boolean = false): Promise<void> {
         const attackerContainer = document.getElementById(`fighter-${attackerId}`)
         const targetContainer = document.getElementById(`fighter-${targetId}`)
         const attackerWrapper = attackerContainer?.querySelector('.mob-wrapper') as HTMLElement
         const targetWrapper = targetContainer?.querySelector('.mob-wrapper') as HTMLElement
         const weaponEl = attackerWrapper?.querySelector('.weapon-container') as HTMLElement
 
-        // WEAPON ANIMATION
-        if (weaponEl) {
-            // Find weapon type based on what is currently rendered (we can infer from engine or check registry if we had the mob data handy)
-            // But we don't have easy access to the exact weapon instance here easily without looking up mob data.
-            // However, we can check the ID of the weapon image or just pass it in event? 
-            // Better: Perform a quick lookup via registry if we can get the weapon name. 
-            // Or simpler: Pass weapon name in the event!
-            // The event 'attack' has `weapon?: string`. PERFECT.
-
-            // Wait, I need to check if event has weapon name. 
-            // Looking at files, CombatEvent for attack has: weapon?: string.
-
-            // Let's retrieve the animation type.
-            // We need to access the event data in this function, or pass it.
-            // The signature is animateAttack(attackerId, targetId, damage, crit).
-            // I should update signature or just do a best guess if not passed? 
-            // Wait, I am editing the function right now. I can just change the signature or use a global lookup?
-            // Actually I should update the method signature in the class to accept weaponName.
-        }
-
         if (attackerContainer && targetContainer && attackerWrapper && targetWrapper) {
-            this.performDash(attackerContainer, targetWrapper)
+            await this.performDash(isCompanion ? (attackerContainer.querySelector('.maggot-companion') as HTMLElement || attackerContainer) : attackerContainer, targetWrapper)
 
             // Trigger Weapon specific animation
             if (weaponEl) {
-                // Try to deduce animation from the weapon currently in DOM? 
-                // Or we rely on the fact that `animateAttack` should theoretically know the weapon.
-                // Let's modify the signature in a subsequent step if needed, but for now let's just use a generic 'swing' if we can't find it,
-                // OR BETTER: Use the MobData references `this.currentFighter1/2` to find what weapon they have!
-
-                // let weaponName: string | undefined
-                // if (attackerId === this.currentFighter1?.id) weaponName = this.currentFighter1.weapon
-                // else if (attackerId === this.currentFighter2?.id) weaponName = this.currentFighter2.weapon
-
                 if (weaponName) {
                     const def = WEAPON_REGISTRY[weaponName]
                     const animType = def?.animationType || 'slash' // Default to slash
 
                     weaponEl.classList.add(`anim-${animType}`)
-                    setTimeout(() => weaponEl.classList.remove(`anim-${animType}`), 500)
+                    await new Promise(r => setTimeout(r, 500 / this.currentSpeed))
+                    weaponEl.classList.remove(`anim-${animType}`)
                 }
             }
 
             targetWrapper.classList.add('hit')
-            setTimeout(() => targetWrapper.classList.remove('hit'), 300)
-
             this.showPopup(targetId, `-${damage}${crit ? ' CRIT!' : ''}`, crit ? 'crit' : 'damage')
+            await new Promise(r => setTimeout(r, 300 / this.currentSpeed))
+            targetWrapper.classList.remove('hit')
         }
     }
 
     /**
      * Centralized dash animation logic
      */
-    private performDash(attacker: HTMLElement, target: HTMLElement): void {
+    private async performDash(attacker: HTMLElement, target: HTMLElement): Promise<void> {
         // Calculate distance for responsive dash
         const attackerRect = attacker.getBoundingClientRect()
         const targetRect = target.getBoundingClientRect()
@@ -487,9 +549,8 @@ export class CombatUI {
         void attacker.offsetWidth // Force reflow
         attacker.classList.add('dash-attacking')
 
-        setTimeout(() => {
-            attacker.classList.remove('dash-attacking')
-        }, 700)
+        await new Promise(r => setTimeout(r, 700 / this.currentSpeed))
+        attacker.classList.remove('dash-attacking')
     }
 
     private showPopup(targetId: string, text: string, type: string): void {
@@ -536,100 +597,113 @@ export class CombatUI {
 
         const continueBtn = document.getElementById('continue-combat-btn')
         await new Promise<void>(resolve => {
-            continueBtn?.addEventListener('click', () => {
+            continueBtn?.addEventListener('click', async () => {
                 victoryOverlay.remove()
+
+                // 1. Process Results (XP / Rewards)
+                try {
+                    const combatResult = await (window.api as any).processCombatResult(winner, loser)
+                    console.log('[CombatUI] Combat processed:', combatResult)
+                    if (combatResult.reward) {
+                        alert(`Récompense obtenue: ${combatResult.reward}`)
+                    }
+                } catch (e) {
+                    console.error('[CombatUI] Error processing combat result:', e)
+                }
+
+                // 2. Handle level ups before finishing
+                const result = await (window.api as any).getAllMobs()
+                const mobsArr = result.mobs || []
+                const f1 = mobsArr.find((m: MobData) => m.id === this.currentFighter1?.id)
+                const f2 = mobsArr.find((m: MobData) => m.id === this.currentFighter2?.id)
+                const mobsToCheck = [f1, f2].filter(Boolean) as MobData[]
+
+                await this.handleLevelUps(mobsToCheck)
+
+                this.destroyCombat()
+                onFinish(winner, loser)
                 resolve()
             })
         })
-
-        // 1. Process Results (XP / Rewards)
-        try {
-            const result = await window.api.processCombatResult(winner, loser)
-            console.log('[CombatUI] Combat processed:', result)
-
-            // Show reward if any
-            if (result.reward) {
-                // TODO: Better reward UI
-                alert(`Récompense obtenue: ${result.reward}`)
-            }
-
-            // Update local references to use the fresh data (stats, level, etc)
-            // But handleLevelUps re-fetches anyway.
-        } catch (e) {
-            console.error('[CombatUI] Error processing combat result:', e)
-        }
-
-        // 2. Check for level-ups (Now that XP is added)
-        try {
-            await this.handleLevelUps([winner, loser])
-        } catch (e) {
-            console.error('[CombatUI] Error during level-ups:', e)
-        }
-
-        this.destroyCombat()
-        onFinish(winner, loser)
     }
 
-    private async handleLevelUps(mobs: any[]): Promise<void> {
+    private async handleLevelUps(mobs: MobData[]): Promise<void> {
         for (const mob of mobs) {
-            const mobData = await window.api.getMobById(mob.id)
-            if (!mobData.success || !mobData.mob) continue
-
-            const freshMob = mobData.mob
-            if (freshMob.statPoints > 0) {
+            let freshMob = mob
+            // Standardizing level up check based on MobData interface
+            while (freshMob.experience >= (freshMob.level * 100)) {
+                // Trigger level up and wait for choice
                 await this.showLevelUpChoices(freshMob)
+                // Refresh mob data after choice
+                const result = await (window.api as any).getAllMobs()
+                if (result.success && result.mobs) {
+                    const updated = result.mobs.find((m: MobData) => m.id === mob.id)
+                    if (updated) freshMob = updated
+                    else break
+                } else {
+                    break
+                }
             }
         }
     }
 
-    private async showLevelUpChoices(mob: any): Promise<void> {
-        try {
-            const choicesResult = await window.api.getMobUpgradeChoices(mob.id)
-            if (!choicesResult.success || !choicesResult.choices || choicesResult.choices.length === 0) {
-                console.log('[CombatUI] No upgrade choices available for', mob.nom)
+    private async showLevelUpChoices(mob: MobData): Promise<void> {
+        return new Promise(async (resolve) => {
+            const result = await (window.api as any).getMobUpgradeChoices(mob.id)
+            if (!result || !result.success || !result.choices) {
+                resolve()
                 return
             }
 
-            const levelUpOverlay = document.createElement('div')
-            levelUpOverlay.className = 'levelup-overlay'
-            levelUpOverlay.innerHTML = `
-                <div class="levelup-content">
-                    <h2 class="levelup-title">${mob.nom} - Niveau ${mob.level}!</h2>
-                    <p class="levelup-subtitle">Choisissez une amélioration:</p>
-                    <div class="upgrade-choices" id="upgrade-choices"></div>
+            const { choices } = result
+            const overlay = document.createElement('div')
+            overlay.className = 'level-up-overlay'
+            overlay.innerHTML = `
+                <div class="level-up-content">
+                    <h2>NIVEAU SUPÉRIEUR !</h2>
+                    <p>${mob.nom} passe au niveau ${mob.level + 1}</p>
+                    <div class="choices-container">
+                        ${choices.map((c: any, i: number) => `
+                            <div class="choice-card" data-index="${i}">
+                                <div class="choice-icon">${this.getUpgradeIcon(c.type)}</div>
+                                <div class="choice-name">${c.name}</div>
+                                <div class="choice-desc">${c.description}</div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             `
-            this.combatOverlay?.appendChild(levelUpOverlay)
+            document.body.appendChild(overlay)
 
-            const choicesContainer = levelUpOverlay.querySelector('#upgrade-choices') as HTMLElement
-
-            const choicePromise = new Promise<any>(resolve => {
-                choicesResult.choices?.forEach(choice => {
-                    const card = document.createElement('div')
-                    card.className = 'upgrade-card'
-                    const descText = choice.type === 'trait' ? choice.description || '' : ''
-                    card.innerHTML = `
-                        <div class="upgrade-icon">${this.getUpgradeIcon(choice)}</div>
-                        <div class="upgrade-label">${choice.label}</div>
-                        ${descText ? `<div class="upgrade-desc">${descText}</div>` : ''}
-                    `
-                    card.addEventListener('click', () => resolve(choice))
-                    choicesContainer.appendChild(card)
+            overlay.querySelectorAll('.choice-card').forEach(card => {
+                card.addEventListener('click', async () => {
+                    const index = parseInt((card as HTMLElement).dataset.index!)
+                    await (window.api as any).applyMobUpgrade(mob.id, choices[index])
+                    overlay.remove()
+                    resolve()
                 })
             })
+        })
+    }
 
-            const selectedChoice = await choicePromise
-            await window.api.applyMobUpgrade(mob.id, selectedChoice)
-            levelUpOverlay.remove()
-        } catch (error) {
-            console.error('[CombatUI] Error in showLevelUpChoices:', error)
+    private getUpgradeIcon(type: string): string {
+        switch (type) {
+            case 'stat': return '📈'
+            case 'weapon': return '⚔️'
+            case 'trait': return '✨'
+            default: return '❓'
         }
     }
 
-    private getUpgradeIcon(choice: any): string {
-        if (choice.type === 'stat') return '📈'
-        if (choice.type === 'weapon') return '⚔️'
-        if (choice.type === 'trait') return '✨'
-        return '🎁'
+    private updateGuardianHp(ownerId: string, current: number): void {
+        const text = document.getElementById(`guardian-hp-${ownerId}`)
+        if (text) {
+            text.innerText = `${Math.max(0, Math.floor(current))} HP`
+            if (current <= 0) {
+                text.style.opacity = '0.3'
+                const companion = text.parentElement?.querySelector('.gardien') as HTMLElement
+                if (companion) companion.style.opacity = '0.3'
+            }
+        }
     }
 }
