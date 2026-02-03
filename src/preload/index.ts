@@ -32,7 +32,21 @@ const api = {
   saveBiome: (data: any) => ipcRenderer.invoke('biome:save', data),
   loadBiome: () => ipcRenderer.invoke('biome:load'),
   minimizeWindow: () => ipcRenderer.send('window:minimize'),
-  closeWindow: () => ipcRenderer.send('window:close')
+  closeWindow: () => ipcRenderer.send('window:close'),
+
+  // PvE
+  getPveEnemies: (mobId: string, mobLevel: number) => ipcRenderer.invoke('pve:getEnemies', mobId, mobLevel),
+  clearPveCache: (mobId: string) => ipcRenderer.invoke('pve:clearCache', mobId),
+
+  // Memorial
+  getMemorial: () => ipcRenderer.invoke('memorial:get'),
+  addToMemorial: (mob: any, killedBy: string) => ipcRenderer.invoke('memorial:add', mob, killedBy),
+
+  // Inventory
+  getInventory: () => ipcRenderer.invoke('inventory:get'),
+  addPotion: () => ipcRenderer.invoke('inventory:addPotion'),
+  usePotion: () => ipcRenderer.invoke('inventory:usePotion'),
+  getPotionCount: () => ipcRenderer.invoke('inventory:getPotionCount')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

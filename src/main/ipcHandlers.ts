@@ -1,6 +1,9 @@
 import { ipcMain } from 'electron'
 import { MobManager } from './MobService'
 import { BiomeService } from './BiomeService'
+import { PveService } from './PveService'
+import { MemorialService } from './MemorialService'
+import { InventoryService } from './InventoryService'
 
 /**
  * Enregistre tous les handlers IPC pour la gestion des mobs
@@ -120,5 +123,44 @@ export function registerMobHandlers(): void {
   // Charger le biome
   ipcMain.handle('biome:load', () => {
     return BiomeService.loadBiome()
+  })
+
+  // --- PvE Handlers ---
+  ipcMain.handle('pve:getEnemies', (_event, mobId: string, mobLevel: number) => {
+    return PveService.getEnemiesForMob(mobId, mobLevel)
+  })
+
+  ipcMain.handle('pve:clearCache', (_event, mobId: string) => {
+    PveService.clearCacheForMob(mobId)
+    return { success: true }
+  })
+
+  // --- Memorial Handlers ---
+  ipcMain.handle('memorial:get', () => {
+    return MemorialService.getMemorial()
+  })
+
+  ipcMain.handle('memorial:add', (_event, mob: any, killedBy: string) => {
+    MemorialService.addToMemorial(mob, killedBy)
+    return { success: true }
+  })
+
+  // --- Inventory Handlers ---
+  ipcMain.handle('inventory:get', () => {
+    return InventoryService.getInventory()
+  })
+
+  ipcMain.handle('inventory:addPotion', () => {
+    InventoryService.addPotion()
+    return { success: true }
+  })
+
+  ipcMain.handle('inventory:usePotion', () => {
+    const used = InventoryService.usePotion()
+    return { success: used }
+  })
+
+  ipcMain.handle('inventory:getPotionCount', () => {
+    return { success: true, count: InventoryService.getPotionCount() }
   })
 }

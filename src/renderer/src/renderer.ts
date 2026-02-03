@@ -7,6 +7,8 @@ import { generateRandomName } from './utils/NameGenerator'
 import { TournamentUI } from './tournament/TournamentUI'
 import { TournamentManager } from '../../shared/TournamentManager'
 import { PartyUI } from './mob/PartyUI'
+import { PveUI } from './pve/PveUI'
+import { MemorialUI } from './memorial/MemorialUI'
 
 import {
   MobRenderer,
@@ -79,6 +81,12 @@ if (!window.api) {
 // Party UI
 let partyUI: PartyUI
 
+// PvE UI
+let pveUI: PveUI
+
+// Memorial UI
+let memorialUI: MemorialUI
+
 async function applyActionToMob(mobRenderer: MobRenderer): Promise<void> {
   // Toggle selection
   const current = getSelectedMob()
@@ -98,6 +106,8 @@ async function init(): Promise<void> {
   try {
     // 1. UI Setup
     tournamentUI = new TournamentUI()
+    pveUI = new PveUI()
+    memorialUI = new MemorialUI()
     partyUI = new PartyUI(
       () => { }, // On close
       () => loadMobs() // On update (moved from box to squad)
@@ -110,6 +120,7 @@ async function init(): Promise<void> {
     setupMobManagementButtons()
     setupRenameCallback()
     setupParallax()
+    setupPveAndMemorialButtons()
 
     console.log('[Renderer] UI Setup complete')
 
@@ -474,6 +485,113 @@ function setupWindowControls(): void {
     window.api.closeWindow()
   })
 }
+
+/**
+ * Setup PvE and Memorial button handlers
+ */
+function setupPveAndMemorialButtons(): void {
+  console.log('[Renderer] Setting up PvE and Memorial buttons...')
+  
+  // PvE Button
+  const btnPve = document.getElementById('btn-pve')
+  console.log('[Renderer] btn-pve element:', btnPve)
+  
+  btnPve?.addEventListener('click', () => {
+    console.log('[Renderer] PvE button clicked!')
+    const selectedMob = getSelectedMob()
+    if (!selectedMob) {
+      showNotification('Sélectionnez une patate pour le combat PvE', 'error')
+      return
+    }
+
+    // Get fresh mob data
+    window.api.getMobById(selectedMob.id).then((result) => {
+      if (!result.success || !result.mob) {
+        showNotification('Erreur: Mob introuvable', 'error')
+        return
+      }
+
+      pveUI.showEnemySelection(result.mob, async (enemy) => {
+        // Start PvE combat
+        console.log('[Renderer] Starting PvE combat:', result.mob!.nom, 'vs', enemy.nom)
+        
+        combatUI.renderCombatScene(result.mob!, enemy, async (winner, _loser) => {
+          // Check if player won
+          const playerWon = winner.id === result.mob!.id
+
+          if (playerWon) {
+            // Player survives - grant XP and maybe potion
+            console.log('[Renderer] Player won PvE!')
+            
+            // 5% chance for potion drop
+            if (Math.random() < 0.05) {
+              await window.api.addPotion()
+              showNotification('🧪 Potion de Réanimation obtenue !', 'success')
+            }
+            
+            // Save and refresh
+            await window.api.saveMobs()
+            await loadMobs(winner.id)
+            showNotification(`${winner.nom} a survécu !`, 'success')
+          } else {
+            // Player lost - check for potion
+            console.log('[Renderer] Player lost PvE!')
+            
+            const potionResult = await window.api.getPotionCount()
+            if (potionResult.success && potionResult.count > 0) {
+              // Has potion - ask to use
+              const usePotion = confirm(`💀 ${result.mob!.nom} est mort(e) !\n\n🧪 Vous avez ${potionResult.count} Potion(s) de Réanimation.\n\nVoulez-vous en utiliser une pour ressusciter ?`)
+              
+              if (usePotion) {
+                const used = await window.api.usePotion()
+                if (used.success) {
+                  showNotification(`🧪 ${result.mob!.nom} ressuscite et continue le combat !`, 'success')
+                  // Resurrect with full HP and continue (restart combat)
+                  combatUI.renderCombatScene(result.mob!, enemy, async (w2, _l2) => {
+                    // Recursive handling
+                    await window.api.saveMobs()
+                    await loadMobs(w2.id)
+                  })
+                  return
+                }
+              }
+            }
+            
+            // No potion or declined - permadeath
+            showNotification(`💀 ${result.mob!.nom} est mort(e) définitivement...`, 'error')
+            
+            // Add to memorial
+            await window.api.addToMemorial(result.mob!, enemy.nom)
+            
+            // Delete the mob
+            await window.api.deleteMob(result.mob!.id)
+            
+            // Refresh UI
+            mobRenderers.get(result.mob!.id)?.destroy()
+            mobRenderers.delete(result.mob!.id)
+            setSelectedMob(null)
+            await loadMobs()
+          }
+        })
+      }, () => {
+        // Cancelled
+        console.log('[Renderer] PvE cancelled')
+      })
+    })
+  })
+
+  // Memorial Button
+  const btnMemorial = document.getElementById('btn-memorial')
+  console.log('[Renderer] btn-memorial element:', btnMemorial)
+  
+  btnMemorial?.addEventListener('click', () => {
+    console.log('[Renderer] Memorial button clicked!')
+    memorialUI.show()
+  })
+  
+  console.log('[Renderer] PvE and Memorial buttons setup complete.')
+}
+
 
 
 function setupActionButtons(): void {

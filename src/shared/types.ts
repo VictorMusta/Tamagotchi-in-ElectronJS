@@ -123,3 +123,31 @@ export interface TournamentHistory {
     tournaments?: TournamentData[]
     error?: string
 }
+
+// PvE & Memorial types
+export interface FallenMob extends MobData {
+    dateOfDeath: string // ISO date string
+    killedBy: string // Enemy name
+}
+
+export interface PlayerInventory {
+    potions: number
+}
+
+export interface InventoryResult {
+    success: boolean
+    inventory?: PlayerInventory
+    error?: string
+}
+
+export interface MemorialResult {
+    success: boolean
+    fallen?: FallenMob[]
+    error?: string
+}
+
+export interface PveEnemiesResult {
+    success: boolean
+    enemies?: MobData[]
+    error?: string
+}

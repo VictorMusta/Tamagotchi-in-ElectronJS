@@ -113,6 +113,11 @@ export class CombatUI {
 
         // Calculate initial HP percentages
         const f1HpPercent = (f1.vie / f1MaxHP) * 100
+
+        // Default potato image for enemies without imageUrl
+        const defaultImage = 'assets/Potato still.png'
+        const f1Image = f1.imageUrl || defaultImage
+        const f2Image = f2.imageUrl || defaultImage
         const f2HpPercent = (f2.vie / f2MaxHP) * 100
 
         this.combatOverlay = document.createElement('div')
@@ -143,7 +148,7 @@ export class CombatUI {
                 <div class="atb-bar"><div class="atb-fill" id="atb-${f1.id}" style="width: 0%"></div></div>
             </div>
             <div class="mob-wrapper">
-                <img src="${f1.imageUrl}" class="combat-mob-img" />
+                <img src="${f1Image}" class="combat-mob-img" />
                 <div class="skin-layers">
                     <div class="layer hat-layer ${f1.skin?.hat || 'none'}"></div>
                 </div>
@@ -178,7 +183,7 @@ export class CombatUI {
                 <div class="atb-bar"><div class="atb-fill" id="atb-${f2.id}" style="width: 0%"></div></div>
             </div>
             <div class="mob-wrapper">
-                <img src="${f2.imageUrl}" class="combat-mob-img" />
+                <img src="${f2Image}" class="combat-mob-img" />
                 <div class="skin-layers">
                     <div class="layer hat-layer ${f2.skin?.hat || 'none'}"></div>
                 </div>
