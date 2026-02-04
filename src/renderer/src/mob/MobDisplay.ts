@@ -93,17 +93,35 @@ export class MobDisplay {
 
             </div>
             ${displayedWeapon ? `
-            <div class="hub-weapon-icon" style="
+            <div class="hub-weapon-pivot" style="
                 position: absolute;
-                bottom: 5px;
-                right: -5px;
-                width: 24px;
-                height: 24px;
-                background-image: url('assets/weapons/${WEAPON_REGISTRY[displayedWeapon]?.icon || 'toothpick.png'}');
-                background-size: cover;
-                image-rendering: pixelated;
-                z-index: 5;
-            "></div>
+                top: 50%;
+                right: -15px;
+                width: 40px;
+                height: 40px;
+                z-index: 20;
+                pointer-events: none;
+                transform-origin: center center;
+            ">
+                <div class="hub-weapon-container" style="
+                    width: 100%;
+                    height: 100%;
+                    position: relative;
+                    filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.5));
+                    animation: weapon-float 2s infinite ease-in-out;
+                ">
+                    <img 
+                        src="assets/weapons/${WEAPON_REGISTRY[displayedWeapon]?.icon || 'toothpick.png'}" 
+                        class="weapon-icon"
+                        style="
+                            width: 100%;
+                            height: 100%;
+                            object-fit: contain;
+                            image-rendering: pixelated;
+                        "
+                    />
+                </div>
+            </div>
             ` : ''}
             ${data.status === 'mort' ? '<div class="dead-marker">💀</div>' : ''}
         `

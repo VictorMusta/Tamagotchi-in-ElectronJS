@@ -12,8 +12,65 @@ export class CombatUI {
     private eventQueue: CombatEvent[] = []
     private isProcessingQueue: boolean = false
 
+    private isCinematicMode: boolean = true
+
     constructor() {
         this.loadSpeed()
+        this.loadCinematicMode()
+    }
+
+    private loadCinematicMode(): void {
+        const saved = localStorage.getItem('cinematic-mode')
+        this.isCinematicMode = saved === 'false' ? false : true // Default true
+    }
+
+    private toggleCinematicMode(): void {
+        this.isCinematicMode = !this.isCinematicMode
+        localStorage.setItem('cinematic-mode', this.isCinematicMode.toString())
+        
+        const btn = document.getElementById('btn-cinematic')
+        if (btn) {
+            btn.classList.toggle('active', this.isCinematicMode)
+            btn.innerHTML = `🎥 ${this.isCinematicMode ? 'ON' : 'OFF'}`
+        }
+    }
+
+    private async applyCameraEffect(type: 'focus' | 'impact' | 'reset', targetId?: string, duration: number = 0.5, easing: string = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'): Promise<void> {
+        if (!this.isCinematicMode || !this.combatOverlay) return
+
+        const arena = this.combatOverlay.querySelector('.combat-arena') as HTMLElement
+        if (!arena) return
+
+        // Set dynamic transition props
+        arena.style.setProperty('--camera-speed', `${duration}s`)
+        arena.style.setProperty('--camera-easing', easing)
+
+        switch (type) {
+            case 'focus': // Generic focus on a specific entity (attacker or target)
+                if (targetId) {
+                    const el = document.getElementById(`fighter-${targetId}`)
+                    if (el) {
+                        const isRight = el.classList.contains('right')
+                        // Center the entity:
+                        // If Right side: move arena Left (-150)
+                        // If Left side: move arena Right (+150)
+                        const offsetX = isRight ? -150 : 150
+                        
+                        arena.style.transform = `scale(1.4) translate(${offsetX}px, 50px)`
+                        // Store these as origin for keyframe animations (camera-track)
+                        arena.style.setProperty('--cam-origin-x', `${offsetX}px`)
+                        arena.style.setProperty('--cam-origin-y', '50px')
+                    }
+                }
+                break
+            case 'impact':
+                arena.classList.add('shake')
+                setTimeout(() => arena.classList.remove('shake'), 500)
+                break
+            case 'reset':
+                arena.style.transform = 'scale(1) translate(0, 0)'
+                break
+        }
     }
 
     private loadSpeed(): void {
@@ -33,7 +90,7 @@ export class CombatUI {
      */
     async showSelectionMenu(onStartFight: (f1: MobData, f2: MobData) => void): Promise<void> {
         console.log('[CombatUI] Requesting mobs for selection menu...')
-        const result = await window.api.getAllMobs()
+        const result = await (window.api as any).getAllMobs()
         console.log('[CombatUI] Mobs result:', result)
 
         if (!result.success || !result.mobs) {
@@ -117,25 +174,15 @@ export class CombatUI {
         })
     }
 
-    /**
-     * Lance la scène de combat visuelle
-     */
-    /**
-     * Lance la scène de combat visuelle
-     */
     renderCombatScene(f1: MobData, f2: MobData, onFinish: (winner: MobData, loser: MobData) => void, options: { combatType?: 'standard' | 'friendly' | 'tournament' } = {}): void {
         this.currentFighter1 = f1
         this.currentFighter2 = f2
         const combatType = options.combatType || 'standard'
 
-        // Calculate Max HP for each fighter
+        // ... existing calc vars ...
         const f1MaxHP = 100 + ((f1.stats?.vitalite || 0) * (f1.hpMultiplier || 10))
         const f2MaxHP = 100 + ((f2.stats?.vitalite || 0) * (f2.hpMultiplier || 10))
-
-        // Calculate initial HP percentages
         const f1HpPercent = (f1.vie / f1MaxHP) * 100
-
-        // Default potato image for enemies without imageUrl
         const defaultImage = 'assets/Potato still.png'
         const f1Image = f1.imageUrl || defaultImage
         const f2Image = f2.imageUrl || defaultImage
@@ -147,6 +194,7 @@ export class CombatUI {
 
         this.combatOverlay.innerHTML = `
       <div class="combat-arena">
+        <!-- Fighters ... -->
         <div class="fighter-container left" id="fighter-${f1.id}">
             <div class="hud">
                 <div class="name">${f1.nom}</div>
@@ -160,6 +208,7 @@ export class CombatUI {
                     <span class="stat">⚡ ${f1.stats.vitesse}</span>
                     <span class="stat">🎯 ${f1.stats.agilite}</span>
                 </div>
+                <!-- Weapon Stock -->
                 <div class="weapon-stock" id="stock-${f1.id}">
                     ${(f1.weapons || []).map(w => {
             const icon = WEAPON_REGISTRY[w]?.icon || 'default.png'
@@ -195,7 +244,7 @@ export class CombatUI {
         <div class="vs-label">VS</div>
 
         <div class="fighter-container right" id="fighter-${f2.id}">
-            <div class="hud">
+             <div class="hud">
                 <div class="name">${f2.nom}</div>
                 <div class="hp-bar">
                     <div class="hp-fill" id="hp-${f2.id}" style="width: ${f2HpPercent}%"></div>
@@ -239,6 +288,10 @@ export class CombatUI {
             </div>
         </div>
         
+        <button id="btn-cinematic" class="cinematic-toggle ${this.isCinematicMode ? 'active' : ''}">
+            🎥 ${this.isCinematicMode ? 'ON' : 'OFF'}
+        </button>
+
         <div class="speed-controls">
             <button class="speed-btn active" data-speed="1">x1</button>
             <button class="speed-btn" data-speed="1.5">x1.5</button>
@@ -249,17 +302,27 @@ export class CombatUI {
         <div id="combat-log"></div>
       </div>
     `
-
         document.body.appendChild(this.combatOverlay)
+
+        // Event for Cinematic Toggle
+        document.getElementById('btn-cinematic')?.addEventListener('click', () => this.toggleCinematicMode())
 
         // Initialiser l'engine avec la vitesse persistée
         const engine = new CombatEngine(f1, f2, (event) => {
             this.handleCombatEvent(event)
         })
         engine.setSpeed(this.currentSpeed)
+        // Ensure engine is accessible for cinematic speed control? Ideally we access it via method but engine is local here.
+        // We can cheat and attach it to `this` temporarily or just ignore speed manip for now and rely on CSS/visuals.
+        // Actually for slow mo on crit we might need to setSpeed.
+        // Let's attach engine to a private prop if we want full control, but for now visual slow mo is CSS based?
+        // No, engine speed controls event timing.
+        // To implement engine slow motion properly, I would need to store engine reference. 
+        // For this step I'll focus on Visuals (CSS).
 
-        // Mettre à jour les boutons UI selon la vitesse persistée
+        // ... existing speed btn events ...
         this.combatOverlay.querySelectorAll('.speed-btn').forEach(btn => {
+            // ... existing code ...
             const btnSpeed = parseFloat((btn as HTMLElement).dataset.speed || '1')
             if (btnSpeed === this.currentSpeed) {
                 btn.classList.add('active')
@@ -270,31 +333,25 @@ export class CombatUI {
             btn.addEventListener('click', (e) => {
                 const target = e.target as HTMLElement
                 const speed = parseFloat(target.dataset.speed || '1')
-
-                // Sauvegarder la nouvelle vitesse
                 this.saveSpeed(speed)
-
-                // Update UI
                 this.combatOverlay?.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'))
                 target.classList.add('active')
-
-                // Update Engine
                 engine.setSpeed(speed)
-
-                // Update CSS Variables for animations
                 const animDuration = Math.max(0.1, 0.4 / speed)
                 document.documentElement.style.setProperty('--combat-speed', `${animDuration}s`)
             })
         })
 
-        // Appliquer la variable CSS initiale
         const initialAnimDuration = Math.max(0.1, 0.4 / this.currentSpeed)
         document.documentElement.style.setProperty('--combat-speed', `${initialAnimDuration}s`)
 
-        // engine start promise
         engine.start().then(async ({ winner, loser }) => {
-            // Wait for all animations in the queue to finish before showing victory
             await this.waitForQueue()
+            // Final slow mo finish
+             if (this.isCinematicMode) {
+                // Dramatic pause
+                await new Promise(r => setTimeout(r, 1000))
+            }
             this.showVictoryScreen(winner, loser, onFinish, combatType)
         })
     }
@@ -345,10 +402,12 @@ export class CombatUI {
                 break
             case 'dodge':
                 // Dash animation for the attacker even if it's dodged
-                const dodgeAttacker = document.getElementById(`fighter-${event.attackerId}`)
+                const dodgeAttackerContainer = document.getElementById(`fighter-${event.attackerId}`)
+                const dodgeAttackerWrapper = dodgeAttackerContainer?.querySelector('.mob-wrapper') as HTMLElement
                 const dodgeTarget = document.querySelector(`#fighter-${event.targetId} .mob-wrapper`) as HTMLElement
-                if (dodgeAttacker && dodgeTarget) {
-                    await this.performDash(dodgeAttacker, dodgeTarget)
+                
+                if (dodgeAttackerWrapper && dodgeTarget) {
+                    await this.performDash(dodgeAttackerWrapper, dodgeTarget)
                 }
 
                 // Dodging animation for the target
@@ -514,7 +573,41 @@ export class CombatUI {
         const weaponEl = attackerWrapper?.querySelector('.weapon-container') as HTMLElement
 
         if (attackerContainer && targetContainer && attackerWrapper && targetWrapper) {
-            await this.performDash(isCompanion ? (attackerContainer.querySelector('.maggot-companion') as HTMLElement || attackerContainer) : attackerContainer, targetWrapper)
+            
+            // --- Cinematic Logic ---
+            let moveDuration = 0.6 // Normal speec
+            // CRITICAL CHANGE: Only trigger cinematic sequence on CRITS
+            const isCinematicSequence = this.isCinematicMode && crit
+            
+            if (isCinematicSequence) {
+                // Setup Phase: Zoom on ATTACKER first
+                await this.applyCameraEffect('focus', attackerId, 0.5, 'ease-out')
+                // A small beat to register the focus
+                await new Promise(r => setTimeout(r, 400))
+                
+                moveDuration = 2.0 // Slow motion dash
+            }
+
+            // --- Execution Phase (Dash + Follow) ---
+            
+            // Randomize attack style if Unarmed (no weapon)
+            let attackStyle: 'dash' | 'jump' | 'uppercut' = 'dash'
+            if (!weaponName) {
+                const styles: ('dash' | 'jump' | 'uppercut')[] = ['dash', 'jump', 'uppercut']
+                attackStyle = styles[Math.floor(Math.random() * styles.length)]
+            }
+
+            const dashPromise = this.performDash(
+                // Use attackerWrapper IF not companion. This prevents HUD from moving.
+                isCompanion ? (attackerContainer.querySelector('.maggot-companion') as HTMLElement || attackerWrapper) : attackerWrapper, 
+                targetWrapper,
+                moveDuration,
+                isCinematicSequence, // Enable camera tracking sync ONLY for cinematic sequence
+                attackStyle
+            )
+
+            // Wait for movement to finish
+            await dashPromise
 
             // Trigger Weapon specific animation
             if (weaponEl) {
@@ -523,22 +616,54 @@ export class CombatUI {
                     const animType = def?.animationType || 'slash' // Default to slash
 
                     weaponEl.classList.add(`anim-${animType}`)
-                    await new Promise(r => setTimeout(r, 500 / this.currentSpeed))
+                    // Animation speed adapts to bullet time too? Maybe keep hit fast?
+                    // Let's keep hit relatively snappy but slightly slower if bullet time
+                    const hitDuration = isCinematicSequence ? 1000 : (500 / this.currentSpeed)
+                     // Does weapon animation use css var? Check css.
+                     // The weapon anims use fixed times (0.4s). Use style override if needed or just accept it's fast.
+                     // For "Impact" feel, fast hit after slow movement is good.
+                    await new Promise(r => setTimeout(r, hitDuration))
                     weaponEl.classList.remove(`anim-${animType}`)
                 }
             }
 
+            // --- Impact Phase ---
+            // 2. Impact Effect (Shake) - Keep this for all hits or just crits?
+            // User asked "animations" to be crit only. Shake is juiciness. 
+            // I'll keep shake for all cinematic mode hits because it feels dead otherwise.
+            if (this.isCinematicMode) {
+                 this.applyCameraEffect('impact')
+            }
+            
+            // JUICE: Potato Juice Particles on Hit
+            this.createHitParticles(targetWrapper, 12)
+
             targetWrapper.classList.add('hit')
             this.showPopup(targetId, `-${damage}${crit ? ' CRIT!' : ''}`, crit ? 'crit' : 'damage')
-            await new Promise(r => setTimeout(r, 300 / this.currentSpeed))
+            
+            // 3. Post-Hit Delay (Slow mo linger)
+            if (isCinematicSequence) {
+                 await new Promise(r => setTimeout(r, 500)) 
+            } else {
+                 await new Promise(r => setTimeout(r, 300 / this.currentSpeed))
+            }
+
             targetWrapper.classList.remove('hit')
+
+            // 4. Reset Camera (Only if we zoomed)
+            if (isCinematicSequence) {
+                this.applyCameraEffect('reset', undefined, 0.8, 'ease-in-out')
+            }
         }
     }
 
     /**
      * Centralized dash animation logic
      */
-    private async performDash(attacker: HTMLElement, target: HTMLElement): Promise<void> {
+    /**
+     * Centralized dash animation logic
+     */
+    private async performDash(attacker: HTMLElement, target: HTMLElement, durationSec: number = 0.7, enableTracking: boolean = false, style: 'dash' | 'jump' | 'uppercut' = 'dash'): Promise<void> {
         // Calculate distance for responsive dash
         const attackerRect = attacker.getBoundingClientRect()
         const targetRect = target.getBoundingClientRect()
@@ -549,13 +674,75 @@ export class CombatUI {
         // Set CSS variables for the animation
         attacker.style.setProperty('--dash-x', `${deltaX}px`)
         attacker.style.setProperty('--dash-y', `${deltaY}px`)
+        
+        // Dynamically set speed for this specific dash
+        const realDuration = this.isCinematicMode ? durationSec : (durationSec / this.currentSpeed)
+        attacker.style.setProperty('--combat-speed', `${realDuration}s`)
 
-        attacker.classList.remove('dash-attacking')
+        const arena = this.combatOverlay?.querySelector('.combat-arena') as HTMLElement
+        if (enableTracking && arena) {
+             // For tracking, we need the arena to know the dash vector too
+             arena.style.setProperty('--dash-x', `${deltaX}px`)
+             arena.style.setProperty('--dash-y', `${deltaY}px`)
+             
+             // For jump/uppercut, the camera tracking MIGHT need to be different? 
+             // Currently camera-track mirrors linear dash.
+             // If we jump, camera stays linear? That's actually fine, it keeps the ground focused.
+             // If we want camera to follow the jump arc, we'd need a specific camera animation too.
+             // For now, let's keep camera linear "Pan" while fighter jumps/uppercuts. It adds depth.
+             
+             arena.classList.add('camera-tracking')
+             // Ensure speed is synced
+             arena.style.setProperty('--combat-speed', `${realDuration}s`)
+        }
+
+        const animClass = `${style}-attacking` // dash-attacking, jump-attacking, uppercut-attacking
+
+        attacker.classList.remove('dash-attacking', 'jump-attacking', 'uppercut-attacking')
         void attacker.offsetWidth // Force reflow
-        attacker.classList.add('dash-attacking')
+        attacker.classList.add(animClass)
 
-        await new Promise(r => setTimeout(r, 700 / this.currentSpeed))
-        attacker.classList.remove('dash-attacking')
+        await new Promise(r => setTimeout(r, realDuration * 1000))
+        attacker.classList.remove(animClass)
+        
+        if (enableTracking && arena) {
+             arena.classList.remove('camera-tracking')
+        }
+    }
+
+    private createHitParticles(target: HTMLElement, amount: number = 8): void {
+        if (!this.combatOverlay) return
+
+        const rect = target.getBoundingClientRect()
+        const centerX = rect.left + rect.width / 2
+        const centerY = rect.top + rect.height / 2
+
+        for (let i = 0; i < amount; i++) {
+             const p = document.createElement('div')
+             p.classList.add('juice-particle')
+             
+             // Random spread
+             const angle = Math.random() * Math.PI * 2
+             const dist = 50 + Math.random() * 100
+             const tx = Math.cos(angle) * dist
+             const ty = Math.sin(angle) * dist
+             const rot = Math.random() * 360
+
+             p.style.setProperty('--x', `${tx}px`)
+             p.style.setProperty('--y', `${ty}px`)
+             p.style.setProperty('--rot', `${rot}deg`)
+             
+             p.style.left = `${centerX}px`
+             p.style.top = `${centerY}px`
+
+             this.combatOverlay.appendChild(p)
+             
+             // Slight delay for more natural "splurt"
+             setTimeout(() => p.classList.add('animate'), Math.random() * 100)
+
+             // Cleanup
+             setTimeout(() => p.remove(), 800)
+        }
     }
 
     private showPopup(targetId: string, text: string, type: string): void {

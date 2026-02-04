@@ -6,6 +6,10 @@ export class PhysicsWorld {
     private runner: Matter.Runner
     private render: Matter.Render
     private canvas: HTMLCanvasElement
+    private lastHighFiveTime: number = 0
+    
+    // Callback for mid-air collisions (HIGH-FIVE!)
+    public onHighFive: ((x: number, y: number) => void) | null = null
 
     constructor(element: HTMLElement) {
         // Create engine
@@ -75,6 +79,36 @@ export class PhysicsWorld {
 
         // Keep the mouse in sync with rendering
         this.render.mouse = mouse
+        
+        // --- COLLISION DETECTION FOR HIGH-FIVES ---
+        Matter.Events.on(this.engine, 'collisionStart', (event) => {
+            event.pairs.forEach((pair) => {
+                const { bodyA, bodyB } = pair
+                
+                // Check if both are Mobs (not walls)
+                if (bodyA.label === 'Mob' && bodyB.label === 'Mob') {
+                    // Check if both are airborne (moving upward or just launched)
+                    const isAirborne = bodyA.velocity.y < -2 || bodyB.velocity.y < -2
+                    
+                    if (isAirborne) {
+                        // Check cooldown (5 seconds)
+                        const now = Date.now()
+                        if (now - this.lastHighFiveTime > 5000) {
+                            this.lastHighFiveTime = now
+                            
+                            // Calculate collision point (midpoint)
+                            const x = (bodyA.position.x + bodyB.position.x) / 2
+                            const y = (bodyA.position.y + bodyB.position.y) / 2
+                            
+                            // Trigger callback!
+                            if (this.onHighFive) {
+                                this.onHighFive(x, y)
+                            }
+                        }
+                    }
+                }
+            })
+        })
 
         // Start
         this.start()
@@ -98,7 +132,8 @@ export class PhysicsWorld {
             render: { visible: false },
             label: 'Wall'
         })
-        const rightWall = Matter.Bodies.rectangle(width + wallThickness / 2, height / 2, wallThickness, height * 2, {
+        // Right wall moved 200px left to prevent potatoes going behind action menu
+        const rightWall = Matter.Bodies.rectangle(width - 200 + wallThickness / 2, height / 2, wallThickness, height * 2, {
             isStatic: true,
             render: { visible: false },
             label: 'Wall'

@@ -65,6 +65,42 @@ let tournamentUI: TournamentUI
 // Physics World
 const physicsWorld = new PhysicsWorld(document.getElementById('app') || document.body)
 
+// High-Five Celebration Handler
+physicsWorld.onHighFive = (x: number, y: number) => {
+  console.log('🙌 HIGH-FIVE at', x, y)
+  
+  // Spawn emoji
+  const emoji = document.createElement('div')
+  emoji.className = 'high-five-emoji'
+  emoji.textContent = '✋'
+  emoji.style.left = `${x}px`
+  emoji.style.top = `${y}px`
+  document.body.appendChild(emoji)
+  setTimeout(() => emoji.remove(), 1500)
+  
+  // Spawn gold celebration particles
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div')
+    p.classList.add('celebration-particle')
+    
+    const angle = Math.random() * Math.PI * 2
+    const dist = 60 + Math.random() * 120
+    const tx = Math.cos(angle) * dist
+    const ty = Math.sin(angle) * dist
+    const rot = Math.random() * 360
+    
+    p.style.setProperty('--x', `${tx}px`)
+    p.style.setProperty('--y', `${ty}px`)
+    p.style.setProperty('--rot', `${rot}deg`)
+    p.style.left = `${x}px`
+    p.style.top = `${y}px`
+    
+    document.body.appendChild(p)
+    setTimeout(() => p.classList.add('animate'), Math.random() * 50)
+    setTimeout(() => p.remove(), 900)
+  }
+}
+
 // Web API Fallback
 import { WebApi } from './WebApi'
 // @ts-ignore

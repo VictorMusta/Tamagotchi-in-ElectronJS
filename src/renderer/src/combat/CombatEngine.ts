@@ -365,7 +365,8 @@ export class CombatEngine {
         if (victim.vie <= 0) return
 
         // GLOBAL WEAPON STEALING
-        if (!victim.weapon && source.weapon) {
+        // Chance for an unarmed victim to steal the weapon of the attacker
+        if (!victim.weapon && source.weapon && Math.random() < 0.10) {
             this.stealWeapon(victim, source)
         }
 

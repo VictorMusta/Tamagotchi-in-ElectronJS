@@ -171,15 +171,49 @@ export class MobMovement {
         update()
     }
     
-    public hop(): void {
+    public hop(intensity: number = 0.5): void {
         if (!this.body) return
 
-        // Random jump force
-        // Force is vector. Mass is implicit.
-        const forceX = (Math.random() - 0.5) * 0.05
-        const forceY = -0.05 - Math.random() * 0.05
+        // Force Y calculation - BOOSTED 10x for dramatic jumps!
+        // Low intensity (0.1) -> -0.42 (Small jump)
+        // High intensity (1.0) -> -1.5 (MEGA JUMP!)
+        const forceY = (-0.03 - (intensity * 0.12)) * 10
+        
+        // Random horizontal force - 5x BOOST for wide jumps!
+        let forceX = (Math.random() - 0.5) * 0.05 * 5
+        if (Math.random() < 0.3) {
+            // Lateral jump! BIG horizontal force - 5x multiplier
+            forceX = (Math.random() > 0.5 ? 1 : -1) * (0.2 + Math.random() * 0.3) * intensity * 5
+        }
 
         Matter.Body.applyForce(this.body, this.body.position, { x: forceX, y: forceY })
+        
+        // SALTO: Add random spin for flip effect (50% chance)
+        if (Math.random() < 0.5) {
+            const spinDirection = Math.random() > 0.5 ? 1 : -1
+            const spinSpeed = 0.05 + Math.random() * 0.15 * intensity
+            Matter.Body.setAngularVelocity(this.body, spinDirection * spinSpeed)
+        }
+    }
+
+    public walk(direction: number): void {
+        // direction: -1 (left) or 1 (right)
+        if (!this.body) return
+        const forceX = direction * 0.005 // Small nudges
+        Matter.Body.applyForce(this.body, this.body.position, { x: forceX, y: 0 })
+        
+        // Slight rotation for waddle effect
+        Matter.Body.setAngularVelocity(this.body, direction * 0.05)
+    }
+
+    public squish(): void {
+        this.element.classList.add('squishing')
+        setTimeout(() => this.element.classList.remove('squishing'), 300)
+        
+        // Physics bounce
+        if (this.body) {
+             Matter.Body.applyForce(this.body, this.body.position, { x: 0, y: -0.02 })
+        }
     }
 
     public destroy(): void {
