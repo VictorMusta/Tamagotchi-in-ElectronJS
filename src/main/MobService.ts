@@ -230,8 +230,8 @@ class MobManagerClass {
     this.saveMobs()
 
     return {
-      winner: winner ? winner.toJSON() : { ...winnerData, vie: 100 + (winnerData.stats.vitalite * 5), status: 'vivant' },
-      loser: loser ? loser.toJSON() : { ...loserData, vie: 100 + (loserData.stats.vitalite * 5), status: 'vivant' },
+      winner: winner ? winner.toJSON() : { ...winnerData, vie: 100 + (winnerData.stats.vitalite * (winnerData.hpMultiplier || 10)), status: 'vivant' },
+      loser: loser ? loser.toJSON() : { ...loserData, vie: 100 + (loserData.stats.vitalite * (loserData.hpMultiplier || 10)), status: 'vivant' },
       reward
     }
   }

@@ -86,7 +86,8 @@ class PveServiceClass {
       skin,
       combatProgress: { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 },
       inSquad: false,
-      weapons: this.generateWeaponsForLevel(level)
+      weapons: this.generateWeaponsForLevel(level),
+      hpMultiplier: 5
     }
 
     return enemy

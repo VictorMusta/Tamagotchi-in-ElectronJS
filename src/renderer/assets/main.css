@@ -75,7 +75,8 @@ body {
   color: white;
   user-select: none;
   font-family: var(--font-main);
-  touch-action: none;
+  /* Removed global touch-action: none to allow scrolling in modals */
+  /* touch-action: none; */ 
   /* Crucial for dragging vs scrolling */
   overflow: hidden;
 }
@@ -97,10 +98,31 @@ body {
 }
 
 /* Allow scrolling in modals */
+/* Allow scrolling in modals - Recursive to ensure children don't block it */
 .selection-list,
+.selection-list *,
+.selection-card,
+.selection-card *,
+.pve-modal,
+.pve-modal *,
+.memorial-modal,
+.memorial-modal *,
+.tournament-overlay,
+.tournament-overlay *,
+#action-bar,
+#action-bar *,
+#combat-log,
+#combat-log *,
 .party-list,
-.history-section {
+.party-list *,
+.history-section,
+.history-section * {
   touch-action: pan-y !important;
+  user-select: auto !important; /* Allow text selection/interaction */
+  -webkit-overflow-scrolling: touch !important; /* Smooth scrolling on touch devices */
+  overscroll-behavior: contain !important; /* Prevent scroll chaining */
+  pointer-events: auto !important; /* Ensure events are captured */
+  cursor: auto; /* feedback for mouse users */
 }
 
 body.theme-forest #parallax-background {
@@ -140,6 +162,7 @@ body.theme-cozy #parallax-background {
   /* Factor 0.6 (Midground) */
   transform: translate(calc(var(--parallax-x) * 0.6), calc(var(--parallax-y) * 0.6));
   transition: transform 0.1s linear;
+  touch-action: none; /* Prevent scrolling when interacting with mobs */
 }
 
 .mob {

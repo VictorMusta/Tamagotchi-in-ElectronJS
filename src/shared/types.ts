@@ -35,6 +35,7 @@ export interface MobData {
     combatProgress: CombatStats
     inSquad: boolean // True if in active squad (Hub), false if in Box
     weapons: string[] // List of owned weapons
+    hpMultiplier?: number // HP per Vitality point (default 10)
 }
 
 export interface MobActionResult {
