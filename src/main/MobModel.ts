@@ -197,9 +197,9 @@ export class Mob {
     const randomStat = stats[Math.floor(Math.random() * stats.length)]
     choices.push({
       type: 'stat',
-      label: `+1 ${randomStat.toUpperCase()}`,
+      label: `+2 ${randomStat.toUpperCase()}`,
       stat: randomStat,
-      amount: 1
+      amount: 2
     })
 
     // 2. Guaranteed Weapon Choice (if available)
@@ -220,9 +220,9 @@ export class Mob {
       const secondStat = otherStats[Math.floor(Math.random() * otherStats.length)]
       choices.push({
         type: 'stat',
-        label: `+1 ${secondStat.toUpperCase()}`,
+        label: `+2 ${secondStat.toUpperCase()}`,
         stat: secondStat,
-        amount: 1
+        amount: 2
       })
     }
 
@@ -248,9 +248,9 @@ export class Mob {
         const fillStat = remainingStats[0]
         choices.push({
           type: 'stat',
-          label: `+1 ${fillStat.toUpperCase()}`,
+          label: `+2 ${fillStat.toUpperCase()}`,
           stat: fillStat,
-          amount: 1
+          amount: 2
         })
       } else {
         break; // Should never happen with 4 stats and max 3 slots

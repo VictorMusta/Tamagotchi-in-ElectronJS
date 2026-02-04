@@ -1,0 +1,224 @@
+/* Mob Styles */
+#mob-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  transform: translate(calc(var(--parallax-x) * 0.6), calc(var(--parallax-y) * 0.6));
+  transition: transform 0.1s linear;
+  touch-action: none;
+}
+
+.mob {
+  position: absolute;
+  bottom: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.mob:hover .mob-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mob.selected .mob-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mob.selected {
+  filter: drop-shadow(0 0 10px rgba(79, 195, 247, 0.8));
+}
+
+.mob.selected .mob-image {
+  filter: drop-shadow(0 0 5px #4fc3f7);
+}
+
+.mob.dead .mob-image,
+.mob.dead .layer {
+  filter: grayscale(100%);
+  opacity: 0.6;
+}
+
+.mob-image {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  -webkit-user-drag: none;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.mob.facing-left .mob-image {
+  transform: scaleX(-1);
+}
+
+.mob-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 8px;
+  padding: 10px;
+  width: 160px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  margin-bottom: 10px;
+  z-index: 100;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mob-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.85);
+}
+
+.mob-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mob-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+}
+
+.mob-stats {
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mob-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mob-stat-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+}
+
+.mob-stat-bar {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mob-stat-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.mob-stat-vie .mob-stat-fill {
+  background: linear-gradient(90deg, #e53935, #4caf50);
+}
+
+.mob-stat-energie .mob-stat-fill {
+  background: linear-gradient(90deg, #ff9800, #ffeb3b);
+}
+
+/* Skin layers */
+.skin-layers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Hats */
+.hat-layer.crown {
+  background-image: url('../public/assets/skins/hat_crown.png');
+  transform: translateY(-25%) scale(0.6);
+}
+
+.hat-layer.cap {
+  background-image: url('../public/assets/skins/hat_cap.png');
+  transform: translateY(-21%) scale(0.55);
+}
+
+.hat-layer.wizard {
+  background-image: url('../public/assets/skins/hat_wizard.png');
+  transform: translateY(-29%) scale(0.7);
+}
+
+/* --- HUB POTATO ANIMATIONS --- */
+.mob-inner {
+  animation: breathing 3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes breathing {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05, 0.95); }
+}
+
+.mob.squishing .mob-inner {
+  animation: mobSquish 0.3s ease-out forwards;
+}
+
+@keyframes mobSquish {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.3, 0.7); }
+  80% { transform: scale(0.9, 1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Death Animation */
+@keyframes death {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.5) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.dead-marker {
+  position: absolute;
+  top: -20px;
+  font-size: 24px;
+}
