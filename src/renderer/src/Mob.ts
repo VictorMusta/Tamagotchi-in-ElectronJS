@@ -142,17 +142,26 @@ export class MobRenderer {
       // Storing interval on the instance would be better but this is quick cleanup
       // Actually let's use a property on the class if possible, or just rely on MobMovement's internal updates if we moved logic there.
       // For now, let's just make them hop occasionally via timeout loop locally.
-      const planHop = () => {
+      const planBehavior = () => {
         if (this.status !== 'vivant') return
 
-        if (Math.random() < 0.3) {
-          this.movement?.hop()
+        const r = Math.random()
+
+        if (r < 0.4) {
+          // Idle (Breathing handles visuals)
+        } else if (r < 0.7) {
+          // Walk / Wander
+          const dir = Math.random() > 0.5 ? 1 : -1
+          this.movement?.walk(dir)
+        } else {
+           // Random Jump (Small hop to Big leap)
+           this.movement?.hop(Math.random()) 
         }
 
-        // Next thought
-        setTimeout(planHop, 2000 + Math.random() * 3000)
+        // Loop - dynamic timing
+        setTimeout(planBehavior, 1000 + Math.random() * 3000)
       }
-      planHop()
+      planBehavior()
     }
   }
 
@@ -167,13 +176,16 @@ export class MobRenderer {
     return this.movement?.getPosX() || 0
   }
 
-  render(
+    render(
     container: HTMLElement,
     physicsWorld: PhysicsWorld
   ): HTMLElement {
     const el = this.display.render(
       container,
       () => {
+        // --- Quick Win: Squish on Click ---
+        this.movement?.squish()
+        
         if (onMobClickCallback) {
           onMobClickCallback(this)
         } else {
