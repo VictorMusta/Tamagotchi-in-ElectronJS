@@ -1,6 +1,7 @@
 import { MobData } from '../../../shared/types'
 import { CombatEngine, CombatEvent } from './CombatEngine'
 import { WEAPON_REGISTRY } from '../../../shared/WeaponRegistry'
+import { TRAIT_DEFINITIONS } from '../mob/TraitDefinitions'
 
 export class CombatUI {
     private selectionOverlay: HTMLElement | null = null
@@ -881,7 +882,12 @@ export class CombatUI {
                     <p class="levelup-subtitle">${mob.nom} passe au niveau ${mob.level + 1}</p>
                     <div class="upgrade-choices">
                         ${choices.map((c: any, i: number) => `
-                            <div class="upgrade-card" data-index="${i}">
+                            <div class="upgrade-card" 
+                                 data-index="${i}" 
+                                 data-type="${c.type}"
+                                 ${c.type === 'trait' && c.name ? `data-trait="${c.name}"` : ''}
+                                 ${c.type === 'weapon' && c.name ? `data-weapon="${c.name}"` : ''}
+                                 ${c.type === 'stat' ? `data-stat="${c.stat}" data-amount="${c.amount}"` : ''}>
                                 <div class="upgrade-icon">${this.getUpgradeIcon(c.type)}</div>
                                 <div class="upgrade-label">${c.label || c.name}</div>
                                 <div class="upgrade-desc">${c.description || ''}</div>
@@ -892,12 +898,142 @@ export class CombatUI {
             `
             document.body.appendChild(overlay)
 
+            // Create tooltip element
+            const tooltipEl = document.createElement('div')
+            tooltipEl.className = 'trait-tooltip'
+            tooltipEl.style.display = 'none'
+            tooltipEl.style.position = 'fixed' // Use fixed positioning
+            tooltipEl.style.zIndex = '25000'
+            document.body.appendChild(tooltipEl) // Append to body, not overlay
+
+            // Tooltip positioning helper - ALWAYS show above the card
+            const positionTooltip = (target: HTMLElement, content: string) => {
+                tooltipEl.innerHTML = content
+                tooltipEl.style.display = 'block'
+
+                // Wait for next frame to get accurate dimensions
+                requestAnimationFrame(() => {
+                    const rect = target.getBoundingClientRect()
+                    const tooltipWidth = tooltipEl.offsetWidth
+                    const tooltipHeight = tooltipEl.offsetHeight
+
+                    // Center horizontally relative to card
+                    let left = rect.left + (rect.width / 2) - (tooltipWidth / 2)
+                    // Position ABOVE the card with some spacing
+                    let top = rect.top - tooltipHeight - 15
+
+                    // Keep within screen bounds horizontally
+                    const padding = 10
+                    if (left < padding) left = padding
+                    if (left + tooltipWidth > window.innerWidth - padding) {
+                        left = window.innerWidth - tooltipWidth - padding
+                    }
+
+                    // Keep within screen bounds vertically
+                    if (top < padding) {
+                        // If not enough space above, position below
+                        top = rect.bottom + 15
+                    }
+
+                    tooltipEl.style.left = `${left}px`
+                    tooltipEl.style.top = `${top}px`
+                })
+            }
+
+            // Add click and tooltip listeners
             overlay.querySelectorAll('.upgrade-card').forEach(card => {
-                card.addEventListener('click', async () => {
-                    const index = parseInt((card as HTMLElement).dataset.index!)
+                const element = card as HTMLElement
+                const upgradeType = element.dataset.type
+                
+                // Click handler
+                element.addEventListener('click', async () => {
+                    const index = parseInt(element.dataset.index!)
                     await (window.api as any).applyMobUpgrade(mob.id, choices[index])
                     overlay.remove()
                     resolve()
+                })
+
+                // Show tooltip on hover for all types
+                element.style.cursor = 'help'
+                
+                element.addEventListener('mouseenter', () => {
+                    let html = ''
+
+                    // TRAIT tooltip
+                    if (upgradeType === 'trait') {
+                        const traitName = element.dataset.trait
+                        if (traitName && TRAIT_DEFINITIONS[traitName]) {
+                            const def = TRAIT_DEFINITIONS[traitName]
+                            html = `
+                                <h4>${traitName}</h4>
+                                <p>${def.description}</p>
+                                ${def.effect ? `<p class="tooltip-effect"><strong>Effet:</strong> ${def.effect}</p>` : ''}
+                                ${def.stats ? `<p class="tooltip-stats"><strong>Stats:</strong> ${def.stats}</p>` : ''}
+                            `
+                        }
+                    }
+                    
+                    // STAT tooltip
+                    else if (upgradeType === 'stat') {
+                        const statName = element.dataset.stat
+                        const amount = parseInt(element.dataset.amount || '0')
+                        if (statName && amount) {
+                            const statKey = statName.toLowerCase() as keyof typeof mob.stats
+                            const currentValue = mob.stats[statKey] || 0
+                            const newValue = currentValue + amount
+                            
+                            const statLabels: Record<string, string> = {
+                                force: 'Force',
+                                vitalite: 'Vitalité',
+                                agilite: 'Agilité',
+                                vitesse: 'Vitesse'
+                            }
+                            
+                            html = `
+                                <h4>+${amount} ${statLabels[statName] || statName}</h4>
+                                <p class="tooltip-effect">
+                                    <strong>Calcul:</strong><br/>
+                                    ${currentValue} + ${amount} = <span style="color: #55efc4; font-weight: bold;">${newValue}</span>
+                                </p>
+                            `
+                        }
+                    }
+                    
+                    // WEAPON tooltip
+                    else if (upgradeType === 'weapon') {
+                        const weaponKey = element.dataset.weapon
+                        const def = weaponKey ? WEAPON_REGISTRY[weaponKey] : null
+                        
+                        if (def) {
+                            html = `
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:5px;">
+                                    <img src="./assets/weapons/${def.icon}" style="width:24px; height:24px;" />
+                                    <h4 style="margin:0;">${def.name}</h4>
+                                </div>
+                                <p style="font-size:11px; margin-bottom:5px; color:#ddd;">${def.description}</p>
+                                <div style="font-size:10px; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+                                    <span style="color:#ff7675;">Dmg +${def.damageBonus}</span>
+                                    <span style="color:#74b9ff;">Type: ${def.type}</span>
+                                    ${def.statBonus ? `<span style="color:#ffeaa7;">+${def.statBonus.amount} ${def.statBonus.stat}</span>` : ''}
+                                </div>
+                                ${def.effects ? `
+                                <div style="margin-top:5px; font-size:10px; color:#a29bfe;">
+                                    ${def.effects.stunChance ? `<div>💫 Stun ${def.effects.stunChance * 100}%</div>` : ''}
+                                    ${def.effects.blockChance ? `<div>🛡️ Block ${(def.effects.blockChance * 100)}%</div>` : ''}
+                                    ${def.effects.counterChance ? `<div>↩️ Counter ${(def.effects.counterChance * 100)}%</div>` : ''}
+                                </div>
+                                ` : ''}
+                            `
+                        }
+                    }
+
+                    if (html) {
+                        positionTooltip(element, html)
+                    }
+                })
+
+                element.addEventListener('mouseleave', () => {
+                    tooltipEl.style.display = 'none'
                 })
             })
         })
