@@ -63,7 +63,7 @@ export class WebApi {
             id: this.generateId(),
             nom: nom, // Uniqueness validation skipped for prototype speed, but could be added
             imageUrl: imageUrl,
-            vie: 100 + (stats.vitalite * 5),
+            vie: 100 + (stats.vitalite * 10),
             energie: 100,
             status: 'vivant',
             level: 1,
@@ -156,14 +156,14 @@ export class WebApi {
         const loserMob = mobs.find(m => m.id === loser.id)
 
         if (loserMob) {
-            loserMob.vie = 100 + (loserMob.stats.vitalite * 5)
+            loserMob.vie = 100 + (loserMob.stats.vitalite * 10)
             loserMob.energie = 100
             loserMob.status = 'vivant'
         }
 
         let reward: string | undefined
         if (winnerMob) {
-            winnerMob.vie = 100 + (winnerMob.stats.vitalite * 5)
+            winnerMob.vie = 100 + (winnerMob.stats.vitalite * 10)
             winnerMob.energie = 100
             winnerMob.status = 'vivant'
             winnerMob.combatProgress.wins++

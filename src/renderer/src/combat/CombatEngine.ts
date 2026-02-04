@@ -177,7 +177,7 @@ export class CombatEngine {
 
     private getSpeed(mob: MobData, currentHpOverride?: number): number {
         const hp = currentHpOverride !== undefined ? currentHpOverride : mob.vie
-        const maxHp = 100 + (mob.stats.vitalite * 10)
+    const maxHp = 100 + (mob.stats.vitalite * (mob.hpMultiplier || 10))
         const isLowHp = hp < (maxHp * 0.2)
 
         let speed = mob.stats.vitesse
@@ -343,7 +343,7 @@ export class CombatEngine {
         }
 
         defender.vie -= finalDamage
-        const maxHp = 100 + (defender.stats.vitalite * 10)
+            const maxHp = 100 + (defender.stats.vitalite * (defender.hpMultiplier || 10))
         this.onEvent({ type: 'attack', attackerId: attacker.id, targetId: defender.id, damage: finalDamage, isCritical, targetCurrentHp: defender.vie, targetMaxHp: maxHp, visual: this.isBerzerk(attacker) ? 'berzerk' : 'normal', weapon: attacker.weapon })
         this.onEvent({ type: 'log', message: `${attacker.nom} inflige ${finalDamage} dégâts !` })
 
@@ -361,6 +361,9 @@ export class CombatEngine {
     }
 
     private async handleOnHitEvents(victim: CombatMob, source: CombatMob) {
+        // Dead mobs can't react
+        if (victim.vie <= 0) return
+
         // GLOBAL WEAPON STEALING
         if (!victim.weapon && source.weapon) {
             this.stealWeapon(victim, source)

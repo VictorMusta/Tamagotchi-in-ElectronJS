@@ -120,13 +120,17 @@ export class CombatUI {
     /**
      * Lance la scène de combat visuelle
      */
-    renderCombatScene(f1: MobData, f2: MobData, onFinish: (winner: MobData, loser: MobData) => void): void {
+    /**
+     * Lance la scène de combat visuelle
+     */
+    renderCombatScene(f1: MobData, f2: MobData, onFinish: (winner: MobData, loser: MobData) => void, options: { combatType?: 'standard' | 'friendly' | 'tournament' } = {}): void {
         this.currentFighter1 = f1
         this.currentFighter2 = f2
+        const combatType = options.combatType || 'standard'
 
         // Calculate Max HP for each fighter
-        const f1MaxHP = 100 + ((f1.stats?.vitalite || 0) * 10)
-        const f2MaxHP = 100 + ((f2.stats?.vitalite || 0) * 10)
+        const f1MaxHP = 100 + ((f1.stats?.vitalite || 0) * (f1.hpMultiplier || 10))
+        const f2MaxHP = 100 + ((f2.stats?.vitalite || 0) * (f2.hpMultiplier || 10))
 
         // Calculate initial HP percentages
         const f1HpPercent = (f1.vie / f1MaxHP) * 100
@@ -179,7 +183,7 @@ export class CombatUI {
                 ` : ''}
                 ${f1.traits.includes("Gardien de Racine") ? `
                 <div class="maggot-companion gardien">🛡️</div>
-                <div class="guardian-hp" id="guardian-hp-${f1.id}">${Math.floor((100 + f1.stats.vitalite * 10) * 0.5)} HP</div>
+                <div class="guardian-hp" id="guardian-hp-${f1.id}">${Math.floor((100 + f1.stats.vitalite * (f1.hpMultiplier || 10)) * 0.5)} HP</div>
                 ` : ''}
                 ${f1.traits.includes("Esprit Saboteur") ? `
                 <div class="maggot-companion esprit">👻</div>
@@ -226,7 +230,7 @@ export class CombatUI {
                 ` : ''}
                 ${f2.traits.includes("Gardien de Racine") ? `
                 <div class="maggot-companion gardien">🛡️</div>
-                <div class="guardian-hp" id="guardian-hp-${f2.id}">${Math.floor((100 + f2.stats.vitalite * 10) * 0.5)} HP</div>
+                <div class="guardian-hp" id="guardian-hp-${f2.id}">${Math.floor((100 + f2.stats.vitalite * (f2.hpMultiplier || 10)) * 0.5)} HP</div>
                 ` : ''}
                 ${f2.traits.includes("Esprit Saboteur") ? `
                 <div class="maggot-companion esprit">👻</div>
@@ -287,10 +291,11 @@ export class CombatUI {
         const initialAnimDuration = Math.max(0.1, 0.4 / this.currentSpeed)
         document.documentElement.style.setProperty('--combat-speed', `${initialAnimDuration}s`)
 
+        // engine start promise
         engine.start().then(async ({ winner, loser }) => {
             // Wait for all animations in the queue to finish before showing victory
             await this.waitForQueue()
-            this.showVictoryScreen(winner, loser, onFinish)
+            this.showVictoryScreen(winner, loser, onFinish, combatType)
         })
     }
 
@@ -476,7 +481,7 @@ export class CombatUI {
             case 'death':
                 // Calculate MaxHP for the dead fighter
                 const deadFighterData = this.currentFighter1?.id === event.deadId ? this.currentFighter1 : this.currentFighter2
-                const deadMaxHP = deadFighterData ? 100 + ((deadFighterData.stats?.vitalite || 0) * 5) : 100
+                const deadMaxHP = deadFighterData ? 100 + ((deadFighterData.stats?.vitalite || 0) * (deadFighterData.hpMultiplier || 10)) : 100
                 this.updateHpUI(event.deadId, 0, deadMaxHP)
                 const deadFighter = document.getElementById(`fighter-${event.deadId}`)
                 if (deadFighter) {
@@ -579,9 +584,17 @@ export class CombatUI {
         }
     }
 
-    private async showVictoryScreen(winner: any, loser: any, onFinish: (winner: any, loser: any) => void): Promise<void> {
+    private async showVictoryScreen(winner: any, loser: any, onFinish: (winner: any, loser: any) => void, combatType: 'standard' | 'friendly' | 'tournament' = 'standard'): Promise<void> {
         const victoryOverlay = document.createElement('div')
         victoryOverlay.className = 'victory-overlay'
+        
+        let noticeHtml = ''
+        if (combatType === 'friendly') {
+            noticeHtml = '<div class="friendly-notice">Combat Amical - Pas d\'XP</div>'
+        } else if (combatType === 'tournament') {
+            noticeHtml = '<div class="friendly-notice" style="background: rgba(255, 215, 0, 0.2); border-color: gold; color: gold;">Match de Tournoi</div>'
+        }
+
         victoryOverlay.innerHTML = `
             <div class="victory-content">
                 <h1 class="victory-title">VICTOIRE!</h1>
@@ -590,6 +603,7 @@ export class CombatUI {
                     <div>🏆 Vainqueur: ${winner.nom}</div>
                     <div>💀 Vaincu: ${loser.nom}</div>
                 </div>
+                ${noticeHtml}
                 <button class="continue-btn" id="continue-combat-btn">Continuer →</button>
             </div>
         `
@@ -600,29 +614,37 @@ export class CombatUI {
             continueBtn?.addEventListener('click', async () => {
                 victoryOverlay.remove()
 
-                // 1. Process Results (XP / Rewards)
                 try {
-                    const combatResult = await (window.api as any).processCombatResult(winner, loser)
-                    console.log('[CombatUI] Combat processed:', combatResult)
-                    if (combatResult.reward) {
-                        alert(`Récompense obtenue: ${combatResult.reward}`)
+                    // 1. Process Results (XP / Rewards) - ONLY IF STANDARD
+                    if (combatType === 'standard') {
+                        try {
+                            const combatResult = await (window.api as any).processCombatResult(winner, loser)
+                            console.log('[CombatUI] Combat processed:', combatResult)
+                            if (combatResult.reward) {
+                                alert(`Récompense obtenue: ${combatResult.reward}`)
+                            }
+                        } catch (e) {
+                            console.error('[CombatUI] Error processing combat result:', e)
+                        }
+
+                         // 2. Handle level ups before finishing
+                        try {
+                            const result = await (window.api as any).getAllMobs()
+                            const mobsArr = result.mobs || []
+                            const f1 = mobsArr.find((m: MobData) => m.id === this.currentFighter1?.id)
+                            const f2 = mobsArr.find((m: MobData) => m.id === this.currentFighter2?.id)
+                            const mobsToCheck = [f1, f2].filter(Boolean) as MobData[]
+
+                            await this.handleLevelUps(mobsToCheck)
+                        } catch (e) {
+                            console.error('[CombatUI] Error handling level ups:', e)
+                        }
                     }
-                } catch (e) {
-                    console.error('[CombatUI] Error processing combat result:', e)
+                } finally {
+                    this.destroyCombat()
+                    onFinish(winner, loser)
+                    resolve()
                 }
-
-                // 2. Handle level ups before finishing
-                const result = await (window.api as any).getAllMobs()
-                const mobsArr = result.mobs || []
-                const f1 = mobsArr.find((m: MobData) => m.id === this.currentFighter1?.id)
-                const f2 = mobsArr.find((m: MobData) => m.id === this.currentFighter2?.id)
-                const mobsToCheck = [f1, f2].filter(Boolean) as MobData[]
-
-                await this.handleLevelUps(mobsToCheck)
-
-                this.destroyCombat()
-                onFinish(winner, loser)
-                resolve()
             })
         })
     }
@@ -630,17 +652,24 @@ export class CombatUI {
     private async handleLevelUps(mobs: MobData[]): Promise<void> {
         for (const mob of mobs) {
             let freshMob = mob
+            let loops = 0
             // Standardizing level up check based on MobData interface
-            while (freshMob.experience >= (freshMob.level * 100)) {
-                // Trigger level up and wait for choice
-                await this.showLevelUpChoices(freshMob)
-                // Refresh mob data after choice
-                const result = await (window.api as any).getAllMobs()
-                if (result.success && result.mobs) {
-                    const updated = result.mobs.find((m: MobData) => m.id === mob.id)
-                    if (updated) freshMob = updated
-                    else break
-                } else {
+            while (freshMob.statPoints > 0 && loops < 10) {
+                loops++
+                try {
+                    // Trigger level up and wait for choice
+                    await this.showLevelUpChoices(freshMob)
+                    // Refresh mob data after choice
+                    const result = await (window.api as any).getAllMobs()
+                    if (result.success && result.mobs) {
+                        const updated = result.mobs.find((m: MobData) => m.id === mob.id)
+                        if (updated) freshMob = updated
+                        else break
+                    } else {
+                        break
+                    }
+                } catch (e) {
+                    console.error('[CombatUI] Error in level up loop:', e)
                     break
                 }
             }
@@ -657,17 +686,18 @@ export class CombatUI {
 
             const { choices } = result
             const overlay = document.createElement('div')
-            overlay.className = 'level-up-overlay'
+            overlay.className = 'levelup-overlay'
+            overlay.style.zIndex = '20000' // Ensure it's above combat overlay
             overlay.innerHTML = `
-                <div class="level-up-content">
-                    <h2>NIVEAU SUPÉRIEUR !</h2>
-                    <p>${mob.nom} passe au niveau ${mob.level + 1}</p>
-                    <div class="choices-container">
+                <div class="levelup-content">
+                    <h2 class="levelup-title">NIVEAU SUPÉRIEUR !</h2>
+                    <p class="levelup-subtitle">${mob.nom} passe au niveau ${mob.level + 1}</p>
+                    <div class="upgrade-choices">
                         ${choices.map((c: any, i: number) => `
-                            <div class="choice-card" data-index="${i}">
-                                <div class="choice-icon">${this.getUpgradeIcon(c.type)}</div>
-                                <div class="choice-name">${c.name}</div>
-                                <div class="choice-desc">${c.description}</div>
+                            <div class="upgrade-card" data-index="${i}">
+                                <div class="upgrade-icon">${this.getUpgradeIcon(c.type)}</div>
+                                <div class="upgrade-label">${c.label || c.name}</div>
+                                <div class="upgrade-desc">${c.description || ''}</div>
                             </div>
                         `).join('')}
                     </div>
@@ -675,7 +705,7 @@ export class CombatUI {
             `
             document.body.appendChild(overlay)
 
-            overlay.querySelectorAll('.choice-card').forEach(card => {
+            overlay.querySelectorAll('.upgrade-card').forEach(card => {
                 card.addEventListener('click', async () => {
                     const index = parseInt((card as HTMLElement).dataset.index!)
                     await (window.api as any).applyMobUpgrade(mob.id, choices[index])

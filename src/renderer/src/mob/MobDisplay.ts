@@ -165,7 +165,7 @@ export class MobDisplay {
             </div>
 
             <div style="margin-top:8px; padding-top:5px; border-top:1px dashed rgba(255,255,255,0.1); display:flex; justify-content:space-between; font-size:10px; color:#aaa;">
-                <span>HP ${data.vie}/${100 + (data.stats.vitalite * 5)}</span>
+                <span>HP ${data.vie}/${100 + (data.stats.vitalite * (data.hpMultiplier || 10))}</span>
                 <span>⚡ ${Math.floor(data.energie)}%</span>
             </div>
             

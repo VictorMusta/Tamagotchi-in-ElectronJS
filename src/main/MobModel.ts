@@ -33,6 +33,7 @@ export class Mob {
   combatProgress: CombatStats
   inSquad: boolean
   weapons: string[]
+  hpMultiplier: number
 
   constructor(
     nom: string,
@@ -48,7 +49,8 @@ export class Mob {
     level: number = 1,
     experience: number = 0,
     statPoints: number = 0,
-    weapons?: string[]
+    weapons?: string[],
+    hpMultiplier: number = 10
   ) {
     this.id = id || randomUUID()
     this.nom = nom
@@ -96,7 +98,7 @@ export class Mob {
     }
 
     // Recalcul des PV Max en fonction de la vitalité
-    const maxHP = 100 + (this.stats.vitalite * 10)
+    const maxHP = 100 + (this.stats.vitalite * (hpMultiplier !== undefined ? hpMultiplier : 10))
 
     // Always full health in Hub
     this.vie = maxHP
@@ -118,6 +120,8 @@ export class Mob {
 
     // Weapon Stock
     this.weapons = weapons || []
+
+    this.hpMultiplier = hpMultiplier
   }
 
   generateRandomSkin(): MobSkin {
@@ -154,7 +158,7 @@ export class Mob {
   }
 
   getMaxHP(): number {
-    return 100 + (this.stats.vitalite * 10)
+    return 100 + (this.stats.vitalite * this.hpMultiplier)
   }
 
   updateStatus(): void {
@@ -271,6 +275,7 @@ export class Mob {
         if (weaponDef.statBonus) {
           this.upgradeStat(weaponDef.statBonus.stat as keyof MobStats, weaponDef.statBonus.amount)
         }
+        this.statPoints-- // Consommer le point de stat
         console.log(`[Mob] ${this.nom} a gagné une nouvelle arme: ${choice.name}`)
       }
     } else if (choice.type === 'trait') {
@@ -300,7 +305,8 @@ export class Mob {
       skin: this.skin,
       combatProgress: this.combatProgress,
       inSquad: this.inSquad,
-      weapons: this.weapons
+      weapons: this.weapons,
+      hpMultiplier: this.hpMultiplier
     }
   }
 
@@ -328,7 +334,8 @@ export class Mob {
       data.level || 1,
       data.experience || 0,
       data.statPoints || 0,
-      migratedWeapons
+      migratedWeapons,
+      data.hpMultiplier || 10
     )
     // Force full heal / revive logic on load (Hub = Safe Zone)
     mob.vie = mob.getMaxHP()

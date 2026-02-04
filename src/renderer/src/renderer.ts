@@ -573,7 +573,7 @@ function setupActionButtons(): void {
         // Sauvegarder l'état final
         await window.api.saveMobs() // Safety save
         await loadMobs(winner.id) // Rafraîchir l'affichage en gardant le winner sélectionné
-      })
+      }, { combatType: 'friendly' }) // Mode Amical : Pas d'XP
     })
   })
 
@@ -651,21 +651,22 @@ async function handleMatchSelected(match: any): Promise<void> {
 
   tournamentUI.hide()
 
+  // Use combatType: 'tournament' to prevent XP gain
   combatUI.renderCombatScene(f1, f2, async (winner, loser) => {
     console.log('Match de tournoi terminé, vainqueur:', winner.nom)
 
     // Avancer dans le tournoi
     await tournamentUI.handleMatchResult(winner.id)
 
-    // Si c'est la patate du joueur, on traite les récompenses standards (XP, etc.)
+    // Si c'est la patate du joueur, on met juste à jour l'affichage
     const isPlayerInvolved = (winner.id === f1.id && match.participant1.isPlayer) ||
       (winner.id === f2.id && match.participant2.isPlayer) ||
       (loser.id === f1.id && match.participant1.isPlayer) ||
       (loser.id === f2.id && match.participant2.isPlayer)
 
     if (isPlayerInvolved) {
-      const result = await window.api.processCombatResult(winner, loser)
-      console.log('[Renderer] Tournament match processed (full heal):', result)
+      // Pas de processCombatResult pour les tournois (Pas d'XP)
+      console.log('[Renderer] Tournament match finished (No XP awarded).')
       await window.api.saveMobs()
       await loadMobs()
     }
