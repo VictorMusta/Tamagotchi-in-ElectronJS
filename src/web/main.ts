@@ -14,7 +14,7 @@ import { ProfileRenderer } from '../renderer/src/ProfileRenderer'
 import { CombatUI } from '../renderer/src/combat/CombatUI'
 import { PhysicsWorld } from '../renderer/src/physics/PhysicsWorld'
 import { generateRandomName } from '../renderer/src/utils/NameGenerator'
-import potatoImage from '../renderer/assets/Potato still.png'
+import potatoImage from '../renderer/public/assets/Potato still.png'
 
 // Utiliser l'API web
 const api = new WebPlatformAPI()
