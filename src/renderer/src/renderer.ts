@@ -439,7 +439,8 @@ function setupMobManagementButtons(): void {
   // Debug (Hitbox) Button
   const btnDebug = document.getElementById('btn-debug')
   btnDebug?.addEventListener('click', () => {
-    physicsWorld.toggleDebug()
+    const isDebug = physicsWorld.toggleDebug()
+    combatUI.setDebug(isDebug)
   })
 
   // Delete All Button
@@ -931,19 +932,22 @@ function setupOnsenDetection(): void {
         // CASE 3: HEALING TICK (While in Onsen)
         if (renderer.isInOnsen) {
             // Calculate healing based on time spent
+            // Formula synchronized with MobModel.ts: 100% recovery in 5 minutes (300 seconds)
             const maxHP = 100 + (renderer.stats.vitalite * (renderer.hpMultiplier || 10))
             if (renderer.vie < maxHP) {
                 const now = Date.now()
                 const entryTime = renderer.lastOnsenEntryTimestamp || now
-                // Heal 1 HP every 3 seconds (3000ms)
-                // Formula: (TimeElapsed / TimePerHP)
-                const hpGained = Math.floor((now - entryTime) / 3000)
+                
+                const elapsedSeconds = (now - entryTime) / 1000
+                const regenPercent = elapsedSeconds / 300
+                const recoveredHP = regenPercent * maxHP
                 
                 // Base HP + Gained
-                const calculatedHP = Math.min(maxHP, (renderer.hpAtOnsenEntry || 0) + hpGained)
+                const calculatedHP = Math.min(maxHP, (renderer.hpAtOnsenEntry || 0) + recoveredHP)
+                const finalHP = Math.floor(calculatedHP)
                 
-                if (Math.floor(calculatedHP) !== Math.floor(renderer.vie)) {
-                    renderer.vie = Math.floor(calculatedHP)
+                if (finalHP !== Math.floor(renderer.vie)) {
+                    renderer.vie = finalHP
                     
                     // Resurrect check
                     if (renderer.status === 'mort' && renderer.vie >= maxHP * 0.05) {
