@@ -10,10 +10,9 @@ function createWindow(): void {
     height: 800,
     show: false,
     frame: false,
-    transparent: true,
+    transparent: false,
     fullscreen: true,
-    backgroundColor: '#00000000',
-    hasShadow: false,
+    backgroundColor: '#1a1a1a',
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon: join(__dirname, '../../build/icon.png') } : {}),
     icon: join(__dirname, '../../resources/icon.png'),
@@ -65,6 +64,24 @@ app.whenReady().then(() => {
 
   // Enregistrer les handlers IPC pour les mobs
   registerMobHandlers()
+
+  ipcMain.handle('update-mob-onsen-state', async (_event, mobId: string, isInOnsen: boolean, timestamp: number | null, hpAtEntry: number | null) => {
+    try {
+      const mob = mobs.get(mobId)
+      if (mob) {
+        mob.isInOnsen = isInOnsen
+        mob.lastOnsenEntryTimestamp = timestamp
+        mob.hpAtOnsenEntry = hpAtEntry
+        // Save automatically
+        await saveMobsToDisk()
+        return { success: true }
+      }
+      return { success: false, error: 'Mob not found' }
+    } catch (error) {
+      console.error('Error updating Onsen state:', error)
+      return { success: false, error: String(error) }
+    }
+  })
 
   createWindow()
 })

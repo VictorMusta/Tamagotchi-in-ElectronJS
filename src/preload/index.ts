@@ -11,11 +11,14 @@ const api = {
   renameMob: (id: string, newName: string) => ipcRenderer.invoke('mob:rename', id, newName),
   updateMobSkin: (id: string, type: 'hat', value: string) => ipcRenderer.invoke('mob:updateSkin', id, type, value),
   toggleSquad: (id: string) => ipcRenderer.invoke('mob:toggleSquad', id),
+  updateMobOnsenState: (id: string, isInOnsen: boolean, timestamp: number | null, hpAtEntry: number | null, onsenPosition: {x:number, y:number} | null) => ipcRenderer.invoke('mob:updateOnsenState', id, isInOnsen, timestamp, hpAtEntry, onsenPosition),
+  updateMobStatus: (id: string, status: 'vivant' | 'mort') => ipcRenderer.invoke('mob:updateStatus', id, status),
+  updateMobHP: (id: string, newHP: number) => ipcRenderer.invoke('mob:updateHP', id, newHP),
 
   // Récupération des mobs
   getAllMobs: () => ipcRenderer.invoke('mob:getAll'),
   getMobById: (id: string) => ipcRenderer.invoke('mob:getById', id),
-  processCombatResult: (winner: any, loser: any) => ipcRenderer.invoke('mob:processResult', winner, loser),
+  processCombatResult: (winner: any, loser: any, options?: { grantXP?: boolean }) => ipcRenderer.invoke('mob:processResult', winner, loser, options),
 
   // Sauvegarde et chargement
   saveMobs: () => ipcRenderer.invoke('mob:save'),

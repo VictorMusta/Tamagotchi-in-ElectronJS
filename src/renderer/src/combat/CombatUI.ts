@@ -803,41 +803,18 @@ export class CombatUI {
                 victoryOverlay.remove()
 
                 try {
-                    // 1. Process Results (XP / Rewards) - ONLY IF STANDARD
-                    if (combatType === 'standard') {
-                        try {
-                            const combatResult = await (window.api as any).processCombatResult(winner, loser)
-                            console.log('[CombatUI] Combat processed:', combatResult)
-                            if (combatResult.reward) {
-                                alert(`Récompense obtenue: ${combatResult.reward}`)
-                            }
-                        } catch (e) {
-                            console.error('[CombatUI] Error processing combat result:', e)
-                        }
-
-                         // 2. Handle level ups before finishing
-                        try {
-                            const result = await (window.api as any).getAllMobs()
-                            const mobsArr = result.mobs || []
-                            const f1 = mobsArr.find((m: MobData) => m.id === this.currentFighter1?.id)
-                            const f2 = mobsArr.find((m: MobData) => m.id === this.currentFighter2?.id)
-                            const mobsToCheck = [f1, f2].filter(Boolean) as MobData[]
-
-                            await this.handleLevelUps(mobsToCheck)
-                        } catch (e) {
-                            console.error('[CombatUI] Error handling level ups:', e)
-                        }
-                    }
+                    // Logic moved to renderer.ts onFinish callbacks for better unification
                 } finally {
+                    // Await onFinish BEFORE destroying the overlay to keep the Onsen guard active
+                    await onFinish(winner, loser)
                     this.destroyCombat()
-                    onFinish(winner, loser)
                     resolve()
                 }
             })
         })
     }
 
-    private async handleLevelUps(mobs: MobData[]): Promise<void> {
+    public async handleLevelUps(mobs: MobData[]): Promise<void> {
         for (const mob of mobs) {
             let freshMob = mob
             let loops = 0
@@ -948,6 +925,10 @@ export class CombatUI {
                 // Click handler
                 element.addEventListener('click', async () => {
                     const index = parseInt(element.dataset.index!)
+                    
+                    // Cleanup tooltip directly
+                    tooltipEl.remove()
+                    
                     await (window.api as any).applyMobUpgrade(mob.id, choices[index])
                     overlay.remove()
                     resolve()

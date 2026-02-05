@@ -22,6 +22,7 @@ import { PhysicsWorld } from './physics/PhysicsWorld'
 
 // Map des renderers de mobs par ID
 const mobRenderers: Map<string, MobRenderer> = new Map()
+let isInitializingMobs = false
 
 const themes = ['forest', 'cyberpunk', 'cozy']
 let currentThemeIndex = 0
@@ -146,6 +147,7 @@ async function init(): Promise<void> {
     )
 
     doAThing()
+    setupOnsenDetection()
     setupActionButtons()
     setupWindowControls()
     setupSaveLoadButtons()
@@ -160,7 +162,6 @@ async function init(): Promise<void> {
     await preloadSounds().catch(e => console.error('[Renderer] Sound preload failed:', e))
     await initMobs().catch(e => console.error('[Renderer] Mob init failed:', e))
 
-    // 3. System Setup
     console.log('[Renderer] Initialization finished successfully')
   } catch (error) {
     console.error('[Renderer] CRITICAL INITIALIZATION ERROR:', error)
@@ -210,8 +211,14 @@ function doAThing(): void {
 }
 
 async function initMobs(): Promise<void> {
+  if (isInitializingMobs) return
+  isInitializingMobs = true
+  
   const mobContainer = document.getElementById('mob-container')
-  if (!mobContainer) return
+  if (!mobContainer) {
+    isInitializingMobs = false
+    return
+  }
 
   // Essayer de charger la sauvegarde
   const loaded = await loadMobsOnStartup(mobContainer)
@@ -225,6 +232,7 @@ async function initMobs(): Promise<void> {
       mobRenderers.set(result.mob.id, renderer)
     }
   }
+  isInitializingMobs = false
 }
 
 async function loadMobsOnStartup(mobContainer: HTMLElement): Promise<boolean> {
@@ -277,6 +285,8 @@ async function loadMobs(idToSelect?: string): Promise<void> {
     showNotification(result.error || 'Erreur de chargement', 'error')
     return
   }
+
+  console.log('[Renderer] loadMobs result:', result.mobs.map(m => `${m.nom}: ${m.vie} HP (inOnsen: ${m.isInOnsen})`))
 
   try {
     const mobContainer = document.getElementById('mob-container')
@@ -426,6 +436,12 @@ function setupMobManagementButtons(): void {
     deleteSelectedMob()
   })
 
+  // Debug (Hitbox) Button
+  const btnDebug = document.getElementById('btn-debug')
+  btnDebug?.addEventListener('click', () => {
+    physicsWorld.toggleDebug()
+  })
+
   // Delete All Button
   const btnDeleteAll = document.getElementById('btn-delete-all')
   if (btnDeleteAll) {
@@ -452,9 +468,7 @@ function setupMobManagementButtons(): void {
             setSelectedMob(null)
             showNotification('Toutes les patates ont été supprimées.', 'success')
 
-            setTimeout(() => {
-              initMobs()
-            }, 1000)
+            await initMobs()
           } catch (e) {
             console.error('[Renderer] Error executing deleteAllMobs:', e)
             showNotification('Erreur lors de la suppression: ' + String(e), 'error')
@@ -515,16 +529,41 @@ function setupPveAndMemorialButtons(): void {
 
           if (playerWon) {
             // Player survives - grant XP and maybe potion
-            console.log('[Renderer] Player won PvE!')
+            console.log(`[Renderer] Player won PvE! Winner: ${winner.nom}, HP: ${winner.vie}, Energy: ${winner.energie}`)
+            
+            // CRITICAL FIX: Update local renderer instance IMMEDIATELY to prevent the physics loop
+            // from using stale data if it fires before the backend calls complete.
+            const localRenderer = mobRenderers.get(winner.id)
+            if (localRenderer) {
+                localRenderer.vie = winner.vie
+                localRenderer.energie = winner.energie
+                
+                // CRITICAL FIX: Reset local Onsen state to prevent the physics loop 
+                // from thinking the mob has been in the Onsen all along (which would trigger full healing).
+                localRenderer.isInOnsen = false
+                localRenderer.hpAtOnsenEntry = null
+                localRenderer.lastOnsenEntryTimestamp = null
+                localRenderer.onsenPosition = null
 
-            // 5% chance for potion drop
-            if (Math.random() < 0.05) {
-              await window.api.addPotion()
-              showNotification('🧪 Potion de Réanimation obtenue !', 'success')
+                console.log(`[Renderer] Updated local renderer ${winner.nom} HP to ${winner.vie} and reset Onsen state`)
+                
+                // Force display update
+                // @ts-ignore
+                if (localRenderer.display) localRenderer.display.update(localRenderer)
             }
 
+            // NEW: Use unified combat result processor
+            console.log(`[Renderer] Calling processCombatResult for winner ${winner.nom}`)
+            const combatResult = await window.api.processCombatResult(winner, enemy)
+            
+            if (combatResult.reward) {
+                showNotification(`Récompense obtenue: ${combatResult.reward}`, 'success')
+            }
+
+            // Check for level ups
+            await combatUI.handleLevelUps([combatResult.winner])
+
             // Save and refresh
-            await window.api.saveMobs()
             await loadMobs(winner.id)
             showNotification(`${winner.nom} a survécu !`, 'success')
           } else {
@@ -602,13 +641,19 @@ function setupActionButtons(): void {
         console.error('Combat error: One or both fighters are missing stats.', { f1, f2 });
         return;
       }
-      combatUI.renderCombatScene(f1, f2, async (winner, _loser) => {
+      combatUI.renderCombatScene(f1, f2, async (winner, loser) => {
         // Gérer la fin du combat (récompenses, mise à jour des stats, mort de l'autre)
         console.log('Combat terminé, vainqueur:', winner.nom)
+        
+        // NEW: Unify with processCombatResult (Friendly = No XP/Reward, but Syncs HP and clears Onsen)
+        // Update local renderer states
+        const winRenderer = mobRenderers.get(winner.id)
+        if (winRenderer) { winRenderer.vie = winner.vie; winRenderer.energie = winner.energie; winRenderer.isInOnsen = false; }
+        const lossRenderer = mobRenderers.get(loser.id)
+        if (lossRenderer) { lossRenderer.vie = loser.vie; lossRenderer.energie = loser.energie; lossRenderer.isInOnsen = false; }
 
-        // Sauvegarder l'état final
-        await window.api.saveMobs() // Safety save
-        await loadMobs(winner.id) // Rafraîchir l'affichage en gardant le winner sélectionné
+        await window.api.processCombatResult(winner, loser, { grantXP: false })
+        await loadMobs(winner.id)
       }, { combatType: 'friendly' }) // Mode Amical : Pas d'XP
     })
   })
@@ -646,7 +691,8 @@ function setupActionButtons(): void {
           imageUrl: typeof m.imageUrl === 'string' ? m.imageUrl : '',
           stats: m.stats,
           level: m.level,
-          isPlayer: m === selected // On marque seulement la sélectionnée comme joueur
+          isPlayer: m === selected, // On marque seulement la sélectionnée comme joueur
+          vie: m.vie // INCLUDE CURRENT HP
         }))
 
         // Générer et sauvegarder le nouveau tournoi
@@ -701,9 +747,24 @@ async function handleMatchSelected(match: any): Promise<void> {
       (loser.id === f2.id && match.participant2.isPlayer)
 
     if (isPlayerInvolved) {
-      // Pas de processCombatResult pour les tournois (Pas d'XP)
-      console.log('[Renderer] Tournament match finished (No XP awarded).')
-      await window.api.saveMobs()
+      // NEW: Use unified combat result processor (No XP for tournaments)
+      console.log(`[Renderer] Syncing tournament match result to backend for ${winner.nom} and ${loser.nom}`)
+      
+      // Update local renderer states
+      const winRenderer = mobRenderers.get(winner.id)
+      if (winRenderer) {
+          winRenderer.vie = winner.vie
+          winRenderer.energie = winner.energie
+          winRenderer.isInOnsen = false
+      }
+      const lossRenderer = mobRenderers.get(loser.id)
+      if (lossRenderer) {
+          lossRenderer.vie = loser.vie
+          lossRenderer.energie = loser.energie
+          lossRenderer.isInOnsen = false
+      }
+
+      await window.api.processCombatResult(winner, loser, { grantXP: false })
       await loadMobs()
     }
 
@@ -748,7 +809,7 @@ function participantToMobData(p: any): any {
     id: p.id,
     nom: p.nom,
     imageUrl: p.imageUrl || potatoImage,
-    vie: 100 + (p.stats.vitalite * 10),
+    vie: p.vie !== undefined ? p.vie : (100 + (p.stats.vitalite * 10)),
     energie: 100,
     status: 'vivant',
     stats: p.stats,
@@ -785,7 +846,133 @@ function setupParallax(): void {
 
     document.body.style.setProperty('--parallax-x', `${baseX}px`)
     document.body.style.setProperty('--parallax-y', `${baseY}px`)
+
+    // IMPORTANT: Sync physics interaction mouse offset
+    // Mob container uses 0.6 factor for parallax
+    // We must offset the mouse by the NEGATIVE of the visual shift
+    // to align "absolute mouse" with shifted "physics bodies" (or vice versa in engine logic)
+    // Actually, Matter.Mouse.setOffset(mouse, {x, y}) means mouse_engine = mouse_actual + offset
+    // If visual is at mx + shift, and we click mx, we want engine to see px.
+    // Wait: If mx = px + shift, engine wants to see mx - shift.
+    const shiftX = baseX * 0.6
+    const shiftY = baseY * 0.6
+    
+    // @ts-ignore
+    if (physicsWorld) {
+      physicsWorld.setMouseOffset(-shiftX, -shiftY)
+    }
   })
+}
+
+function setupOnsenDetection(): void {
+  const onsenZone = document.getElementById('onsen-zone')
+  if (!onsenZone) return
+
+  // Every 200ms, sync physics state and update healing
+  setInterval(async () => {
+    // PAUSE ONSEN LOGIC DURING COMBAT
+    // This is critical to prevent the background Onsen loop from detecting the mob "in Onsen"
+    // with its pre-combat HP (full) and overwriting the post-combat HP result (low) 
+    // before the save/reload cycle completes.
+    if (document.querySelector('.combat-overlay') || document.querySelector('.victory-overlay')) {
+        return
+    }
+
+    // Update visual sensor for debug mode if active
+    const rect = onsenZone.getBoundingClientRect()
+    physicsWorld.updateOnsenSensor(rect)
+    physicsWorld.updateOnsenWalls(rect)
+
+    for (const renderer of mobRenderers.values()) {
+        const physicsInOnsen = renderer.movement?.inOnsen ?? false
+        
+        // CASE 1: ENTERING ONSEN (Physics says YES, Renderer says NO)
+        if (physicsInOnsen && !renderer.isInOnsen) {
+            console.log(`[Onsen] ${renderer.nom} entered the water (detected via Physics).`)
+            renderer.isInOnsen = true
+            renderer.lastOnsenEntryTimestamp = Date.now()
+            renderer.hpAtOnsenEntry = renderer.vie
+            
+            // Notification
+            showNotification(`${renderer.nom} se repose dans le Onsen ♨️`, 'success')
+
+            // Update Main Process
+            const pos = renderer.movement?.body.position
+            window.api.updateMobOnsenState(renderer.id, true, renderer.lastOnsenEntryTimestamp, renderer.hpAtOnsenEntry, pos ? {x: pos.x, y: pos.y} : null)
+            
+            // Force visual update (particles)
+            // @ts-ignore
+            renderer.display.setHealingState(true)
+            // @ts-ignore
+            renderer.display.update(renderer)
+            
+            renderer.stopBehavior()
+        }
+        
+        // CASE 2: LEAVING ONSEN (Physics says NO, Renderer says YES)
+        else if (!physicsInOnsen && renderer.isInOnsen) {
+            console.log(`[Onsen] ${renderer.nom} left the water.`)
+            renderer.isInOnsen = false
+            renderer.lastOnsenEntryTimestamp = null
+            renderer.hpAtOnsenEntry = null
+            
+            // Update Main Process
+            window.api.updateMobOnsenState(renderer.id, false, null, null, null)
+            
+            // Force visual update (remove particles)
+            // @ts-ignore
+            renderer.display.setHealingState(false)
+            // @ts-ignore
+            renderer.display.update(renderer)
+            
+            renderer.startBehavior()
+        }
+
+        // CASE 3: HEALING TICK (While in Onsen)
+        if (renderer.isInOnsen) {
+            // Calculate healing based on time spent
+            const maxHP = 100 + (renderer.stats.vitalite * (renderer.hpMultiplier || 10))
+            if (renderer.vie < maxHP) {
+                const now = Date.now()
+                const entryTime = renderer.lastOnsenEntryTimestamp || now
+                // Heal 1 HP every 3 seconds (3000ms)
+                // Formula: (TimeElapsed / TimePerHP)
+                const hpGained = Math.floor((now - entryTime) / 3000)
+                
+                // Base HP + Gained
+                const calculatedHP = Math.min(maxHP, (renderer.hpAtOnsenEntry || 0) + hpGained)
+                
+                if (Math.floor(calculatedHP) !== Math.floor(renderer.vie)) {
+                    renderer.vie = Math.floor(calculatedHP)
+                    
+                    // Resurrect check
+                    if (renderer.status === 'mort' && renderer.vie >= maxHP * 0.05) {
+                        renderer.status = 'vivant'
+                        window.api.updateMobStatus(renderer.id, 'vivant')
+                        showNotification(`${renderer.nom} est ressuscité ! ♨️`, 'success')
+                        // @ts-ignore
+                        if (renderer.movement) renderer.movement.updateStatus('vivant')
+                    }
+                    
+                    // Update API only on change
+                    window.api.updateMobHP(renderer.id, renderer.vie)
+                }
+            }
+            // Always update display to show healing indicator
+            // @ts-ignore
+            renderer.display.update(renderer)
+            // @ts-ignore
+            renderer.display.setHealingState(true)
+        }
+    }
+  }, 200)
+
+  // Physics interaction hook
+  physicsWorld.onDraggableDropped = async (_body: Matter.Body) => {
+    // Logic moved to polling loop above (see CASE 1/2) based on physics inOnsen state
+    // This hook now only handles specific dropped logic if needed (e.g. sound effect)
+    // For now, it is redundant regarding Onsen detection
+  }
 }
 
 // Lancer l'initialisation quand le DOM est prêt (ou s'il l'est déjà)

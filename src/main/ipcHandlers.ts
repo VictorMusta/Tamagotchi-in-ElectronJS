@@ -52,6 +52,14 @@ export function registerMobHandlers(): void {
     return MobManager.toggleSquad(id)
   })
 
+  ipcMain.handle('mob:updateOnsenState', (_event, id: string, isInOnsen: boolean, timestamp: number | null, hpAtEntry: number | null, onsenPosition: {x:number, y:number} | null) => {
+    return MobManager.updateMobOnsenState(id, isInOnsen, timestamp, hpAtEntry, onsenPosition)
+  })
+
+  ipcMain.handle('mob:updateStatus', (_event, id: string, status: 'vivant' | 'mort') => {
+    return MobManager.updateMobStatus(id, status)
+  })
+
   // Récupérer tous les mobs
   ipcMain.handle('mob:getAll', () => {
     const mobs = MobManager.getAllMobs()
@@ -68,8 +76,13 @@ export function registerMobHandlers(): void {
   })
 
   // Traiter résultat combat
-  ipcMain.handle('mob:processResult', (_event, winner: any, loser: any) => {
-    return MobManager.processCombatResult(winner, loser)
+  ipcMain.handle('mob:processResult', (_event, winner: any, loser: any, options?: { grantXP?: boolean }) => {
+    return MobManager.processCombatResult(winner, loser, options)
+  })
+
+  // Mettre à jour la vie d'un mob
+  ipcMain.handle('mob:updateHP', (_event, id: string, newHP: number) => {
+    return MobManager.updateMobHP(id, newHP)
   })
 
   // Sauvegarder les mobs

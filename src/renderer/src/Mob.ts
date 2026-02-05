@@ -70,11 +70,19 @@ export class MobRenderer {
   traits: string[]
   skin: MobSkin
   combatProgress: CombatStats
+  weapons: string[]
+  inSquad: boolean
+  hpMultiplier?: number
+  isInOnsen: boolean
+  lastOnsenEntryTimestamp: number | null
+  hpAtOnsenEntry: number | null
+  onsenPosition?: { x: number, y: number } | null
 
   private display: MobDisplay
   private animation: MobAnimation | null = null
-  private movement: MobMovement | null = null
+  public movement: MobMovement | null = null
   private renamer: MobRenamer | null = null
+  private behaviorTimeout: any = null
 
   constructor(data: MobData) {
     this.id = data.id
@@ -91,13 +99,22 @@ export class MobRenderer {
     this.skin = data.skin
     this.traits = data.traits
     this.combatProgress = data.combatProgress
+    this.weapons = data.weapons || []
+    this.inSquad = data.inSquad || false
+    this.hpMultiplier = data.hpMultiplier
+    this.isInOnsen = data.isInOnsen || false
+    this.lastOnsenEntryTimestamp = data.lastOnsenEntryTimestamp || null
+    this.hpAtOnsenEntry = data.hpAtOnsenEntry || null
+    this.onsenPosition = data.onsenPosition || null
 
     this.display = new MobDisplay(data)
   }
 
   updateFromData(data: MobData): void {
+    // console.log(`[MobRenderer] updateFromData called for ${this.nom}`)
     const wasAlive = this.status === 'vivant'
 
+    this.id = data.id // Ensure ID is synced just in case
     this.nom = data.nom
     this.vie = data.vie
     this.energie = data.energie
@@ -110,12 +127,30 @@ export class MobRenderer {
     this.skin = data.skin
     this.traits = data.traits
     this.combatProgress = data.combatProgress
+    this.weapons = data.weapons || []
+    this.inSquad = data.inSquad || false
+    this.hpMultiplier = data.hpMultiplier
+    this.isInOnsen = data.isInOnsen || false
+    this.lastOnsenEntryTimestamp = data.lastOnsenEntryTimestamp || null
+    this.onsenPosition = data.onsenPosition || null
 
-    this.display.update(data)
-
+    // 1. Update Movement & Sync Physics State FIRST
     if (this.movement) {
       this.movement.updateStatus(this.status)
+      
+      // SYNC ONSEN STATE FROM PHYSICS (Source of Truth)
+      // The renderer/data check is visual and can be inaccurate
+      if (this.movement.inOnsen) {
+          this.isInOnsen = true
+          data.isInOnsen = true // Patch data so display.update uses correct state for health bar!
+      }
     }
+
+    // 2. Update Display (Health bar, etc)
+    this.display.update(data)
+    
+    // 3. Update Visual Effects (Particles)
+    this.display.setHealingState(this.isInOnsen)
 
     if (wasAlive && this.status === 'mort') {
       this.stopBehavior()
@@ -135,7 +170,7 @@ export class MobRenderer {
 
   startBehavior(): void {
     // Random hopping behavior
-    if (this.status === 'vivant') {
+    if (this.status === 'vivant' && !this.isInOnsen) {
       // Clear existing interval just in case
       this.stopBehavior()
       // Simple random interval for hopping
@@ -143,7 +178,10 @@ export class MobRenderer {
       // Actually let's use a property on the class if possible, or just rely on MobMovement's internal updates if we moved logic there.
       // For now, let's just make them hop occasionally via timeout loop locally.
       const planBehavior = () => {
-        if (this.status !== 'vivant') return
+        if (this.status !== 'vivant' || this.isInOnsen) {
+          this.behaviorTimeout = null
+          return
+        }
 
         const r = Math.random()
 
@@ -159,14 +197,17 @@ export class MobRenderer {
         }
 
         // Loop - dynamic timing
-        setTimeout(planBehavior, 1000 + Math.random() * 3000)
+        this.behaviorTimeout = setTimeout(planBehavior, 1000 + Math.random() * 3000)
       }
       planBehavior()
     }
   }
 
   stopBehavior(): void {
-    // Stop intervals if stored
+    if (this.behaviorTimeout) {
+      clearTimeout(this.behaviorTimeout)
+      this.behaviorTimeout = null
+    }
     this.movement?.stop()
   }
 
@@ -185,6 +226,9 @@ export class MobRenderer {
       () => {
         // --- Quick Win: Squish on Click ---
         this.movement?.squish()
+        
+        // Don't select mobs in Onsen to prevent high five jumps
+        // Guard removed to allow combat selection
         
         if (onMobClickCallback) {
           onMobClickCallback(this)
@@ -207,11 +251,15 @@ export class MobRenderer {
     this.animation = new MobAnimation(el)
 
     // Initial Position (Random if not set)
-    const initialX = Math.random() * (window.innerWidth - 100) + 50
+    const initialX = (this.isInOnsen && this.onsenPosition) ? this.onsenPosition.x : Math.random() * (window.innerWidth - 100) + 50
+    const initialY = (this.isInOnsen && this.onsenPosition) ? this.onsenPosition.y : null
+
     this.movement = new MobMovement(
       el,
       physicsWorld,
-      initialX
+      initialX,
+      initialY,
+      this.display.mobInner // Pass rotation element to decouple rotation from particles
     )
 
     this.renamer = new MobRenamer(
