@@ -31,6 +31,23 @@
       </button>
     </div>
 
+    <!-- Onsen Zone - Background Layer -->
+    <div id="onsen-zone" class="drop-zone" title="Placez vos patates ici pour les soigner">
+      <div class="onsen-label">温泉 (Onsen)</div>
+    </div>
+
+    <!-- Onsen Front Layer (Water Overlay) -->
+    <div id="onsen-front">
+      <div class="onsen-water"></div>
+      <div class="onsen-steam">
+        <div class="steam-particle" style="--d: 0s; --l: 20%;"></div>
+        <div class="steam-particle" style="--d: 1s; --l: 40%;"></div>
+        <div class="steam-particle" style="--d: 2s; --l: 60%;"></div>
+        <div class="steam-particle" style="--d: 0.5s; --l: 80%;"></div>
+        <div class="steam-particle" style="--d: 1.5s; --l: 50%;"></div>
+      </div>
+    </div>
+
     <!-- Barre d'actions en bas -->
     <div id="action-bar">
       <div id="action-list">
@@ -93,6 +110,12 @@
             <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
           </svg>
           <span class="action-label">Thème</span>
+        </button>
+        <button class="action-btn" id="btn-debug" title="Mode Debug (Hitbox)">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+          </svg>
+          <span class="action-label">Debug</span>
         </button>
         <button class="action-btn danger-btn" id="btn-delete-all" title="TOUT supprimer (Danger!)">
           <svg viewBox="0 0 24 24" fill="currentColor">

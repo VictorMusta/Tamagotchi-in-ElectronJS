@@ -35,7 +35,11 @@ export interface MobData {
     combatProgress: CombatStats
     inSquad: boolean // True if in active squad (Hub), false if in Box
     weapons: string[] // List of owned weapons
+    isInOnsen: boolean // True if regenerating in the Hot Spring
+    lastOnsenEntryTimestamp: number | null // Timestamp of entry for offline healing
+    hpAtOnsenEntry: number | null // HP when the mob entered the Onsen
     hpMultiplier?: number // HP per Vitality point (default 10)
+    onsenPosition?: { x: number, y: number } | null // Saved position when in Onsen
 }
 
 export interface MobActionResult {
@@ -90,6 +94,7 @@ export interface TournamentParticipant {
     stats: MobStats
     level: number
     isPlayer: boolean
+    vie: number
 }
 
 export interface TournamentMatch {

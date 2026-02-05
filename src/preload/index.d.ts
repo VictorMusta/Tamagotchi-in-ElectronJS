@@ -23,11 +23,14 @@ interface CustomAPI {
   deleteAllMobs: () => Promise<{ success: boolean; error?: string }>
   renameMob: (id: string, newName: string) => Promise<MobActionResult>
   updateMobSkin: (id: string, type: 'hat', value: string) => Promise<MobActionResult>
+  updateMobOnsenState: (id: string, isInOnsen: boolean, timestamp: number | null, hpAtEntry: number | null, onsenPosition: {x:number, y:number} | null) => Promise<MobActionResult>
+  updateMobStatus: (id: string, status: 'vivant' | 'mort') => Promise<MobActionResult>
+  updateMobHP: (id: string, newHP: number) => Promise<MobActionResult>
 
   // Récupération des mobs
   getAllMobs: () => Promise<MobListResult>
   getMobById: (id: string) => Promise<MobActionResult>
-  processCombatResult: (winner: MobData, loser: MobData) => Promise<{ winner: MobData; loser: MobData; reward?: string }>
+  processCombatResult: (winner: MobData, loser: MobData, options?: { grantXP?: boolean }) => Promise<{ winner: MobData; loser: MobData; reward?: string }>
 
   // Sauvegarde et chargement
   saveMobs: () => Promise<SaveLoadResult>

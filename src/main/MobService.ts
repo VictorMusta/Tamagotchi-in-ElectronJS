@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 
-import { MobData, MobActionResult, MobListResult, SaveLoadResult, TournamentResult, TournamentData, TournamentHistory } from '../shared/types'
+import { MobData, MobStatus, MobActionResult, MobListResult, SaveLoadResult, TournamentResult, TournamentData, TournamentHistory } from '../shared/types'
 import { Mob } from './MobModel'
 import { TournamentService } from './TournamentService'
 
@@ -66,7 +66,7 @@ class MobManagerClass {
     if (!mob) return false
     const deleted = this.mobs.delete(id)
     if (deleted) {
-        this.saveMobs()
+      this.saveMobs()
     }
     return deleted
   }
@@ -135,6 +135,66 @@ class MobManagerClass {
     return name
   }
 
+  updateMobOnsenState(id: string, isInOnsen: boolean, timestamp: number | null, hpAtEntry: number | null, onsenPosition: {x:number, y:number} | null): MobActionResult {
+    const mob = this.mobs.get(id)
+    if (!mob) return { success: false, error: 'Mob non trouvé' }
+
+    mob.isInOnsen = isInOnsen
+    mob.lastOnsenEntryTimestamp = timestamp
+    mob.hpAtOnsenEntry = hpAtEntry
+    // Only update position if entering or moving in Onsen (if provided)
+    // If exiting (isInOnsen=false), we might strictly want to clear it, or keep it?
+    // User wants "respawn at same position", so we should keep it if in Onsen.
+    // If not in Onsen, we reset it to null.
+    if (!isInOnsen) {
+        mob.onsenPosition = null
+    } else if (onsenPosition) {
+        mob.onsenPosition = onsenPosition
+    }
+
+    this.saveMobs()
+    return { success: true, mob: mob.toJSON() }
+  }
+
+  updateMobHP(id: string, newHP: number): MobActionResult {
+    const mob = this.mobs.get(id)
+    if (!mob) return { success: false, error: 'Mob non trouvé' }
+
+    // Calculate maxHP
+    const maxHP = mob.getMaxHP()
+    
+    // Update HP
+    mob.vie = Math.max(0, Math.min(newHP, maxHP))
+    
+    // Update Status
+    mob.updateStatus()
+
+    // CRITICAL: If HP changed (damage taken), we must reset Onsen state logic
+    // so that calculateCurrentHP doesn't overwrite it with old healing data.
+    // We assume combats happen OUTSIDE the Onsen, or break the healing flow.
+    if (mob.isInOnsen) {
+        mob.isInOnsen = false
+        mob.hpAtOnsenEntry = null
+        mob.lastOnsenEntryTimestamp = null
+        // keep position if desired, or clear it. Clearning it is safer.
+        mob.onsenPosition = null
+    }
+
+    this.saveMobs()
+    console.log(`[MobService] updateMobHP finished for ${id}. New HP: ${mob.vie}, isInOnsen: ${mob.isInOnsen}`)
+    return { success: true, mob: mob.toJSON() }
+  }
+
+  updateMobStatus(id: string, status: 'vivant' | 'mort'): MobActionResult {
+    const mob = this.mobs.get(id)
+    if (!mob) return { success: false, error: 'Mob non trouvé' }
+
+    mob.status = status
+
+    this.saveMobs()
+    return { success: true, mob: mob.toJSON() }
+  }
+
   /**
    * Sauvegarde tous les mobs dans un fichier
    */
@@ -196,42 +256,69 @@ class MobManagerClass {
   /**
    * Traite le résultat d'un combat
    */
-  processCombatResult(winnerData: MobData, loserData: MobData): { winner: MobData, loser: MobData, reward?: string } {
-    console.log(`[MobService] processCombatResult: Winner=${winnerData.nom} (${winnerData.id}), Loser=${loserData.nom} (${loserData.id})`)
+  processCombatResult(winnerData: MobData, loserData: MobData, options: { grantXP?: boolean } = { grantXP: true }): { winner: MobData, loser: MobData, reward?: string } {
+    console.log(`[MobService] START processCombatResult for ${winnerData.nom} (${winnerData.vie} HP) and ${loserData.nom}. grantXP: ${options.grantXP}`)
     const winner = this.mobs.get(winnerData.id)
     const loser = this.mobs.get(loserData.id)
+    
+    if (winner) console.log(`[MobService] Found winner in backend. Pre-update HP: ${winner.vie}, isInOnsen: ${winner.isInOnsen}`)
+    if (loser) console.log(`[MobService] Found loser in backend. Pre-update HP: ${loser.vie}`)
 
     if (loser) {
-      console.log(`[MobService] Healing loser: ${loser.nom}`)
-      loser.vie = loser.getMaxHP()
-      loser.energie = 100
+      console.log(`[MobService] Processing loser: ${loser.nom}`)
+      // PERSIST HP FROM COMBAT
+      loser.vie = loserData.vie
+      loser.energie = loserData.energie
+      
+      // CRITICAL: Clear Onsen state so toJSON doesn't overwrite HP
+      loser.isInOnsen = false
+      loser.hpAtOnsenEntry = null
+      loser.lastOnsenEntryTimestamp = null
+      loser.onsenPosition = null
+
+      // Force status update based on new HP
       loser.updateStatus()
+      if (loser.vie <= 0) { 
+        loser.status = 'mort' 
+      }
     }
 
     let reward: string | undefined
     if (winner) {
-      console.log(`[MobService] Healing winner: ${winner.nom}`)
-      winner.vie = winner.getMaxHP()
-      winner.energie = 100
+      console.log(`[MobService] Processing winner: ${winner.nom}`)
+      // PERSIST HP FROM COMBAT
+      winner.vie = winnerData.vie
+      winner.energie = winnerData.energie
+      
+      // CRITICAL: Clear Onsen state so toJSON doesn't overwrite HP
+      winner.isInOnsen = false
+      winner.hpAtOnsenEntry = null
+      winner.lastOnsenEntryTimestamp = null
+      winner.onsenPosition = null
+
+      // Force status update
       winner.updateStatus()
 
-      winner.combatProgress.wins++
-      winner.combatProgress.winStreak++
-
       // XP GAIN POUR VICTOIRE
-      winner.gainExperience(50)
+      if (options.grantXP) {
+        winner.gainExperience(50)
 
-      if (winner.combatProgress.winStreak >= 5) {
-        reward = 'Fiole de Réanimation'
-        winner.combatProgress.winStreak = 0
+        if (winner.combatProgress.winStreak >= 5) {
+          reward = 'Fiole de Réanimation'
+          winner.combatProgress.winStreak = 0
+        }
       }
     }
 
     this.saveMobs()
+    console.log(`[MobService] END processCombatResult. Saved HP - Winner: ${winner?.vie}, Loser: ${loser?.vie}`)
+
+    const winnerJSON = winner ? winner.toJSON() : { ...winnerData, status: 'vivant' as MobStatus }
+    console.log(`[MobService] processCombatResult winnerJSON HP: ${winnerJSON.vie}`)
 
     return {
-      winner: winner ? winner.toJSON() : { ...winnerData, vie: 100 + (winnerData.stats.vitalite * (winnerData.hpMultiplier || 10)), status: 'vivant' },
-      loser: loser ? loser.toJSON() : { ...loserData, vie: 100 + (loserData.stats.vitalite * (loserData.hpMultiplier || 10)), status: 'vivant' },
+      winner: winnerJSON,
+      loser: loser ? loser.toJSON() : { ...loserData, status: 'vivant' as MobStatus },
       reward
     }
   }

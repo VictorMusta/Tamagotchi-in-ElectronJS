@@ -6,34 +6,39 @@ export class MobDisplay {
     private tooltip: HTMLElement | null = null
     private isTrackingTooltip: boolean = false
     private rafId: number | null = null
+    private currentData: MobData // NEW: Store current data
 
     // Elements
-    private mobInner: HTMLElement
+    public mobInner: HTMLElement
     private nameElement: HTMLElement
 
     constructor(data: MobData) {
+        this.currentData = data // Init
         this.element = document.createElement('div')
         this.element.className = 'mob'
         this.element.id = `mob-${data.id}`
 
-        // Create inner container
+        // Create inner container (THIS WILL ROTATE)
         this.mobInner = document.createElement('div')
-        this.mobInner.className = 'mob-inner'
+        this.mobInner.className = 'mob-inner-rotating'
+        this.mobInner.style.width = '100%'
+        this.mobInner.style.height = '100%'
+        this.mobInner.style.position = 'absolute'
+        this.mobInner.style.top = '0'
+        this.mobInner.style.left = '0'
+        this.mobInner.style.display = 'flex'
+        this.mobInner.style.alignItems = 'center'
+        this.mobInner.style.justifyContent = 'center'
 
-        // Create Name Element
+        // Create Name Element (STATIONARY)
         this.nameElement = document.createElement('div')
         this.nameElement.className = 'mob-name'
         this.nameElement.style.position = 'absolute'
         this.nameElement.style.top = '-25px'
         this.nameElement.style.left = '50%'
         this.nameElement.style.transform = 'translateX(-50%)'
-        this.nameElement.style.color = 'white'
-        this.nameElement.style.background = 'rgba(0,0,0,0.5)'
-        this.nameElement.style.padding = '2px 6px'
-        this.nameElement.style.borderRadius = '4px'
-        this.nameElement.style.fontSize = '12px'
-        this.nameElement.style.whiteSpace = 'nowrap'
-        this.nameElement.style.pointerEvents = 'auto' // Important for clicking name
+        this.nameElement.style.zIndex = '140'
+        this.nameElement.style.pointerEvents = 'auto'
         this.nameElement.style.cursor = 'pointer'
 
         this.element.appendChild(this.mobInner)
@@ -42,7 +47,8 @@ export class MobDisplay {
         this.update(data)
 
         // Tooltip Listeners (On the mob visual, not the name necessarily)
-        this.mobInner.addEventListener('mouseenter', () => this.showTooltip(data))
+        // CRITICAL FIX: Use this.currentData instead of closure 'data'
+        this.mobInner.addEventListener('mouseenter', () => this.showTooltip(this.currentData))
         this.mobInner.addEventListener('mouseleave', () => this.hideTooltip())
     }
 
@@ -83,48 +89,70 @@ export class MobDisplay {
     }
 
     update(data: MobData): void {
+        // console.log(`[MobDisplay] update called for ${data.nom}`)
+        this.currentData = data // UPDATE CURRENT DATA
+        this.updateHealthIndicator(data)
+        
+        // Only rebuild HTML if necessary (skin, weapon, status changed significantly)
+        // For now, let's just do it intelligently
         const weapons = Array.isArray(data.weapons) ? data.weapons : []
         const displayedWeapon = weapons.length > 0 ? weapons[0] : undefined
 
-        this.mobInner.innerHTML = `
-            <img src="${data.imageUrl}" class="mob-image" draggable="false" />
-            <div class="skin-layers">
-                <div class="layer hat-layer ${data.skin?.hat || 'none'}"></div>
+        // Check if we need to rebuild the inner HTML
+        // Simplest way: Check if the image source or weapon changed. 
+        // But since we use innerHTML string, let's just rebuild it safely BUT check for existing structure first?
+        // Actually, replacing innerHTML WILL kill hover states.
+        
+        // Let's create the structure ONCE during constructor and only update src/classes here
+        // But the previous implementation used innerHTML replacement.
+        
+        // FIX: Construct the HTML string and compare with current? No, that's heavy.
+        // Better: Query existing elements and update them.
+        
+        // 1. Image
+        let img = this.mobInner.querySelector('.mob-image') as HTMLImageElement
+        if (!img) {
+             // Init structure if missing (first run)
+             this.mobInner.innerHTML = `
+                <img src="${data.imageUrl}" class="mob-image" draggable="false" />
+                <div class="skin-layers"></div>
+                <div class="weapon-mount"></div>
+                <div class="status-marker"></div>
+             `
+             img = this.mobInner.querySelector('.mob-image') as HTMLImageElement
+        }
 
-            </div>
-            ${displayedWeapon ? `
-            <div class="hub-weapon-pivot" style="
-                position: absolute;
-                top: 50%;
-                right: -15px;
-                width: 40px;
-                height: 40px;
-                z-index: 20;
-                pointer-events: none;
-                transform-origin: center center;
-            ">
-                <div class="hub-weapon-container" style="
-                    width: 100%;
-                    height: 100%;
-                    position: relative;
-                    filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.5));
-                    animation: weapon-float 2s infinite ease-in-out;
-                ">
-                    <img 
-                        src="assets/weapons/${WEAPON_REGISTRY[displayedWeapon]?.icon || 'toothpick.png'}" 
-                        class="weapon-icon"
-                        style="
-                            width: 100%;
-                            height: 100%;
-                            object-fit: contain;
-                            image-rendering: pixelated;
-                        "
-                    />
-                </div>
-            </div>
-            ` : ''}
-            ${data.status === 'mort' ? '<div class="dead-marker">💀</div>' : ''}
-        `
+        if (img.src !== data.imageUrl) img.src = data.imageUrl
+        
+        // 2. Skins
+        const skinContainer = this.mobInner.querySelector('.skin-layers')
+        if (skinContainer) {
+             // Simple rebuild of skins is fine as they are non-interactive pointer-events: none
+             skinContainer.innerHTML = `<div class="layer hat-layer ${data.skin?.hat || 'none'}"></div>`
+        }
+
+        // 3. Weapon
+        const weaponMount = this.mobInner.querySelector('.weapon-mount')
+        if (weaponMount) {
+            if (displayedWeapon) {
+                 // Check if already has this weapon? 
+                 // Just rebuild weapon HTML, it's safer.
+                 weaponMount.innerHTML = `
+                    <div class="hub-weapon-pivot" style="position: absolute; top: 50%; right: -15px; width: 40px; height: 40px; z-index: 20; pointer-events: none; transform-origin: center center;">
+                        <div class="hub-weapon-container" style="width: 100%; height: 100%; position: relative; filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.5)); animation: weapon-float 2s infinite ease-in-out;">
+                            <img src="assets/weapons/${WEAPON_REGISTRY[displayedWeapon]?.icon || 'toothpick.png'}" class="weapon-icon" style="width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated;" />
+                        </div>
+                    </div>`
+            } else {
+                weaponMount.innerHTML = ''
+            }
+        }
+
+        // 4. Status (Dead)
+        const statusMarker = this.mobInner.querySelector('.status-marker')
+        if (statusMarker) {
+            statusMarker.innerHTML = data.status === 'mort' ? '<div class="dead-marker">💀</div>' : ''
+        }
 
         this.nameElement.textContent = data.nom
 
@@ -206,8 +234,32 @@ export class MobDisplay {
             this.rafId = null
         }
         if (this.tooltip) {
-            this.tooltip.remove()
-            this.tooltip = null
+            this.tooltip.style.opacity = '0'
+            this.tooltip.style.visibility = 'hidden'
+        }
+    }
+
+    setHealingState(isHealing: boolean): void {
+        let container = this.element.querySelector('.healing-container') as HTMLElement | null
+        
+        if (isHealing) {
+            if (!container) {
+                container = document.createElement('div')
+                container.className = 'healing-container'
+                container.style.pointerEvents = 'none' // Force pointer-events: none to prevent blocking clicks
+                // Add particles
+                for (let i = 0; i < 3; i++) {
+                    const particle = document.createElement('div')
+                    particle.className = 'healing-particle'
+                    particle.textContent = '+'
+                    container.appendChild(particle)
+                }
+                this.element.appendChild(container)
+            }
+        } else {
+            if (container) {
+                container.remove()
+            }
         }
     }
 
@@ -235,6 +287,45 @@ export class MobDisplay {
 
         this.tooltip.style.left = `${left}px`
         this.tooltip.style.top = `${top}px`
+    }
+
+    private updateHealthIndicator(data: MobData): void {
+        let hpEl = this.element.querySelector('.mob-onsen-hp') as HTMLElement
+        
+        const maxHP = 100 + (data.stats.vitalite * (data.hpMultiplier || 10))
+        const isNotFullLife = data.vie < maxHP
+        const isInOnsen = !!data.isInOnsen
+        const showIndicator = isInOnsen || isNotFullLife
+
+        if (showIndicator) {
+            if (!hpEl) {
+                hpEl = document.createElement('div')
+                hpEl.className = 'mob-onsen-hp'
+                // Use a standard top offset and ensure it's not rotated
+                hpEl.style.position = 'absolute'
+                hpEl.style.top = '-50px' // Slightly above name (-25px)
+                hpEl.style.left = '50%'
+                hpEl.style.transform = 'translateX(-50%)'
+                this.element.appendChild(hpEl)
+            }
+            const percent = Math.min(100, Math.floor((data.vie / maxHP) * 100))
+            const prefix = isInOnsen ? '♨️' : '❤️'
+            
+            // Console log for debugging health bar disappearance
+            if (isInOnsen) {
+                console.log(`[MobDisplay] ${data.nom} is in Onsen. ShowIndicator: ${showIndicator}, HP: ${data.vie}/${maxHP}`)
+            }
+
+            hpEl.textContent = `${prefix} ${percent}%`
+            hpEl.style.display = 'block'
+            
+            // Optional: Color based on health
+            if (percent < 30) hpEl.style.color = '#ff6b6b'
+            else if (percent < 70) hpEl.style.color = '#ffe66d'
+            else hpEl.style.color = '#4ecdc4'
+        } else if (hpEl) {
+            hpEl.style.display = 'none'
+        }
     }
 
     destroy(): void {

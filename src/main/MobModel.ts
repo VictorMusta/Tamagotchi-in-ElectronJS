@@ -34,6 +34,10 @@ export class Mob {
   inSquad: boolean
   weapons: string[]
   hpMultiplier: number
+  isInOnsen: boolean
+  lastOnsenEntryTimestamp: number | null
+  hpAtOnsenEntry: number | null
+  onsenPosition: { x: number, y: number } | null
 
   constructor(
     nom: string,
@@ -50,7 +54,11 @@ export class Mob {
     experience: number = 0,
     statPoints: number = 0,
     weapons?: string[],
-    hpMultiplier: number = 10
+    hpMultiplier: number = 10,
+    isInOnsen: boolean = false,
+    lastOnsenEntryTimestamp: number | null = null,
+    hpAtOnsenEntry: number | null = null,
+    onsenPosition: { x: number, y: number } | null = null
   ) {
     this.id = id || randomUUID()
     this.nom = nom
@@ -61,6 +69,10 @@ export class Mob {
     this.level = level
     this.experience = experience
     this.statPoints = statPoints
+    this.isInOnsen = isInOnsen
+    this.lastOnsenEntryTimestamp = lastOnsenEntryTimestamp
+    this.hpAtOnsenEntry = hpAtOnsenEntry
+    this.onsenPosition = onsenPosition
 
     // Initialisation des stats (40 points aléatoires totaux, min 1 par stat)
     if (stats) {
@@ -95,15 +107,18 @@ export class Mob {
 
       // DEBUG: Log generated stats
       console.log('[MobService] New mob stats generated:', this.stats, 'Total:', this.stats.force + this.stats.vitalite + this.stats.vitesse + this.stats.agilite)
+      
+      // New Mob: Start with full HP
+      const initialMaxHP = 100 + (this.stats.vitalite * (hpMultiplier !== undefined ? hpMultiplier : 10))
+      this.vie = initialMaxHP
+      this.energie = 100
+      this.status = 'vivant'
     }
 
     // Recalcul des PV Max en fonction de la vitalité
     const maxHP = 100 + (this.stats.vitalite * (hpMultiplier !== undefined ? hpMultiplier : 10))
-
-    // Always full health in Hub
-    this.vie = maxHP
-    this.energie = 100
-    this.status = 'vivant'
+    // Validate loaded HP (cap at maxHP if stats changed externally/legacy)
+    if (this.vie > maxHP) this.vie = maxHP
 
     // Initialisation des traits (3 aléatoires si non fournis)
     this.traits = traits || this.generateRandomTraits()
@@ -159,6 +174,31 @@ export class Mob {
 
   getMaxHP(): number {
     return 100 + (this.stats.vitalite * this.hpMultiplier)
+  }
+
+  /**
+   * Calculates the current HP based on Onsen time.
+   * 100% recovery in 5 minutes (300 seconds).
+   */
+  calculateCurrentHP(): number {
+    if (!this.isInOnsen || this.lastOnsenEntryTimestamp === null || this.hpAtOnsenEntry === null) {
+      return this.vie
+    }
+
+    const maxHP = this.getMaxHP()
+    if (this.vie >= maxHP) {
+      return maxHP
+    }
+
+    const now = Date.now()
+    const elapsedSeconds = (now - this.lastOnsenEntryTimestamp) / 1000
+    const regenPercent = elapsedSeconds / 300
+    const recoveredHP = regenPercent * maxHP
+
+    const currentHP = Math.min(maxHP, this.hpAtOnsenEntry + recoveredHP)
+    const result = Math.floor(currentHP)
+    console.log(`[MobModel] calculateCurrentHP for ${this.nom}: result=${result}, original_vie=${this.vie}, entryHP=${this.hpAtOnsenEntry}, inOnsen=${this.isInOnsen}`)
+    return result
   }
 
   updateStatus(): void {
@@ -290,13 +330,16 @@ export class Mob {
    * Sérialise le mob en objet JSON
    */
   toJSON(): MobData {
+    // Before saving, ensure we save the calculated HP if in Onsen
+    const actualVie = this.calculateCurrentHP()
+    
     return {
       id: this.id,
       nom: this.nom,
       imageUrl: this.imageUrl,
-      vie: this.vie,
+      vie: actualVie,
       energie: this.energie,
-      status: this.status,
+      status: actualVie > 0 ? 'vivant' : 'mort',
       stats: this.stats,
       level: this.level,
       experience: this.experience,
@@ -306,7 +349,10 @@ export class Mob {
       combatProgress: this.combatProgress,
       inSquad: this.inSquad,
       weapons: this.weapons,
-      hpMultiplier: this.hpMultiplier
+      hpMultiplier: this.hpMultiplier,
+      isInOnsen: this.isInOnsen,
+      lastOnsenEntryTimestamp: this.lastOnsenEntryTimestamp,
+      hpAtOnsenEntry: this.hpAtOnsenEntry
     }
   }
 
@@ -335,12 +381,15 @@ export class Mob {
       data.experience || 0,
       data.statPoints || 0,
       migratedWeapons,
-      data.hpMultiplier || 10
+      data.hpMultiplier || 10,
+      data.isInOnsen || false,
+      data.lastOnsenEntryTimestamp || null,
+      data.hpAtOnsenEntry || null
     )
-    // Force full heal / revive logic on load (Hub = Safe Zone)
-    mob.vie = mob.getMaxHP()
-    mob.energie = 100
-    mob.status = 'vivant'
+    
+    // On load, update HP based on Onsen time
+    mob.vie = mob.calculateCurrentHP()
+    mob.updateStatus()
 
     // Sanitize Traits (deduplicate)
     mob.traits = Array.from(new Set(mob.traits))

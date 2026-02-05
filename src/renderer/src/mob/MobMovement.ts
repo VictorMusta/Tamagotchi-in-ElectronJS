@@ -8,18 +8,22 @@ export class MobMovement {
     // Balance constants
     private readonly UPRIGHT_STIFFNESS = 0.05
     private readonly UPRIGHT_TORQUE_MAX = 5 // Limit torque to avoid spinning wildly
+    private isGrounded: boolean = false
+    public inOnsen: boolean = false
 
     constructor(
         private element: HTMLElement,
         private physicsWorld: PhysicsWorld,
-        initialX: number
+        initialX: number,
+        initialY: number | null,
+        private rotationElement?: HTMLElement
     ) {
         // Create physics body
         // Approximating mob as a rectangle. 
         // Visual size is approx 120px wide (from CSS .mob-image), but let's check bounding box.
         // Assuming ~80x100 for proper physics fit effectively.
         const startX = initialX || Math.random() * (window.innerWidth - 100) + 50
-        const startY = -100 + 500 // Drop from sky (lower start)
+        const startY = initialY !== null ? initialY : (-100 + 500) // Use provided Y or drop from sky
 
         // Set static styles once
         this.element.style.position = 'absolute'
@@ -39,8 +43,19 @@ export class MobMovement {
             friction: 0.5,
             frictionAir: 0.02, // Damping
             density: 0.002,
+            collisionFilter: {
+                category: PhysicsWorld.CATEGORY_MOB
+            },
             label: 'Mob'
         })
+
+        // Store ID on body for easy identification in physics events
+        // @ts-ignore
+        this.body.mobId = this.element.id.replace('mob-', '')
+        
+        // Store reference to this MobMovement for collision handlers
+        // @ts-ignore
+        this.body.mobMovement = this
 
         // Add to world
         physicsWorld.addBody(this.body)
@@ -48,8 +63,8 @@ export class MobMovement {
         // Start sync loop
         this.startSync()
 
-        // Hook into mouse events to know if held
-        // We can check if body.speed is very low to determine 'resting'
+        // Setup collision detection for grounded state
+        this.setupCollisionDetection()
     }
 
     private startSync(): void {
@@ -104,7 +119,14 @@ export class MobMovement {
             const offsetX = -60
             const offsetY = -70
 
-            this.element.style.transform = `translate(${x + offsetX}px, ${y + offsetY}px) rotate(${angle}rad)`
+            this.element.style.transform = `translate(${x + offsetX}px, ${y + offsetY}px)`
+            
+            if (this.rotationElement) {
+                this.rotationElement.style.transform = `rotate(${angle}rad)`
+            } else {
+                // Combine translate and rotate in one transform to prevent drift
+                this.element.style.transform = `translate(${x + offsetX}px, ${y + offsetY}px) rotate(${angle}rad)`
+            }
 
             // Balance logic: Try to stay upright
             // Target the NEAREST upright angle (0, 2PI, 4PI, etc.)
@@ -133,7 +155,8 @@ export class MobMovement {
             // RECOVERY JUMP LOGIC
             // If we are tilted too far ("fallen", e.g. > 60 degrees) and stationary on ground, try to hop up.
             // 60 degrees is approx 1.0 radian.
-            if (Math.abs(angleDiff) > 1.0) {
+            // BUT: Don't do this if in Onsen!
+            if (Math.abs(angleDiff) > 1.0 && !this.inOnsen) {
                 // Check if almost stationary (on ground)
                 if (Math.abs(this.body.velocity.y) < 0.1 && Math.abs(this.body.velocity.x) < 0.1) {
                     // small random chance to hop, so they don't all pop at once or spam
@@ -170,9 +193,45 @@ export class MobMovement {
         }
         update()
     }
+
+    private setupCollisionDetection(): void {
+        // Listen to collision events from Matter.js
+        Matter.Events.on(this.physicsWorld.engine, 'collisionStart', (event) => {
+            event.pairs.forEach((pair) => {
+                // Check if this mob's body is involved in the collision
+                if (pair.bodyA === this.body || pair.bodyB === this.body) {
+                    // Mob has touched something (ground or wall)
+                    this.isGrounded = true
+                }
+            })
+        })
+
+        // Also check if mob is moving very slowly vertically (likely on ground)
+        Matter.Events.on(this.physicsWorld.engine, 'afterUpdate', () => {
+            if (!this.body) return
+            
+            // If vertical velocity is very low, consider grounded
+            if (Math.abs(this.body.velocity.y) < 0.5) {
+                this.isGrounded = true
+            }
+        })
+    }
     
     public hop(intensity: number = 0.5): void {
         if (!this.body) return
+
+        // Prevent jumping in Onsen
+        if (this.inOnsen) {
+            return
+        }
+
+        // Prevent double jumps - only jump if grounded
+        if (!this.isGrounded) {
+            return
+        }
+
+        // Set grounded to false immediately after jump
+        this.isGrounded = false
 
         // Force Y calculation - BOOSTED 10x for dramatic jumps!
         // Low intensity (0.1) -> -0.42 (Small jump)
@@ -228,7 +287,16 @@ export class MobMovement {
     }
 
     // Legacy support (noop or adapt)
-    updateStatus(_status: MobStatus): void { }
-    start(): void { }
     stop(): void { }
+
+    public updateStatus(_status: MobStatus): void { }
+    
+    public setInOnsen(inOnsen: boolean, _x?: number, _y?: number): void {
+        if (!this.body) return
+        
+        // Just set the flag - don't make static, let physics work naturally
+        this.inOnsen = inOnsen
+        
+        console.log('[MobMovement] setInOnsen:', inOnsen, 'for body at', this.body.position)
+    }
 }
