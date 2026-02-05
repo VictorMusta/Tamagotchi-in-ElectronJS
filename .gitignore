@@ -95,11 +95,6 @@ out/
 dist-web/
 dist/
 
-# Android build
-android/.gradle/
-android/app/build/
-android/build/
-android/local.properties
 
 # BMAD workflow files (keep outputs only)
 _bmad/
