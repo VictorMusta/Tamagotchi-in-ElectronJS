@@ -49,6 +49,19 @@ export class PveUI {
             <div class="pve-mob-info">
               <span class="pve-mob-name">${playerMob.nom}</span>
               <span class="pve-mob-level">Niv. ${playerMob.level}</span>
+              
+              <div class="pve-mob-stats">
+                <span>FOR: ${playerMob.stats.force}</span>
+                <span>VIT: ${playerMob.stats.vitalite}</span>
+                <span>VIS: ${playerMob.stats.vitesse}</span>
+                <span>AGI: ${playerMob.stats.agilite}</span>
+              </div>
+              
+              <div class="pve-mob-traits">
+                <span class="pve-trait-label">Traits:</span> ${playerMob.traits.length > 0 ? playerMob.traits.slice(0, 3).join(', ') : 'Aucun'}
+              </div>
+              
+              ${playerMob.weapons.length > 0 ? `<div class="pve-mob-weapons">🗡️ ${playerMob.weapons.length} arme(s)</div>` : ''}
             </div>
           </div>
           <span class="pve-vs">VS</span>

@@ -8,13 +8,13 @@ interface CombatMob extends MobData {
 
 export type CombatEvent =
     | { type: 'tick', fighter1Energy: number, fighter2Energy: number, maggot1Energy?: number, maggot2Energy?: number, essaim1Energy?: number, essaim2Energy?: number, spirit1Energy?: number, spirit2Energy?: number }
-    | { type: 'attack', attackerId: string, targetId: string, damage: number, isCritical: boolean, targetCurrentHp: number, targetMaxHp: number, weapon?: string, visual?: 'berzerk' | 'normal' }
+    | { type: 'attack', attackerId: string, targetId: string, damage: number, isCritical: boolean, targetCurrentHp: number, targetMaxHp: number, weapon?: string, visual?: 'berzerk' | 'normal', isFinisher?: boolean }
     | { type: 'dodge', attackerId: string, targetId: string, targetCurrentHp: number }
     | { type: 'maggot_attack', attackerId: string, targetId: string, damage: number, targetCurrentHp: number, targetMaxHp: number }
     | { type: 'essaim_attack', attackerId: string, targetId: string, damage: number, targetCurrentHp: number, targetMaxHp: number, blinded: boolean }
     | { type: 'spirit_action', attackerId: string, targetId: string, action: 'swap' | 'drop' | 'miss' }
     | { type: 'guardian_absorb', ownerId: string, damageAbsorbed: number, guardianHp: number }
-    | { type: 'counter_attack', attackerId: string, targetId: string, damage: number, targetCurrentHp: number, targetMaxHp: number, weapon?: string }
+    | { type: 'counter_attack', attackerId: string, targetId: string, damage: number, targetCurrentHp: number, targetMaxHp: number, weapon?: string, isFinisher?: boolean }
     | { type: 'weapon_steal', thiefId: string, victimId: string, weapon: string }
     | { type: 'log', message: string }
     | { type: 'state_change', id: string, state: 'berzerk' | 'stun' | 'normal', value?: boolean }
@@ -342,9 +342,10 @@ export class CombatEngine {
             this.onEvent({ type: 'log', message: `Le Gardien de ${defender.nom} intercepte ${actualAbsorbed} dégâts !` })
         }
 
+        const isLethal = (defender.vie - finalDamage) <= 0
         defender.vie -= finalDamage
             const maxHp = 100 + (defender.stats.vitalite * (defender.hpMultiplier || 10))
-        this.onEvent({ type: 'attack', attackerId: attacker.id, targetId: defender.id, damage: finalDamage, isCritical, targetCurrentHp: defender.vie, targetMaxHp: maxHp, visual: this.isBerzerk(attacker) ? 'berzerk' : 'normal', weapon: attacker.weapon })
+        this.onEvent({ type: 'attack', attackerId: attacker.id, targetId: defender.id, damage: finalDamage, isCritical, targetCurrentHp: defender.vie, targetMaxHp: maxHp, visual: this.isBerzerk(attacker) ? 'berzerk' : 'normal', weapon: attacker.weapon, isFinisher: isLethal })
         this.onEvent({ type: 'log', message: `${attacker.nom} inflige ${finalDamage} dégâts !` })
 
         const w = WEAPON_REGISTRY[attacker.weapon || '']
@@ -401,9 +402,10 @@ export class CombatEngine {
         await new Promise(resolve => setTimeout(resolve, 600 / this.speedMultiplier))
         const damage = attacker.stats.force
         const reduced = this.calculateDamageReduction(target, damage)
+        const isLethal = (target.vie - reduced) <= 0
         target.vie -= reduced
         const maxHp = 100 + (target.stats.vitalite * 10)
-        this.onEvent({ type: 'counter_attack', attackerId: attacker.id, targetId: target.id, damage: reduced, targetCurrentHp: target.vie, targetMaxHp: maxHp, weapon: attacker.weapon })
+        this.onEvent({ type: 'counter_attack', attackerId: attacker.id, targetId: target.id, damage: reduced, targetCurrentHp: target.vie, targetMaxHp: maxHp, weapon: attacker.weapon, isFinisher: isLethal })
         this.onEvent({ type: 'log', message: `${attacker.nom} CONTRE-ATTAQUE !` })
     }
 

@@ -14,6 +14,7 @@ export class CombatUI {
     private isProcessingQueue: boolean = false
 
     private isCinematicMode: boolean = true
+    private isDebug: boolean = false
 
     constructor() {
         this.loadSpeed()
@@ -34,6 +35,10 @@ export class CombatUI {
             btn.classList.toggle('active', this.isCinematicMode)
             btn.innerHTML = `🎥 ${this.isCinematicMode ? 'ON' : 'OFF'}`
         }
+    }
+
+    public setDebug(enabled: boolean): void {
+        this.isDebug = enabled
     }
 
     private async applyCameraEffect(type: 'focus' | 'impact' | 'reset', targetId?: string, duration: number = 0.5, easing: string = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'): Promise<void> {
@@ -196,7 +201,7 @@ export class CombatUI {
         this.combatOverlay.innerHTML = `
       <div class="combat-arena">
         <!-- Fighters ... -->
-        <div class="fighter-container left" id="fighter-${f1.id}">
+        <div class="fighter-container left entry-hidden" id="fighter-${f1.id}">
             <div class="hud">
                 <div class="name">${f1.nom}</div>
                 <div class="hp-bar">
@@ -220,6 +225,8 @@ export class CombatUI {
             </div>
             <div class="mob-wrapper">
                 <img src="${f1Image}" class="combat-mob-img" />
+                <div class="potato-half left" style="background-image: url('${f1Image}')"></div>
+                <div class="potato-half right" style="background-image: url('${f1Image}')"></div>
                 <div class="skin-layers">
                     <div class="layer hat-layer ${f1.skin?.hat || 'none'}"></div>
                 </div>
@@ -244,7 +251,7 @@ export class CombatUI {
 
         <div class="vs-label">VS</div>
 
-        <div class="fighter-container right" id="fighter-${f2.id}">
+        <div class="fighter-container right entry-hidden" id="fighter-${f2.id}">
              <div class="hud">
                 <div class="name">${f2.nom}</div>
                 <div class="hp-bar">
@@ -267,6 +274,8 @@ export class CombatUI {
             </div>
             <div class="mob-wrapper">
                 <img src="${f2Image}" class="combat-mob-img" />
+                <div class="potato-half left" style="background-image: url('${f2Image}')"></div>
+                <div class="potato-half right" style="background-image: url('${f2Image}')"></div>
                 <div class="skin-layers">
                     <div class="layer hat-layer ${f2.skin?.hat || 'none'}"></div>
                 </div>
@@ -302,6 +311,11 @@ export class CombatUI {
         
         <div id="combat-log"></div>
       </div>
+
+      <!-- Cinematic Elements -->
+      <div class="cinematic-bars-top"></div>
+      <div class="cinematic-bars-bottom"></div>
+      <div class="vignette-overlay"></div>
     `
         document.body.appendChild(this.combatOverlay)
 
@@ -313,17 +327,42 @@ export class CombatUI {
             this.handleCombatEvent(event)
         })
         engine.setSpeed(this.currentSpeed)
-        // Ensure engine is accessible for cinematic speed control? Ideally we access it via method but engine is local here.
-        // We can cheat and attach it to `this` temporarily or just ignore speed manip for now and rely on CSS/visuals.
-        // Actually for slow mo on crit we might need to setSpeed.
-        // Let's attach engine to a private prop if we want full control, but for now visual slow mo is CSS based?
-        // No, engine speed controls event timing.
-        // To implement engine slow motion properly, I would need to store engine reference. 
-        // For this step I'll focus on Visuals (CSS).
 
-        // ... existing speed btn events ...
+        // --- Sequence d'introduction ---
+        const runIntro = async () => {
+            const f1El = document.getElementById(`fighter-${f1.id}`)
+            const f2El = document.getElementById(`fighter-${f2.id}`)
+            if (f1El && f2El) {
+                // Sauts d'entrée
+                f1El.classList.add('anim-jump-in-left')
+                f2El.classList.add('anim-jump-in-right')
+                await new Promise(r => setTimeout(r, 800))
+                f1El.classList.remove('entry-hidden')
+                f2El.classList.remove('entry-hidden')
+
+                // Salutations
+                const w1 = f1El.querySelector('.mob-wrapper') as HTMLElement
+                const w2 = f2El.querySelector('.mob-wrapper') as HTMLElement
+                if (w1 && w2) {
+                    w1.classList.add('anim-bow-left')
+                    w2.classList.add('anim-bow-right')
+                    await new Promise(r => setTimeout(r, 800))
+                }
+            }
+
+            // Démarrage du combat
+            engine.start().then(async ({ winner, loser }) => {
+                await this.waitForQueue()
+                if (this.isCinematicMode) {
+                    await new Promise(r => setTimeout(r, 1000))
+                }
+                this.showVictoryScreen(winner, loser, onFinish, combatType)
+            })
+        }
+
+        runIntro()
+
         this.combatOverlay.querySelectorAll('.speed-btn').forEach(btn => {
-            // ... existing code ...
             const btnSpeed = parseFloat((btn as HTMLElement).dataset.speed || '1')
             if (btnSpeed === this.currentSpeed) {
                 btn.classList.add('active')
@@ -345,16 +384,6 @@ export class CombatUI {
 
         const initialAnimDuration = Math.max(0.1, 0.4 / this.currentSpeed)
         document.documentElement.style.setProperty('--combat-speed', `${initialAnimDuration}s`)
-
-        engine.start().then(async ({ winner, loser }) => {
-            await this.waitForQueue()
-            // Final slow mo finish
-             if (this.isCinematicMode) {
-                // Dramatic pause
-                await new Promise(r => setTimeout(r, 1000))
-            }
-            this.showVictoryScreen(winner, loser, onFinish, combatType)
-        })
     }
 
     private async waitForQueue(): Promise<void> {
@@ -398,7 +427,11 @@ export class CombatUI {
                 if (event.spirit2Energy !== undefined) this.updateBar(`spirit-${this.currentFighter2.id}`, event.spirit2Energy)
                 break
             case 'attack':
-                await this.animateAttack(event.attackerId, event.targetId, event.damage, event.isCritical, event.weapon)
+                if (event.isFinisher && this.isDebug) {
+                    await this.animateFinisher(event.attackerId, event.targetId, event.damage)
+                } else {
+                    await this.animateAttack(event.attackerId, event.targetId, event.damage, event.isCritical, event.weapon)
+                }
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
                 break
             case 'dodge':
@@ -493,7 +526,11 @@ export class CombatUI {
                 }
                 break
             case 'counter_attack':
-                await this.animateAttack(event.attackerId, event.targetId, event.damage, false, event.weapon)
+                if (event.isFinisher && this.isDebug) {
+                    await this.animateFinisher(event.attackerId, event.targetId, event.damage, 'launch')
+                } else {
+                    await this.animateAttack(event.attackerId, event.targetId, event.damage, false, event.weapon)
+                }
                 this.updateHpUI(event.targetId, event.targetCurrentHp, event.targetMaxHp)
                 this.showPopup(event.attackerId, 'CONTRE !', 'counter')
                 break
@@ -583,6 +620,10 @@ export class CombatUI {
             if (isCinematicSequence) {
                 // Setup Phase: Zoom on ATTACKER first
                 await this.applyCameraEffect('focus', attackerId, 0.5, 'ease-out')
+                
+                // --- Epic Cinematic Entry ---
+                this.combatOverlay?.classList.add('cinematic-active')
+                
                 // A small beat to register the focus
                 await new Promise(r => setTimeout(r, 400))
                 
@@ -653,9 +694,92 @@ export class CombatUI {
 
             // 4. Reset Camera (Only if we zoomed)
             if (isCinematicSequence) {
+                this.combatOverlay?.classList.remove('cinematic-active')
                 this.applyCameraEffect('reset', undefined, 0.8, 'ease-in-out')
             }
         }
+    }
+
+    private async animateFinisher(attackerId: string, targetId: string, damage: number, forcedType?: 'suplex' | 'execution' | 'launch'): Promise<void> {
+        const attackerContainer = document.getElementById(`fighter-${attackerId}`)
+        const targetContainer = document.getElementById(`fighter-${targetId}`)
+        const attackerWrapper = attackerContainer?.querySelector('.mob-wrapper') as HTMLElement
+        const targetWrapper = targetContainer?.querySelector('.mob-wrapper') as HTMLElement
+        const arena = this.combatOverlay?.querySelector('.combat-arena') as HTMLElement
+
+        if (!attackerContainer || !targetContainer || !attackerWrapper || !targetWrapper || !arena) return
+
+        // --- Cinematic Entry ---
+        this.combatOverlay?.classList.add('cinematic-active')
+        await this.applyCameraEffect('focus', attackerId, 0.5, 'ease-out')
+        await new Promise(r => setTimeout(r, 600)) // Bullet time pause
+
+        // Randomly choose finisher type if not forced
+        const types: ('suplex' | 'execution' | 'launch')[] = ['suplex', 'execution']
+        const type = forcedType || types[Math.floor(Math.random() * types.length)]
+
+        // Setup for Camera Tracking
+        const attackerRect = attackerWrapper.getBoundingClientRect()
+        const targetRect = targetWrapper.getBoundingClientRect()
+        const deltaX = targetRect.left - attackerRect.left
+        const deltaY = targetRect.top - attackerRect.top
+        arena.style.setProperty('--dash-x', `${deltaX}px`)
+        arena.style.setProperty('--dash-y', `${deltaY}px`)
+        arena.classList.add('finisher-active')
+
+        // Set movement props on elements
+        attackerWrapper.style.setProperty('--dash-x', `${deltaX}px`)
+        attackerWrapper.style.setProperty('--dash-y', `${deltaY}px`)
+
+        switch (type) {
+            case 'suplex':
+                attackerWrapper.classList.add('finisher-suplex-attacker')
+                targetWrapper.classList.add('finisher-suplex-target')
+                
+                await new Promise(r => setTimeout(r, 1250)) // Wait for slam impact (50% of 2.5s)
+                this.applyCameraEffect('impact')
+                this.createHitParticles(targetWrapper, 25)
+                this.showPopup(targetId, `-${damage} FATALITY !`, 'crit')
+
+                await new Promise(r => setTimeout(r, 1250)) // Wait for return
+                attackerWrapper.classList.remove('finisher-suplex-attacker')
+                // Target stays down (class persists until death anim)
+                break
+
+            case 'execution':
+                // 1. Dash to target
+                await this.performDash(attackerWrapper, targetWrapper, 0.4)
+                
+                // 2. Position target on head
+                targetWrapper.style.transform = 'translateY(-150px) rotate(90deg)'
+                await new Promise(r => setTimeout(r, 500))
+
+                // 3. Perform Cut
+                targetWrapper.classList.add('execution-cut-active')
+                this.createHitParticles(targetWrapper, 20)
+                this.showPopup(targetId, `-${damage} TRIPLE TRANCHE !`, 'crit')
+                this.applyCameraEffect('impact')
+                
+                await new Promise(r => setTimeout(r, 1500))
+                break
+
+            case 'launch':
+                // This triggers usually on counter. Counter already has a "dash" feel? 
+                // Let's just launch the target from where they are.
+                this.showPopup(targetId, 'CHALLENGER REJECTED !', 'crit')
+                targetWrapper.classList.add('finisher-launch-target')
+                this.applyCameraEffect('impact')
+                
+                await new Promise(r => setTimeout(r, 1000))
+                this.showPopup(attackerId, 'PROCHAIN !', 'dodge')
+                await new Promise(r => setTimeout(r, 1000))
+                break
+        }
+
+        // --- Cleanup ---
+        arena.classList.remove('finisher-active')
+        this.combatOverlay?.classList.remove('cinematic-active')
+        await this.applyCameraEffect('reset', undefined, 1.0, 'ease-in-out')
     }
 
     /**

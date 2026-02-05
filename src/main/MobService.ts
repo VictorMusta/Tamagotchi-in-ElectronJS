@@ -163,22 +163,23 @@ class MobManagerClass {
     // Calculate maxHP
     const maxHP = mob.getMaxHP()
     
+    // CRITICAL: If HP decreased (damage taken), we must reset Onsen state logic
+    // so that calculateCurrentHP doesn't overwrite it with old healing data.
+    // However, if HP INCREASED (healing), we MUST keep the Onsen state
+    // so that offline healing calculation remains consistent.
+    if (newHP < mob.vie && mob.isInOnsen) {
+        console.log(`[MobService] Mob ${mob.nom} took damage (${mob.vie} -> ${newHP}), removing from Onsen.`)
+        mob.isInOnsen = false
+        mob.hpAtOnsenEntry = null
+        mob.lastOnsenEntryTimestamp = null
+        mob.onsenPosition = null
+    }
+
     // Update HP
     mob.vie = Math.max(0, Math.min(newHP, maxHP))
     
     // Update Status
     mob.updateStatus()
-
-    // CRITICAL: If HP changed (damage taken), we must reset Onsen state logic
-    // so that calculateCurrentHP doesn't overwrite it with old healing data.
-    // We assume combats happen OUTSIDE the Onsen, or break the healing flow.
-    if (mob.isInOnsen) {
-        mob.isInOnsen = false
-        mob.hpAtOnsenEntry = null
-        mob.lastOnsenEntryTimestamp = null
-        // keep position if desired, or clear it. Clearning it is safer.
-        mob.onsenPosition = null
-    }
 
     this.saveMobs()
     console.log(`[MobService] updateMobHP finished for ${id}. New HP: ${mob.vie}, isInOnsen: ${mob.isInOnsen}`)
