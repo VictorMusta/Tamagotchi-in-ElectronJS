@@ -447,7 +447,7 @@
     if (ins) {
       createChart('report-chart-insertion', 'bar', DBS.map(d => d.label), 
         [{ data: DBS.map(db => ins[db.key]), backgroundColor: DBS.map(d => d.bg) }],
-        { plugins: { legend: { display: false } } }
+        { plugins: { legend: { display: false } }, scales: { y: { type: 'logarithmic' } } }
       );
     }
 
@@ -457,7 +457,7 @@
     if (read) {
       createChart('report-chart-read', 'bar', DBS.slice(0, 3).map(d => d.label), 
         [{ label: 'READ One (ms)', data: DBS.slice(0, 3).map(db => read[db.key]), backgroundColor: DBS.slice(0, 3).map(db => db.bg) }],
-        { plugins: { legend: { display: false } }, scales: { y: { title: { display: true, text: 'ms (Linear)' } } } }
+        { plugins: { legend: { display: false } }, scales: { y: { type: 'logarithmic', title: { display: true, text: 'ms (Log)' } } } }
       );
     }
     if (del) {
@@ -485,7 +485,8 @@
           label: db.label,
           data: [avg[db.key], cnt[db.key]],
           backgroundColor: db.bg
-        }))
+        })),
+        { scales: { y: { type: 'logarithmic' } } }
       );
     }
   }
@@ -575,7 +576,7 @@
       createChart(`chart-${suffix}-${i}`, 'bar', DBS.map(db => db.label), datasets, {
         scales: { 
           x: { grid: { display: false } },
-          y: { type: r.scenario.includes('Matches') || r.scenario.includes('DELETE') ? 'logarithmic' : 'linear' }
+          y: { type: 'logarithmic' }
         }
       });
     });
