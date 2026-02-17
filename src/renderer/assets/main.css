@@ -3170,3 +3170,13 @@ body.theme-cozy #parallax-background {
   z-index: 10;
 }
 
+
+/* Hidden Cheat Menu */
+.is-cheat {
+  display: none !important;
+}
+
+body.cheats-enabled .is-cheat {
+  display: flex !important;
+}
+
