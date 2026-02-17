@@ -1,5 +1,8 @@
 import { MobData } from '../../../shared/types'
+import { CombatPredictor } from '../combat/CombatPredictor'
+
 const potatoImage = 'assets/Potato still.png'
+const predictor = new CombatPredictor()
 
 export class PveUI {
   private overlay: HTMLElement | null = null
@@ -70,7 +73,7 @@ export class PveUI {
         <div class="pve-enemies-section">
           <h3>Choisissez votre adversaire</h3>
           <div class="pve-enemies-grid">
-            ${this.enemies.map((enemy, index) => this.renderEnemyCard(enemy, index)).join('')}
+            ${this.enemies.map((enemy, index) => this.renderEnemyCard(enemy, index, playerMob)).join('')}
           </div>
         </div>
 
@@ -86,11 +89,25 @@ export class PveUI {
     this.bindEvents()
   }
 
-  private renderEnemyCard(enemy: MobData, index: number): string {
+  private renderEnemyCard(enemy: MobData, index: number, playerMob?: MobData): string {
     const traitList = enemy.traits.length > 0 ? enemy.traits.slice(0, 3).join(', ') : 'Aucun'
+    
+    // Prediction Logic
+    let winChanceHtml = ''
+    if (playerMob) {
+      const chance = Math.round(predictor.predict(playerMob, enemy))
+      const winClass = chance >= 80 ? 'win-high' : (chance >= 50 ? 'win-mid' : 'win-low')
+      winChanceHtml = `
+        <div class="oracle-badge ${winClass}">
+          <span class="chance-label">Win Rate</span>
+          <span class="chance-val">${chance}%</span>
+        </div>
+      `
+    }
 
     return `
       <div class="pve-enemy-card" data-index="${index}">
+        ${winChanceHtml}
         <div class="pve-enemy-avatar">
           <div class="pve-enemy-placeholder">🥔</div>
           <div class="pve-hat-layer ${enemy.skin.hat}"></div>
