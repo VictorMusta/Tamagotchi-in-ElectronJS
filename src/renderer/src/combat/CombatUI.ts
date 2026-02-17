@@ -2,6 +2,9 @@ import { MobData } from '../../../shared/types'
 import { CombatEngine, CombatEvent } from './CombatEngine'
 import { WEAPON_REGISTRY } from '../../../shared/WeaponRegistry'
 import { TRAIT_DEFINITIONS } from '../mob/TraitDefinitions'
+import { LevelUpRecommender } from '../mob/LevelUpRecommender'
+
+const recommender = new LevelUpRecommender()
 
 export class CombatUI {
     private selectionOverlay: HTMLElement | null = null
@@ -982,18 +985,22 @@ export class CombatUI {
                     <h2 class="levelup-title">NIVEAU SUPÉRIEUR !</h2>
                     <p class="levelup-subtitle">${mob.nom} passe au niveau ${mob.level + 1}</p>
                     <div class="upgrade-choices">
-                        ${choices.map((c: any, i: number) => `
-                            <div class="upgrade-card" 
+                        ${choices.map((c: any, i: number) => {
+                            const isRecommended = i === recommender.recommend(mob, choices)
+                            return `
+                            <div class="upgrade-card ${isRecommended ? 'recommended' : ''}" 
                                  data-index="${i}" 
                                  data-type="${c.type}"
                                  ${c.type === 'trait' && c.name ? `data-trait="${c.name}"` : ''}
                                  ${c.type === 'weapon' && c.name ? `data-weapon="${c.name}"` : ''}
                                  ${c.type === 'stat' ? `data-stat="${c.stat}" data-amount="${c.amount}"` : ''}>
+                                ${isRecommended ? '<div class="rec-badge">RECOMMANDÉ 🤖</div>' : ''}
                                 <div class="upgrade-icon">${this.getUpgradeIcon(c.type)}</div>
                                 <div class="upgrade-label">${c.label || c.name}</div>
                                 <div class="upgrade-desc">${c.description || ''}</div>
                             </div>
-                        `).join('')}
+                            `
+                        }).join('')}
                     </div>
                 </div>
             `
