@@ -375,38 +375,72 @@
       <p>L'exploitation des <span class="highlight">45 millions de matchs</span> permet de déployer des modèles d'intelligence artificielle pour optimiser le gameplay de Potato Rotato.</p>
 
       <div class="scenario-grid" style="margin-top: 2rem;">
-        <div class="stat-card">
-          <h3 style="color: var(--accent);">🔮 Combat Oracle</h3>
-          <p style="font-size: 0.85rem; color: var(--text-muted);">Prédit l'issue des combats PVE en temps réel.</p>
-          <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(0,243,255,0.1); border-radius: 8px; border: 1px solid var(--accent);">
-            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.3rem;">
-              <span>Précision du Modèle</span>
-              <span>94.2%</span>
+        <!-- Combat Oracle Card -->
+        <div class="scenario-card" style="grid-column: span 1;">
+          <h3 style="color: var(--accent);">🔮 Combat Oracle (V2)</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Moteur de prédiction probabiliste en temps réel.</p>
+          
+          <!-- CSS Mockup for Oracle -->
+          <div style="background: rgba(0,0,0,0.5); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; text-align: center; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 5px; right: 5px; font-size: 8px; color: var(--accent); opacity: 0.5;">SIMULATION_ACTIVE</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 1rem;">Duel : <span style="color:#fff">Patate Douce</span> vs <span style="color:#ff4438">Gros Bourrin</span></div>
+            <div style="width: 120px; height: 30px; background: rgba(0,243,255,0.2); border: 2px solid var(--accent); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 0 15px var(--accent);">
+              <span style="color:#fff; font-size: 0.8rem; font-weight: 800;">74.2% WIN</span>
             </div>
-            <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px;">
-              <div style="width: 94%; height: 100%; background: var(--accent); border-radius: 2px;"></div>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 1rem;">"L'Oracle a performé 200 duels simulés en 4ms."</p>
+          </div>
+
+          <div class="analysis-box" style="margin:0; font-size: 0.75rem;">
+            <h4>Algorithme : Monte Carlo Headless</h4>
+            <ul style="padding-left: 1rem;">
+              <li>Clonage d'état (Immutable state snapshot)</li>
+              <li>Simulation accélérée "pure-logic" (sans physique)</li>
+              <li>Intégration des traits RNG (Crit, Dodge, Stun)</li>
+              <li>Calcul de la moyenne statistique des victoires</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Level-up Recommender Card -->
+        <div class="scenario-card" style="grid-column: span 1;">
+          <h3 style="color: var(--mongo-idx);">🧠 Smart Recommender</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Optimisation de build basée sur le méta-jeu.</p>
+          
+          <!-- CSS Mockup for Recommender -->
+          <div style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1rem;">
+            <div style="width: 80px; height: 100px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-direction: column; opacity: 0.5;">
+              <span style="font-size: 1.5rem;">❤️</span>
+              <span style="font-size: 0.6rem;">PV</span>
+            </div>
+            <div style="width: 80px; height: 100px; background: rgba(0,243,255,0.1); border: 2px solid var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-direction: column; position: relative; box-shadow: 0 0 20px var(--accent); animation: pulse-soft 2s infinite;">
+              <div style="position: absolute; top: -8px; background: #fff; color: #000; font-size: 5px; font-weight: 900; padding: 2px 5px; border-radius: 10px;">RECOMMANDÉ</div>
+              <span style="font-size: 1.5rem;">⚡</span>
+              <span style="font-size: 0.6rem;">VITESSE</span>
+            </div>
+            <div style="width: 80px; height: 100px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-direction: column; opacity: 0.5;">
+              <span style="font-size: 1.5rem;">⚔️</span>
+              <span style="font-size: 0.6rem;">DÉGÂTS</span>
             </div>
           </div>
-          <p class="desc" style="margin-top: 1rem;">Basé sur une simulation Monte Carlo de 200 itérations par duel, prenant en compte HP, traits et probabilités d'esquive.</p>
-        </div>
 
-        <div class="stat-card">
-          <h3 style="color: var(--mongo-idx);">🧠 Level-up Recommender</h3>
-          <p style="font-size: 0.85rem; color: var(--text-muted);">Optimise la montée en niveau des patates.</p>
-          <ul style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1.2rem; margin-top: 0.5rem;">
-            <li>Analyse des builds gagnants</li>
-            <li>Priorisation des stats (Force vs Vitesse)</li>
-            <li>Synergies de traits optimisées</li>
-          </ul>
-          <p class="desc" style="margin-top: 1rem;">Suggère le meilleur choix à chaque niveau pour maximiser le WinRate global sur le long terme.</p>
-        </div>
-
-        <div class="stat-card">
-          <h3 style="color: var(--redis);">🧬 Clustering d'Archétypes</h3>
-          <p style="font-size: 0.85rem; color: var(--text-muted);">Identification automatique de la Meta.</p>
-          <p class="desc" style="margin-top: 1rem;">Utilisation d'algorithmes non-supervisés (K-Means) pour regrouper les patates par style de jeu : <b>Glass Cannons</b>, <b>Immobile Tanks</b>, ou <b>Speed Blitzers</b>.</p>
+          <div class="analysis-box" style="margin:0; font-size: 0.75rem;">
+            <h4>Algorithme : Heuristic Scorer</h4>
+            <ul style="padding-left: 1rem;">
+              <li>Poids basés sur 45 millions de matchs analysés</li>
+              <li>Priorisation de la Vitesse (Génération d'énergie)</li>
+              <li>Détection de builds (ex: Esquive -> Agilité)</li>
+              <li>Gestion de l'arsenal (Choix d'armes si arsenal vide)</li>
+            </ul>
+          </div>
         </div>
       </div>
+      
+      <style>
+        @keyframes pulse-soft {
+          0%, 100% { box-shadow: 0 0 10px var(--accent); border-color: var(--accent); }
+          50% { box-shadow: 0 0 25px var(--accent); border-color: #fff; }
+        }
+      </style>
 
       <div class="analysis-box" style="margin-top: 3rem; border-left-color: var(--redis);">
         <h4>📈 Prochaine Étape : Surrogate Model</h4>
