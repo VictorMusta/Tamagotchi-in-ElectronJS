@@ -25,6 +25,26 @@ services:
     volumes:
       - cassandra_data:/var/lib/cassandra
 
+  game-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: potato_game_web
+    ports:
+      - "8080:80"
+    depends_on:
+      - mongodb
+      - redis
+      - cassandra
+
+  benchmark-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.benchmark
+    container_name: potato_benchmark_web
+    ports:
+      - "8081:80"
+
 volumes:
   mongo_data:
   cassandra_data:
