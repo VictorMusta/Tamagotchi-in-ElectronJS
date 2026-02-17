@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🥔 Potato Benchmark — MongoDB vs Redis vs Cassandra</title>
+  <title>🥔 Potato Benchmark — MongoDB vs Redis</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet" />
@@ -13,13 +13,12 @@
       --surface: #1a1a2e;
       --surface-2: #16213e;
       --mongo: #00ed64;
-      --mongo-idx: #a8ff78;
+      --mongo-idx: #00ed64;
       --redis: #ff4438;
-      --cassandra: #1da1f2;
       --text: #e0e0e0;
       --text-muted: #8892b0;
-      --accent: #64ffda;
-      --border: rgba(100, 255, 218, 0.15);
+      --accent: #00ed64;
+      --border: rgba(0, 237, 100, 0.15);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -38,7 +37,7 @@
     .header h1 {
       font-size: 2.2rem;
       font-weight: 800;
-      background: linear-gradient(90deg, var(--mongo), var(--mongo-idx), var(--redis), var(--cassandra));
+      background: linear-gradient(90deg, var(--mongo), var(--mongo-idx), var(--redis));
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -52,16 +51,17 @@
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: center;
-      gap: 2rem;
-      padding: 0 2rem;
+      gap: 1.5rem;
+      padding: 0 1rem;
+      flex-wrap: wrap;
     }
     .tab-btn {
       background: none;
       border: none;
       color: var(--text-muted);
-      padding: 1.2rem 1rem;
+      padding: 1.2rem 0.8rem;
       font-family: inherit;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       position: relative;
@@ -118,21 +118,38 @@
       border-radius: 16px;
       border: 1px solid var(--border);
       padding: 3rem;
-      line-height: 1.7;
+      line-height: 1.8;
     }
-    .report-wrap h2 { font-size: 2rem; color: var(--accent); margin: 2rem 0 1rem; }
-    .report-wrap h3 { font-size: 1.4rem; color: var(--text); margin: 2.5rem 0 1rem; border-left: 4px solid var(--accent); padding-left: 1rem; }
+    .report-wrap h1 { font-size: 2.2rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    .report-wrap h2 { font-size: 1.8rem; color: var(--accent); margin: 3rem 0 1.5rem; }
+    .report-wrap h3 { font-size: 1.3rem; color: var(--text); margin: 2rem 0 1rem; border-left: 4px solid var(--accent); padding-left: 1rem; }
     .report-wrap p { margin-bottom: 1.2rem; color: var(--text); font-size: 1.05rem; }
-    .report-wrap ul { margin: 1rem 0 2rem 2rem; color: var(--text-muted); }
-    .report-wrap li { margin-bottom: 0.5rem; }
-    .report-img {
-      width: 100%;
-      border-radius: 12px;
+    .report-wrap ul { margin: 1rem 0 2rem 2rem; color: var(--text); }
+    .report-wrap li { margin-bottom: 0.8rem; }
+    
+    .report-chart-box {
+      background: var(--bg);
       border: 1px solid var(--border);
-      margin: 1.5rem 0 3rem;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 2rem 0 3rem;
+      position: relative;
+      height: 350px;
     }
-    .highlight { color: var(--accent); font-weight: 600; }
+
+    .highlight { color: var(--accent); font-weight: 700; }
+    .db-tag { padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 0.9em; }
+    .tag-mongo { background: rgba(0, 237, 100, 0.2); color: var(--mongo); }
+    .tag-redis { background: rgba(255, 68, 56, 0.2); color: var(--redis); }
+
+    .analysis-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .analysis-box h4 { color: var(--accent); margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
 
     .scenario-grid {
       display: grid;
@@ -162,7 +179,6 @@
     .winner-mongo { background: rgba(0, 237, 100, 0.15); color: var(--mongo); }
     .winner-mongoIdx { background: rgba(168, 255, 120, 0.15); color: var(--mongo-idx); }
     .winner-redis { background: rgba(255, 68, 56, 0.15); color: var(--redis); }
-    .winner-cassandra { background: rgba(29, 161, 242, 0.15); color: var(--cassandra); }
 
     .overview-section {
       background: var(--surface);
@@ -190,7 +206,6 @@
     .c-mongo { color: var(--mongo); font-weight: 600; }
     .c-mongoIdx { color: var(--mongo-idx); font-weight: 600; }
     .c-redis { color: var(--redis); font-weight: 600; }
-    .c-cassandra { color: var(--cassandra); font-weight: 600; }
     .badge {
       display: inline-block; padding: 0.15rem 0.5rem;
       border-radius: 999px; font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
@@ -217,84 +232,113 @@
 
 <div class="header">
   <h1>🥔 Potato Benchmark</h1>
-  <p>MongoDB vs MongoDB (Indexé) vs Redis vs Cassandra — Comparaison CRUD complète</p>
+  <p>Analyse Comparative de Performances NoSQL — Scénarios Réels</p>
 </div>
 
 <div class="tabs-nav">
-  <button class="tab-btn active" onclick="switchTab('report')">📖 Rapport d'Analyse</button>
-  <button class="tab-btn" onclick="switchTab('benchmark')">📊 Détails Techniques</button>
+  <button class="tab-btn active" id="btn-report" onclick="switchTab('report')">📖 Rapport d'Analyse</button>
+  <button class="tab-btn" id="btn-benchmark" onclick="switchTab('benchmark')">📊 Run Actuel (45M)</button>
+  <button class="tab-btn" id="btn-history" onclick="switchTab('history')">🕰️ Historique (500k)</button>
 </div>
 
 <div id="report-tab" class="tab-content active">
   <div class="main">
     <div class="report-wrap">
-      <h1>📋 Rapport de Benchmark NoSQL : Volume Extrême</h1>
-      <p>Ce rapport détaille les performances de trois architectures de stockage face à un volume de données massif : <span class="highlight">10 000 patates</span> et <span class="highlight">~45 Millions de matchs</span>.</p>
+      <h1>📋 Rapport de Benchmark : MongoDB vs Redis</h1>
+      <p>Ce benchmark simule une plateforme de combat de patates générant un volume de données massif : <span class="highlight">10 000 patates</span> engendrant environ <span class="highlight">45 millions de matchs</span>.</p>
 
-      <img src="screenshots/dashboard_main.png" alt="Dashboard Principal" class="report-img">
+      <div class="report-chart-box"><canvas id="report-chart-overview"></canvas></div>
 
-      <h3>🚀 Synthèse des Résultats</h3>
-      <p>Le benchmark met en évidence une spécialisation forte entre les technologies choisies :</p>
+      <h2>🚀 1. Ingestion de Données (Write Performance)</h2>
+      <p>L'ingestion de 45 millions de documents teste la capacité d'écriture continue (Throughput).</p>
       <ul>
-        <li><span class="highlight" style="color:var(--redis)">Redis</span> domine largement sur la réactivité en temps réel et les opérations atomiques (Leaderboards).</li>
-        <li><span class="highlight" style="color:var(--mongo)">MongoDB</span> (avec indexation) reste la solution la plus polyvalente pour les requêtes analytiques complexes et les filtrages ad-hoc.</li>
-        <li>Cassandra a été écarté pour ce volume en raison de limitations matérielles lors de l'ingestion massive.</li>
+        <li><span class="db-tag tag-mongo">MongoDB Raw</span> est le grand vainqueur sur ce volume (<span class="highlight">~115s</span>). Sa capacité à "streamer" les insertions sans contrainte d'index immédiate est impressionnante.</li>
+        <li><span class="db-tag tag-redis">Redis</span> suit avec <span class="highlight">~300s</span> via des pipelines LPUSH. Bien qu'extrêmement rapide pour des records individuels, l'overhead du protocole réseau sur 45M de petits objets est visible.</li>
       </ul>
 
-      <img src="screenshots/overview_log.png" alt="Vue d'ensemble logarithmique" class="report-img">
+      <div class="report-chart-box"><canvas id="report-chart-insertion"></canvas></div>
 
-      <h3>📊 Analyse des Opérations CRUD</h3>
-      <p>L'utilisation des <strong>Sorted Sets</strong> dans Redis permet d'obtenir le Top 10 des winrates en seulement <span class="highlight">24ms</span>, là où MongoDB nécessite plus de 110 secondes pour agréger 45 millions de documents.</p>
+      <h2>🔍 2. Latence et Opérations CRUD</h2>
+      <p>Pour les opérations unitaires, l'architecture prime sur la puissance brute.</p>
+      
+      <div class="analysis-box">
+        <h4>Scenario : READ & DELETE</h4>
+        <p><strong>Redis</strong> surclasse tout le monde. La lecture d'une patate par clé (`READ One`) prend <span class="highlight">2ms</span> contre 6-9ms pour MongoDB. La suppression en cascade (`DELETE Cascade`) est quasi-instantanée (<span class="highlight">10ms</span>) car Redis peut cibler ses structures de données précisément, là où MongoDB doit filtrer des millions de documents.</p>
+      </div>
 
-      <img src="screenshots/crud_charts.png" alt="Graphiques CRUD" class="report-img">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div class="report-chart-box" style="height: 250px;"><canvas id="report-chart-read"></canvas></div>
+        <div class="report-chart-box" style="height: 250px;"><canvas id="report-chart-delete"></canvas></div>
+      </div>
 
-      <h3>🔍 Performances Analytiques</h3>
-      <p>Pour les calculs de type <code>AVG</code>, <code>SUM</code> ou <code>GROUP BY</code>, MongoDB Indexed surpasse Redis (implémentation client) par un facteur de 5. L'indexation sur MongoDB réduit le temps des recherches filtrées (SELECT WHERE) de <span class="highlight">31ms à 6ms</span>.</p>
+      <h2>📊 3. Analyse et Agrégations Complexes</h2>
+      <p>C'est ici que les paradigmes NoSQL s'opposent le plus frontalement.</p>
+      
+      <h3>🏆 Leaderboards (Sorted Sets)</h3>
+      <p>Le calcul du Top 10 des winrates sur 45 millions de matchs est l'exemple parfait. <strong>Redis</strong> utilise un <code>Sorted Set</code> mis à jour en temps réel : la lecture est immédiate (<span class="highlight">24ms</span>). <strong>MongoDB</strong> doit scanner la collection ou utiliser un pipeline d'agrégation lourd, prenant plus de <span class="highlight">110 secondes</span>.</p>
 
-      <img src="screenshots/analytics_charts.png" alt="Graphiques Analytiques" class="report-img">
+      <div class="report-chart-box"><canvas id="report-chart-winrate"></canvas></div>
 
-      <h3>📝 Conclusion Finale</h3>
-      <p>Le choix de la base de données doit être guidé par le cas d'usage : <strong>Redis</strong> pour la vélocité et les fonctionnalités de ranking, <strong>MongoDB</strong> pour la flexibilité des requêtes et l'analyse de données massives.</p>
+      <h3>📈 Calculs de Masse (AVG/SUM/COUNT)</h3>
+      <p>À l'inverse, pour des calculs transversaux (Calculer la force moyenne de 10 000 patates), <span class="db-tag tag-mongo">MongoDB Indexed</span> reprend la main grâce à ses index performants et son exécution native côté serveur (<span class="highlight">~5ms</span> contre ~250ms pour Redis qui doit itérer).</p>
 
-      <img src="screenshots/table_details.png" alt="Tableau Détaillé" class="report-img">
+      <div class="report-chart-box"><canvas id="report-chart-analytics"></canvas></div>
+
+      <h2>📝 Conclusion et Recommandations</h2>
+      <p>Le benchmark démontre qu'aucune base n'est parfaite seule pour ce volume :</p>
+      <ul>
+        <li>Utilisez <span class="highlight" style="color:var(--redis)">Redis</span> pour tout ce qui nécessite de la <span class="highlight">réactivité immédiate</span> (classements, sessions, compteurs temps-réel).</li>
+        <li>Utilisez <span class="highlight" style="color:var(--mongo)">MongoDB</span> pour la <span class="highlight">flexibilité analytique</span> et le stockage principal à long terme.</li>
+      </ul>
     </div>
   </div>
 </div>
 
 <div id="benchmark-tab" class="tab-content">
-  <div id="stats-bar" class="stats-bar"></div>
-  <div class="main" id="app">
-    <div class="loading"><div class="spinner"></div><p>Chargement des résultats...</p></div>
+  <div id="stats-bar-benchmark" class="stats-bar"></div>
+  <div class="main" id="app-benchmark">
+    <div class="loading"><div class="spinner"></div><p>Chargement des résultats 45M...</p></div>
+  </div>
+</div>
+
+<div id="history-tab" class="tab-content">
+  <div id="stats-bar-history" class="stats-bar"></div>
+  <div class="main" id="app-history">
+    <div class="loading"><div class="spinner"></div><p>Chargement de l'historique 500k...</p></div>
   </div>
 </div>
 
 <div class="footer"><p>Potato Benchmark — Cours Opti BDD — <span id="timestamp"></span></p></div>
 
 <script>
+  let mainData = null;
+  let historyData = null;
+  const renderedTabs = new Set();
+
   function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     
-    if (tab === 'report') {
-      document.querySelector('[onclick="switchTab(\'report\')"]').classList.add('active');
-      document.getElementById('report-tab').classList.add('active');
-    } else {
-      document.querySelector('[onclick="switchTab(\'benchmark\')"]').classList.add('active');
-      document.getElementById('benchmark-tab').classList.add('active');
-      if (!window.chartRendered) loadAndRender();
+    document.getElementById(`btn-${tab}`).classList.add('active');
+    document.getElementById(`${tab}-tab`).classList.add('active');
+
+    if (tab === 'benchmark' && !renderedTabs.has('benchmark')) {
+      renderApp(mainData, 'benchmark');
+      renderedTabs.add('benchmark');
+    } else if (tab === 'history' && !renderedTabs.has('history')) {
+      loadAndRender('./history-results.json', 'history');
     }
   }
 
   const DBS = [
     { key: 'mongoTimeMs',        label: 'MongoDB',          color: '#00ed64', bg: 'rgba(0, 237, 100, 0.7)',   cls: 'mongo' },
-    { key: 'mongoIndexedTimeMs', label: 'MongoDB (Indexé)', color: '#a8ff78', bg: 'rgba(168, 255, 120, 0.7)', cls: 'mongoIdx' },
+    { key: 'mongoIndexedTimeMs', label: 'MongoDB (Indexé)', color: '#00ed64', bg: 'rgba(0, 237, 100, 0.4)',   cls: 'mongoIdx' },
     { key: 'redisTimeMs',        label: 'Redis',            color: '#ff4438', bg: 'rgba(255, 68, 56, 0.7)',   cls: 'redis' },
-    { key: 'cassandraTimeMs',    label: 'Cassandra',        color: '#1da1f2', bg: 'rgba(29, 161, 242, 0.7)',  cls: 'cassandra' },
   ];
 
-  async function loadData() {
+  async function loadData(url) {
     try {
-      const res = await fetch('./benchmark-results.json');
+      const res = await fetch(url);
       if (!res.ok) throw new Error('not found');
       return await res.json();
     } catch { return null; }
@@ -303,14 +347,101 @@
   function getWinner(r) {
     const candidates = DBS.filter(db => db.cls !== 'cassandra' && r[db.key] > 0);
     let best = candidates[0];
+    if (!best) return { label: 'N/A', cls: 'none' };
     for (const db of candidates) { 
       if (r[db.key] < r[best.key]) best = db; 
     }
     return best;
   }
 
-  function renderStatsBar(data) {
-    const bar = document.getElementById('stats-bar');
+  function createChart(id, type, labels, datasets, options = {}) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    return new Chart(canvas, {
+      type: type,
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { 
+            display: datasets.length > 1,
+            labels: { color: '#e0e0e0', font: { family: 'Inter', size: 10 } } 
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#8892b0' }, grid: { color: 'rgba(100, 255, 218, 0.05)' } },
+          y: { ticks: { color: '#8892b0' }, grid: { color: 'rgba(100, 255, 218, 0.05)' } }
+        },
+        ...options
+      }
+    });
+  }
+
+  function renderReportCharts(data) {
+    const results = data.results;
+    
+    // 1. Overview
+    createChart('report-chart-overview', 'bar', results.map(r => r.scenario), 
+      DBS.map(db => ({
+        label: db.label,
+        data: results.map(r => r[db.key]),
+        backgroundColor: db.bg
+      })), 
+      { scales: { y: { type: 'logarithmic' } } }
+    );
+
+    // 2. Ingestion (INSERT Matches)
+    const ins = results.find(r => r.scenario.includes('INSERT Matches'));
+    if (ins) {
+      createChart('report-chart-insertion', 'bar', DBS.map(d => d.label), 
+        [{ data: DBS.map(db => ins[db.key]), backgroundColor: DBS.map(d => d.bg) }],
+        { plugins: { legend: { display: false } } }
+      );
+    }
+
+    // 3. Latency (READ + DELETE) - SPLIT for better scales
+    const read = results.find(r => r.scenario.includes('READ One'));
+    const del = results.find(r => r.scenario.includes('DELETE'));
+    if (read) {
+      createChart('report-chart-read', 'bar', DBS.slice(0, 3).map(d => d.label), 
+        [{ label: 'READ One (ms)', data: DBS.slice(0, 3).map(db => read[db.key]), backgroundColor: DBS.slice(0, 3).map(db => db.bg) }],
+        { plugins: { legend: { display: false } }, scales: { y: { title: { display: true, text: 'ms (Linear)' } } } }
+      );
+    }
+    if (del) {
+      createChart('report-chart-delete', 'bar', DBS.slice(0, 3).map(d => d.label), 
+        [{ label: 'DELETE Cascade (ms)', data: DBS.slice(0, 3).map(db => del[db.key]), backgroundColor: DBS.slice(0, 3).map(db => db.bg) }],
+        { plugins: { legend: { display: false } }, scales: { y: { type: 'logarithmic', title: { display: true, text: 'ms (Log)' } } } }
+      );
+    }
+
+    // 4. Winrate
+    const win = results.find(r => r.scenario.includes('Winrate'));
+    if (win) {
+      createChart('report-chart-winrate', 'bar', DBS.slice(0, 3).map(d => d.label), 
+        [{ data: DBS.slice(0, 3).map(db => win[db.key]), backgroundColor: DBS.slice(0, 3).map(d => d.bg) }],
+        { plugins: { legend: { display: false } }, scales: { y: { type: 'logarithmic' } } }
+      );
+    }
+
+    // 5. Analytics (AVG + COUNT)
+    const avg = results.find(r => r.scenario.includes('AVG'));
+    const cnt = results.find(r => r.scenario.includes('COUNT'));
+    if (avg && cnt) {
+      createChart('report-chart-analytics', 'bar', ['AVG Stats', 'COUNT WHERE'], 
+        DBS.slice(0, 3).map(db => ({
+          label: db.label,
+          data: [avg[db.key], cnt[db.key]],
+          backgroundColor: db.bg
+        }))
+      );
+    }
+  }
+
+  function renderStatsBar(data, suffix) {
+    const bar = document.getElementById(`stats-bar-${suffix}`);
+    if (!bar) return;
     const wins = {};
     DBS.forEach(db => wins[db.cls] = 0);
     data.results.forEach(r => wins[getWinner(r).cls]++);
@@ -323,129 +454,119 @@
     `;
   }
 
-  function renderApp(data) {
-    const app = document.getElementById('app');
-    document.getElementById('timestamp').textContent = new Date(data.timestamp).toLocaleString('fr-FR');
+  function renderApp(data, suffix) {
+    const app = document.getElementById(`app-${suffix}`);
+    if (!app) return;
+    if (suffix === 'benchmark') {
+      document.getElementById('timestamp').textContent = new Date(data.timestamp).toLocaleString('fr-FR');
+    }
 
     let cards = '';
     data.results.forEach((r, i) => {
       const w = getWinner(r);
+      const scaling = historyData ? historyData.results.find(h => h.scenario === r.scenario) : null;
+      
       cards += `
         <div class="scenario-card">
           <h3>${r.scenario}</h3>
-          <p class="desc">${r.description}</p>
-          <div class="chart-wrap"><canvas id="chart-${i}"></canvas></div>
-          <span class="winner-tag winner-${w.cls}">🏆 ${w.label} (${r[w.key]}ms)</span>
+          <p class="desc">${r.description}${scaling ? ' <span class="highlight">(Comparison vs 500k active)</span>' : ''}</p>
+          <div class="chart-wrap"><canvas id="chart-${suffix}-${i}"></canvas></div>
+          <span class="winner-tag winner-${w.cls}">🏆 Gagnant 45M: ${w.label} (${r[w.key]}ms)</span>
         </div>`;
     });
 
     app.innerHTML = `
       <div class="scenario-grid">${cards}</div>
       <div class="overview-section">
-        <h2>📊 Vue d'ensemble — échelle logarithmique</h2>
-        <div class="chart-container"><canvas id="overviewChart"></canvas></div>
+        <h2>📊 Vue d'ensemble (${suffix}) — échelle logarithmique</h2>
+        <div class="chart-container"><canvas id="overviewChart-${suffix}"></canvas></div>
       </div>
       <div class="table-section">
-        <h2>📋 Tableau détaillé</h2>
+        <h2>📋 Tableau détaillé (${suffix})</h2>
         <table>
           <thead><tr>
             <th>Scénario</th><th>Description</th>
             ${DBS.map(db => `<th>${db.label} (ms)</th>`).join('')}
             <th>Gagnant</th>
           </tr></thead>
-          <tbody id="detailsBody"></tbody>
+          <tbody id="detailsBody-${suffix}"></tbody>
         </table>
       </div>
     `;
 
-    // Per-scenario charts
     data.results.forEach((r, i) => {
-      new Chart(document.getElementById(`chart-${i}`), {
-        type: 'bar',
-        data: {
-          labels: DBS.map(db => db.label),
-          datasets: [{
-            data: DBS.map(db => r[db.key]),
-            backgroundColor: DBS.map(db => db.bg),
-            borderColor: DBS.map(db => db.color),
-            borderWidth: 2,
-            borderRadius: 8,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: '#8892b0', font: { family: 'Inter', weight: '600', size: 10 } }, grid: { display: false } },
-            y: { ticks: { color: '#8892b0' }, grid: { color: 'rgba(100,255,218,0.06)' }, title: { display: true, text: 'ms', color: '#8892b0' } },
-          },
-        },
+      const scaling = (suffix === 'benchmark' && historyData) ? historyData.results.find(h => h.scenario === r.scenario) : null;
+      const datasets = [];
+      
+      // Dataset 1: Current Run
+      datasets.push({
+        label: scaling ? 'Actuel (45M)' : 'Résultat',
+        data: DBS.map(db => r[db.key]),
+        backgroundColor: DBS.map(db => db.bg),
+        borderColor: DBS.map(db => db.color),
+        borderWidth: 1,
+        borderRadius: 4
+      });
+
+      // Dataset 2: Scaling (Historical 500k)
+      if (scaling) {
+        datasets.push({
+          label: 'Historique (500k)',
+          data: DBS.map(db => scaling[db.key]),
+          backgroundColor: DBS.map(db => db.bg.replace('0.7', '0.25').replace('0.4', '0.15')),
+          borderColor: DBS.map(db => db.color),
+          borderWidth: 1,
+          borderDash: [5, 5],
+          borderRadius: 4
+        });
+      }
+
+      createChart(`chart-${suffix}-${i}`, 'bar', DBS.map(db => db.label), datasets, {
+        scales: { 
+          x: { grid: { display: false } },
+          y: { type: r.scenario.includes('Matches') || r.scenario.includes('DELETE') ? 'logarithmic' : 'linear' }
+        }
       });
     });
 
-    // Overview (log scale)
-    new Chart(document.getElementById('overviewChart'), {
-      type: 'bar',
-      data: {
-        labels: data.results.map(r => r.scenario),
-        datasets: DBS.map(db => ({
-          label: db.label,
-          data: data.results.map(r => r[db.key]),
-          backgroundColor: db.bg,
-          borderColor: db.color,
-          borderWidth: 2,
-          borderRadius: 6,
-        })),
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#e0e0e0', font: { family: 'Inter' } } } },
-        scales: {
-          x: { ticks: { color: '#8892b0', font: { size: 10 } }, grid: { color: 'rgba(100,255,218,0.05)' } },
-          y: { type: 'logarithmic', ticks: { color: '#8892b0' }, grid: { color: 'rgba(100,255,218,0.08)' }, title: { display: true, text: 'Temps (ms) — log', color: '#8892b0' } },
-        },
-      },
-    });
+    createChart(`overviewChart-${suffix}`, 'bar', data.results.map(r => r.scenario), 
+      DBS.map(db => ({ label: db.label, data: data.results.map(r => r[db.key]), backgroundColor: db.bg })),
+      { scales: { y: { type: 'logarithmic' } } }
+    );
 
-    // Details table
-    const tbody = document.getElementById('detailsBody');
+    const tbody = document.getElementById(`detailsBody-${suffix}`);
     for (const r of data.results) {
       const w = getWinner(r);
       const row = document.createElement('tr');
       row.innerHTML = `
         <td><strong>${r.scenario}</strong></td>
         <td>${r.description}</td>
-        ${DBS.map(db => `<td class="c-${db.cls}">${r[db.key].toLocaleString()}</td>`).join('')}
+        ${DBS.map(db => `<td class="c-${db.cls}">${r[db.key] >= 0 ? r[db.key].toLocaleString() : 'N/A'}</td>`).join('')}
         <td><span class="badge badge-${w.cls}">🏆 ${w.label}</span></td>
       `;
       tbody.appendChild(row);
     }
   }
 
-  function renderError() {
-    document.getElementById('app').innerHTML = `
-      <div class="error-box">
-        <h2>⚠️ Aucun résultat trouvé</h2>
-        <p>Lancez le benchmark d'abord :</p>
-        <code>npx ts-node --transpile-only benchmark/benchmark-engine.ts</code>
-      </div>`;
+  async function loadAndRender(url, suffix) {
+    const data = await loadData(url);
+    if (!data) return;
+    renderStatsBar(data, suffix);
+    renderApp(data, suffix);
+    renderedTabs.add(suffix);
   }
 
-  async function loadAndRender() {
-    const data = await loadData();
-    if (!data) return renderError();
-    renderStatsBar(data);
-    renderApp(data);
-    window.chartRendered = true;
+  async function init() {
+    mainData = await loadData('./benchmark-results.json');
+    historyData = await loadData('./history-results.json');
+    
+    if (mainData) {
+      document.getElementById('timestamp').textContent = new Date(mainData.timestamp).toLocaleString('fr-FR');
+      renderReportCharts(mainData);
+    }
   }
 
-  // Initial load for timestamp at bottom
-  (async () => {
-    const data = await loadData();
-    if (data) document.getElementById('timestamp').textContent = new Date(data.timestamp).toLocaleString('fr-FR');
-  })();
+  init();
 </script>
 </body>
 </html>
