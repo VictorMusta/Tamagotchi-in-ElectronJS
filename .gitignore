@@ -99,3 +99,6 @@ dist/
 # BMAD workflow files (keep outputs only)
 _bmad/
 .agent/
+
+# Data files
+*.csv

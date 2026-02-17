@@ -7,8 +7,8 @@ const MONGO_URL = 'mongodb://localhost:27017';
 export class MongoAdapter implements DbAdapter {
   private client: MongoClient;
   private db!: Db;
-  private potatoes!: Collection;
-  private matches!: Collection;
+  private potatoes!: Collection<PotatoDoc>;
+  private matches!: Collection<MatchDoc>;
   private dbName: string;
 
   constructor(dbName: string = 'potato_benchmark') {

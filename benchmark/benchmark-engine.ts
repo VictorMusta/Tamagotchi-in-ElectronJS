@@ -1,10 +1,9 @@
-// --- Benchmark Engine (MongoDB vs MongoDB Indexed vs Redis vs Cassandra) ---
+// --- Benchmark Engine (MongoDB vs MongoDB Indexed vs Redis) ---
 import { readFileSync, writeFileSync, createReadStream, statSync } from 'fs';
 import { join } from 'path';
 import { createInterface } from 'readline';
 import { MongoAdapter } from './mongo-adapter';
 import { RedisAdapter } from './redis-adapter';
-import { CassandraAdapter } from './cassandra-adapter';
 import { BenchmarkResult, BenchmarkReport, PotatoDoc, MatchDoc, DbAdapter } from './types';
 
 // --- CSV Loaders ---
@@ -92,7 +91,7 @@ async function timed(label: string, fn: () => Promise<void>, skip: boolean = fal
 // --- Generic scenario runner ---
 async function scenario(
   name: string, description: string,
-  mongo: DbAdapter, mongoIdx: DbAdapter, redis: DbAdapter, cassandra: DbAdapter,
+  mongo: DbAdapter, mongoIdx: DbAdapter, redis: DbAdapter,
   fn: (adapter: DbAdapter) => Promise<void>
 ): Promise<BenchmarkResult> {
   console.log(`\n🔬 ${name}`);
@@ -100,25 +99,19 @@ async function scenario(
   const mi = await timed('MongoDB (idx)', () => fn(mongoIdx));
   const r = await timed('Redis', () => fn(redis));
   
-  // Skip Cassandra for matches-dependent READs or slow Analytics
-  const skipCassandra = name.includes('READ') || name.includes('Analytics') || name.includes('UPDATE') || name.includes('DELETE');
-  const c = await timed('Cassandra', () => fn(cassandra), skipCassandra);
-
   return {
     scenario: name,
     description,
     mongoTimeMs: Math.round(m.time),
     mongoIndexedTimeMs: Math.round(mi.time),
-    redisTimeMs: Math.round(r.time),
-    cassandraTimeMs: Math.round(c.time),
-    cassandraDetails: c.details
+    redisTimeMs: Math.round(r.time)
   };
 }
 
 // --- MAIN ---
 async function main() {
-  console.log('🥔 Potato Benchmark: MongoDB vs MongoDB(idx) vs Redis vs Cassandra');
-  console.log('=====================================================================\n');
+  console.log('🥔 Potato Benchmark: MongoDB vs MongoDB(idx) vs Redis');
+  console.log('======================================================\n');
 
   const potatoes = loadPotatoes(join(__dirname, '..', 'potatoes.csv'));
   const matchesPath = join(__dirname, '..', 'matches.csv');
@@ -128,17 +121,12 @@ async function main() {
   const mongo = new MongoAdapter('potato_raw');
   const mongoIdx = new MongoAdapter('potato_indexed');
   const redis = new RedisAdapter();
-  const cassandra = new CassandraAdapter();
 
   try {
     await mongo.connect(); await mongoIdx.connect();
-    await redis.connect(); // await cassandra.connect();
+    await redis.connect();
 
     console.log('Skipping data clearing (Resuming analytics)...');
-    /*
-    await mongo.clearAll(); await mongoIdx.clearAll();
-    await redis.clearAll(); await cassandra.clearAll();
-    */
 
     console.log('\n🗂️  Pre-creating/Verifying indexes on MongoDB (indexed)...');
     await mongoIdx.createIndexes();
@@ -156,65 +144,54 @@ async function main() {
         description: `Insert ${potatoes.length} potato documents`,
         mongoTimeMs: 160,
         mongoIndexedTimeMs: 221,
-        redisTimeMs: 365,
-        cassandraTimeMs: 1270
+        redisTimeMs: 365
     });
 
     // --- Scenario 2: INSERT Matches (Hardcoded for resumption) ---
     console.log(`\n🔬 INSERT Matches (SKIPPED - Resuming)`);
     let matchCount = estimatedMatches;
 
-    const mTime = 416069;
-    const miTime = 804495;
-    const rTime = 1095554;
-    const cTime = 0; 
-
     results.push({
       scenario: 'INSERT Matches',
       description: `Bulk insert ~${(matchCount / 1_000_000).toFixed(0)}M match documents (streamed)`,
-      mongoTimeMs: Math.round(mTime),
-      mongoIndexedTimeMs: Math.round(miTime),
-      redisTimeMs: Math.round(rTime),
-      cassandraTimeMs: Math.round(cTime),
+      mongoTimeMs: 416069,
+      mongoIndexedTimeMs: 804495,
+      redisTimeMs: 1095554
     });
 
     results.push(await scenario('READ Top 10 Winrate', 'Aggregation / ZREVRANGE / full scan',
-      mongo, mongoIdx, redis, cassandra, (db) => db.getTopWinrate(10).then(() => {})));
+      mongo, mongoIdx, redis, (db) => db.getTopWinrate(10).then(() => {})));
 
     results.push(await scenario('READ One Potato', `Lecture par clé (${targetId})`,
-      mongo, mongoIdx, redis, cassandra, (db) => db.getOnePotato(targetId).then(() => {})));
+      mongo, mongoIdx, redis, (db) => db.getOnePotato(targetId).then(() => {})));
 
     results.push(await scenario('UPDATE Trait', 'Ajout d\'un trait à une patate',
-      mongo, mongoIdx, redis, cassandra, (db) => db.updatePotatoTrait(targetId, 'Super Saiyan')));
+      mongo, mongoIdx, redis, (db) => db.updatePotatoTrait(targetId, 'Super Saiyan')));
 
     results.push(await scenario('DELETE Cascade', `Suppr. ${deleteId} + matchs`,
-      mongo, mongoIdx, redis, cassandra, (db) => db.deletePotato(deleteId)));
+      mongo, mongoIdx, redis, (db) => db.deletePotato(deleteId)));
 
     // ============================================================
     //  ANALYTICAL / STATISTICS SCENARIOS
     // ============================================================
 
     results.push(await scenario('AVG Stats', 'AVG(force), AVG(vitesse), AVG(agilite), AVG(vitalite)',
-      mongo, mongoIdx, redis, cassandra, (db) => db.avgStats().then(() => {})));
+      mongo, mongoIdx, redis, (db) => db.avgStats().then(() => {})));
 
     results.push(await scenario('SUM Total Stats', 'SUM(totalStats) de toutes les patates',
-      mongo, mongoIdx, redis, cassandra, (db) => db.sumTotalStats().then(() => {})));
+      mongo, mongoIdx, redis, (db) => db.sumTotalStats().then(() => {})));
 
     results.push(await scenario('COUNT WHERE', 'COUNT(*) WHERE force >= 50',
-      mongo, mongoIdx, redis, cassandra, (db) => db.countWhere(50).then(() => {})));
+      mongo, mongoIdx, redis, (db) => db.countWhere(50).then(() => {})));
 
     results.push(await scenario('SELECT WHERE', 'SELECT * WHERE force >= 50 LIMIT 20, trié par force DESC',
-      mongo, mongoIdx, redis, cassandra, (db) => db.selectWhere(50, 20).then(() => {})));
+      mongo, mongoIdx, redis, (db) => db.selectWhere(50, 20).then(() => {})));
 
     results.push(await scenario('GROUP BY Traits', 'GROUP BY nb_traits → AVG(totalStats), COUNT',
-      mongo, mongoIdx, redis, cassandra, (db) => db.groupByTraitCount().then(() => {})));
+      mongo, mongoIdx, redis, (db) => db.groupByTraitCount().then(() => {})));
 
     results.push(await scenario('MIN / MAX Stats', 'MIN(force), MAX(force), MIN(vitesse), MAX(vitesse), etc.',
-      mongo, mongoIdx, redis, cassandra, (db) => db.minMaxStats().then(() => {})));
-
-    // ============================================================
-    //  REPORT
-    // ============================================================
+      mongo, mongoIdx, redis, (db) => db.minMaxStats().then(() => {})));
 
     const report: BenchmarkReport = {
       timestamp: new Date().toISOString(),
@@ -234,21 +211,20 @@ async function main() {
     console.log(`  - ${dashboardPath}`);
 
     console.log('\n📊 Summary:');
-    console.log('┌─────────────────────────┬──────────┬──────────────┬──────────┬──────────────┐');
-    console.log('│ Scenario                │ Mongo    │ Mongo (idx)  │ Redis    │ Cassandra    │');
-    console.log('├─────────────────────────┼──────────┼──────────────┼──────────┼──────────────┤');
+    console.log('┌─────────────────────────┬──────────┬──────────────┬──────────┐');
+    console.log('│ Scenario                │ Mongo    │ Mongo (idx)  │ Redis    │');
+    console.log('├─────────────────────────┼──────────┼──────────────┼──────────┤');
     for (const r of results) {
       const n = r.scenario.padEnd(23);
       const m = r.mongoTimeMs.toString().padStart(8);
       const mi = r.mongoIndexedTimeMs.toString().padStart(12);
       const rd = r.redisTimeMs.toString().padStart(8);
-      const c = r.cassandraTimeMs.toString().padStart(12);
-      console.log(`│ ${n} │${m} │${mi} │${rd} │${c} │`);
+      console.log(`│ ${n} │${m} │${mi} │${rd} │`);
     }
-    console.log('└─────────────────────────┴──────────┴──────────────┴──────────┴──────────────┘');
+    console.log('└─────────────────────────┴──────────┴──────────────┴──────────┘');
   } finally {
     await mongo.disconnect(); await mongoIdx.disconnect();
-    await redis.disconnect(); await cassandra.disconnect();
+    await redis.disconnect();
   }
 }
 

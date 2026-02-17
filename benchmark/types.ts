@@ -31,11 +31,9 @@ export interface BenchmarkResult {
   mongoTimeMs: number;
   mongoIndexedTimeMs: number;
   redisTimeMs: number;
-  cassandraTimeMs: number;
   mongoDetails?: string;
   mongoIndexedDetails?: string;
   redisDetails?: string;
-  cassandraDetails?: string;
 }
 
 export interface BenchmarkReport {
