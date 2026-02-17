@@ -5,7 +5,7 @@ import { WEAPON_REGISTRY } from './src/shared/WeaponRegistry';
 import { TRAIT_DEFINITIONS } from './src/renderer/src/mob/TraitDefinitions';
 
 // --- CONFIGURATION ---
-const POTATO_COUNT = 1000;
+const POTATO_COUNT = 10000;
 const POTATOES_FILE = 'potatoes.csv';
 const MATCHES_FILE = 'matches.csv';
 

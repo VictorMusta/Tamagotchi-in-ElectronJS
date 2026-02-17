@@ -1,0 +1,30 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: potato_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    container_name: potato_redis
+    ports:
+      - "6379:6379"
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: potato_cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=PotatoCluster
+      - CASSANDRA_DC=dc1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+
+volumes:
+  mongo_data:
+  cassandra_data:
