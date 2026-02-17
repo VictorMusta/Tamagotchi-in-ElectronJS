@@ -3147,14 +3147,22 @@ body.theme-cozy #parallax-background {
   position: relative;
 }
 
-/* Level Up Recommender Mod */
-.upgrade-card.recommended {
+/* Level Up Recommender Mod - Hidden by default */
+body.cheats-enabled .upgrade-card.recommended {
   border-color: var(--accent) !important;
   box-shadow: 0 0 20px rgba(0, 243, 255, 0.3) !important;
+}
+
+body.cheats-enabled .upgrade-card.recommended {
   transform: scale(1.05);
 }
 
 .rec-badge {
+  display: none !important;
+}
+
+body.cheats-enabled .rec-badge {
+  display: block !important;
   position: absolute;
   top: -12px;
   left: 50%;
@@ -3171,7 +3179,16 @@ body.theme-cozy #parallax-background {
 }
 
 
+
 /* Hidden Cheat Menu */
+.oracle-badge {
+  display: none !important;
+}
+
+body.cheats-enabled .oracle-badge {
+  display: flex !important;
+}
+
 .is-cheat {
   display: none !important;
 }
@@ -3179,4 +3196,5 @@ body.theme-cozy #parallax-background {
 body.cheats-enabled .is-cheat {
   display: flex !important;
 }
+
 
