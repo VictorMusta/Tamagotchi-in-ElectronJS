@@ -34,7 +34,11 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "cassandra-driver": "^4.8.0",
+    "csv-parse": "^6.1.0",
+    "ioredis": "^5.9.3",
     "matter-js": "^0.20.0",
+    "mongodb": "^7.1.0",
     "sharp": "^0.34.5"
   },
   "devDependencies": {

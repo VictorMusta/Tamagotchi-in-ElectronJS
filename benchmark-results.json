@@ -1,0 +1,113 @@
+{
+  "timestamp": "2026-02-17T09:22:40.732Z",
+  "potatoCount": 10000,
+  "matchCount": 44578634,
+  "results": [
+    {
+      "scenario": "INSERT Potatoes",
+      "description": "Insert 10000 potato documents",
+      "mongoTimeMs": 160,
+      "mongoIndexedTimeMs": 221,
+      "redisTimeMs": 365,
+      "cassandraTimeMs": 1270
+    },
+    {
+      "scenario": "INSERT Matches",
+      "description": "Bulk insert ~45M match documents (streamed)",
+      "mongoTimeMs": 416069,
+      "mongoIndexedTimeMs": 804495,
+      "redisTimeMs": 1095554,
+      "cassandraTimeMs": 0
+    },
+    {
+      "scenario": "READ Top 10 Winrate",
+      "description": "Aggregation / ZREVRANGE / full scan",
+      "mongoTimeMs": 110975,
+      "mongoIndexedTimeMs": 115695,
+      "redisTimeMs": 24,
+      "cassandraTimeMs": 0,
+      "cassandraDetails": "Too slow (Skipped)"
+    },
+    {
+      "scenario": "READ One Potato",
+      "description": "Lecture par clé (potato_42)",
+      "mongoTimeMs": 9,
+      "mongoIndexedTimeMs": 6,
+      "redisTimeMs": 2,
+      "cassandraTimeMs": 0,
+      "cassandraDetails": "Too slow (Skipped)"
+    },
+    {
+      "scenario": "UPDATE Trait",
+      "description": "Ajout d'un trait à une patate",
+      "mongoTimeMs": 19,
+      "mongoIndexedTimeMs": 6,
+      "redisTimeMs": 7,
+      "cassandraTimeMs": 0,
+      "cassandraDetails": "Too slow (Skipped)"
+    },
+    {
+      "scenario": "DELETE Cascade",
+      "description": "Suppr. potato_99 + matchs",
+      "mongoTimeMs": 58636,
+      "mongoIndexedTimeMs": 63242,
+      "redisTimeMs": 10,
+      "cassandraTimeMs": 0,
+      "cassandraDetails": "Too slow (Skipped)"
+    },
+    {
+      "scenario": "AVG Stats",
+      "description": "AVG(force), AVG(vitesse), AVG(agilite), AVG(vitalite)",
+      "mongoTimeMs": 70,
+      "mongoIndexedTimeMs": 64,
+      "redisTimeMs": 280,
+      "cassandraTimeMs": -1,
+      "cassandraDetails": "All host(s) tried for query failed. First host tried, 127.0.0.1:9042: Error: connect ECONNREFUSED 127.0.0.1:9042\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n  errno: -4078,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 9042\n}. See innerErrors."
+    },
+    {
+      "scenario": "SUM Total Stats",
+      "description": "SUM(totalStats) de toutes les patates",
+      "mongoTimeMs": 43,
+      "mongoIndexedTimeMs": 27,
+      "redisTimeMs": 272,
+      "cassandraTimeMs": -1,
+      "cassandraDetails": "All host(s) tried for query failed. First host tried, 127.0.0.1:9042: Error: connect ECONNREFUSED 127.0.0.1:9042\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n  errno: -4078,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 9042\n}. See innerErrors."
+    },
+    {
+      "scenario": "COUNT WHERE",
+      "description": "COUNT(*) WHERE force >= 50",
+      "mongoTimeMs": 13,
+      "mongoIndexedTimeMs": 5,
+      "redisTimeMs": 266,
+      "cassandraTimeMs": -1,
+      "cassandraDetails": "All host(s) tried for query failed. First host tried, 127.0.0.1:9042: Error: connect ECONNREFUSED 127.0.0.1:9042\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n  errno: -4078,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 9042\n}. See innerErrors."
+    },
+    {
+      "scenario": "SELECT WHERE",
+      "description": "SELECT * WHERE force >= 50 LIMIT 20, trié par force DESC",
+      "mongoTimeMs": 31,
+      "mongoIndexedTimeMs": 6,
+      "redisTimeMs": 353,
+      "cassandraTimeMs": -1,
+      "cassandraDetails": "All host(s) tried for query failed. First host tried, 127.0.0.1:9042: Error: connect ECONNREFUSED 127.0.0.1:9042\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n  errno: -4078,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 9042\n}. See innerErrors."
+    },
+    {
+      "scenario": "GROUP BY Traits",
+      "description": "GROUP BY nb_traits → AVG(totalStats), COUNT",
+      "mongoTimeMs": 29,
+      "mongoIndexedTimeMs": 26,
+      "redisTimeMs": 216,
+      "cassandraTimeMs": -1,
+      "cassandraDetails": "All host(s) tried for query failed. First host tried, 127.0.0.1:9042: Error: connect ECONNREFUSED 127.0.0.1:9042\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n  errno: -4078,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 9042\n}. See innerErrors."
+    },
+    {
+      "scenario": "MIN / MAX Stats",
+      "description": "MIN(force), MAX(force), MIN(vitesse), MAX(vitesse), etc.",
+      "mongoTimeMs": 28,
+      "mongoIndexedTimeMs": 31,
+      "redisTimeMs": 219,
+      "cassandraTimeMs": -1,
+      "cassandraDetails": "All host(s) tried for query failed. First host tried, 127.0.0.1:9042: Error: connect ECONNREFUSED 127.0.0.1:9042\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n  errno: -4078,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 9042\n}. See innerErrors."
+    }
+  ]
+}
