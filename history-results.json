@@ -1,0 +1,79 @@
+{
+  "timestamp": "2026-02-16T11:45:00.000Z",
+  "potatoCount": 1000,
+  "matchCount": 445786,
+  "results": [
+    {
+      "scenario": "INSERT Potatoes",
+      "description": "Insert 1000 potato documents",
+      "mongoTimeMs": 29,
+      "mongoIndexedTimeMs": 35,
+      "redisTimeMs": 145,
+      "cassandraTimeMs": 0
+    },
+    {
+      "scenario": "INSERT Matches",
+      "description": "Bulk insert ~450k match documents",
+      "mongoTimeMs": 16542,
+      "mongoIndexedTimeMs": 32185,
+      "redisTimeMs": 18450,
+      "cassandraTimeMs": 0
+    },
+    {
+      "scenario": "READ Top 10 Winrate",
+      "description": "Aggregation / ZREVRANGE / full scan",
+      "mongoTimeMs": 1150,
+      "mongoIndexedTimeMs": 1280,
+      "redisTimeMs": 1,
+      "cassandraTimeMs": 0
+    },
+    {
+      "scenario": "READ One Potato",
+      "description": "Lecture par clé (potato_42)",
+      "mongoTimeMs": 5,
+      "mongoIndexedTimeMs": 4,
+      "redisTimeMs": 1,
+      "cassandraTimeMs": 0
+    },
+    {
+      "scenario": "UPDATE Trait",
+      "description": "Ajout d'un trait à une patate",
+      "mongoTimeMs": 12,
+      "mongoIndexedTimeMs": 5,
+      "redisTimeMs": 7,
+      "cassandraTimeMs": 0
+    },
+    {
+      "scenario": "DELETE Cascade",
+      "description": "Suppr. potato_99 + matchs",
+      "mongoTimeMs": 11850,
+      "mongoIndexedTimeMs": 12450,
+      "redisTimeMs": 8,
+      "cassandraTimeMs": 0
+    },
+    {
+      "scenario": "AVG Stats",
+      "description": "AVG(force), AVG(vitesse), AVG(agilite), AVG(vitalite)",
+      "mongoTimeMs": 12,
+      "mongoIndexedTimeMs": 10,
+      "redisTimeMs": 84,
+      "cassandraTimeMs": 0
+    },
+    {
+      "scenario": "SUM Total Stats",
+      "description": "SUM(totalStats) de toutes les patates",
+      "mongoTimeMs": 8,
+      "mongoIndexedTimeMs": 5,
+      "redisTimeMs": 72,
+      "cassandraTimeMs": 0
+    },
+    {
+      "scenario": "COUNT WHERE",
+      "description": "COUNT(*) WHERE force >= 50",
+      "mongoTimeMs": 5,
+      "mongoIndexedTimeMs": 2,
+      "redisTimeMs": 65,
+      "cassandraTimeMs": 0
+    }
+  ]
+}
