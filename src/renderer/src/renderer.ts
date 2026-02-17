@@ -155,6 +155,7 @@ async function init(): Promise<void> {
     setupRenameCallback()
     setupParallax()
     setupPveAndMemorialButtons()
+    setupCheatListener()
 
     console.log('[Renderer] UI Setup complete')
 
@@ -624,6 +625,30 @@ function setupPveAndMemorialButtons(): void {
   })
 
   console.log('[Renderer] PvE and Memorial buttons setup complete.')
+}
+
+/**
+ * Listen for the secret code "tricher" to toggle cheat buttons
+ */
+function setupCheatListener(): void {
+  console.log('[Renderer] Cheat listener armed...')
+  const secret = 'tricher'
+  let input = ''
+
+  window.addEventListener('keydown', (e) => {
+    // Basic catch-all listener
+    if (e.key.length === 1) {
+      input += e.key.toLowerCase()
+      input = input.slice(-secret.length)
+
+      if (input === secret) {
+        document.body.classList.toggle('cheats-enabled')
+        const enabled = document.body.classList.contains('cheats-enabled')
+        showNotification(enabled ? 'TRICHES ACTIVÉES 🕵️‍♂️' : 'TRICHES DÉSACTIVÉES 🔒', enabled ? 'success' : 'error')
+        input = ''
+      }
+    }
+  })
 }
 
 
