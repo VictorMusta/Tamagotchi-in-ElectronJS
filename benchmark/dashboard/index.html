@@ -391,13 +391,15 @@
           </div>
 
           <div class="analysis-box" style="margin:0; font-size: 0.75rem;">
-            <h4>Algorithme : Monte Carlo Headless</h4>
-            <ul style="padding-left: 1rem;">
-              <li>Clonage d'état (Immutable state snapshot)</li>
-              <li>Simulation accélérée "pure-logic" (sans physique)</li>
-              <li>Intégration des traits RNG (Crit, Dodge, Stun)</li>
-              <li>Calcul de la moyenne statistique des victoires</li>
+            <h4>🧠 Comment ça marche ?</h4>
+            <p style="margin-bottom: 0.5rem;">L'Oracle utilise une approche de <strong>Simulation Monte Carlo</strong>. Au lieu de comparer bêtement les statistiques, il projette le futur du combat :</p>
+            <ul style="padding-left: 1rem; margin-bottom:0.5rem;">
+              <li><strong>Clonage d'État</strong> : Création de copies "fantômes" (immutables) des combattants.</li>
+              <li><strong>Duels Headless</strong> : Exécution de 200 itérations du moteur de combat en quelques millisecondes (sans physique ni graphismes).</li>
+              <li><strong>Logique Énergétique</strong> : Simulation précise de la génération d'énergie basée sur la vitesse (Tick-based).</li>
+              <li><strong>Statistiques RNG</strong> : Intégration des probabilités d'esquive, de critique et de stun pour chaque tour.</li>
             </ul>
+            <p>Le résultat final est la moyenne statistique des victoires sur l'ensemble des simulations mondes parallèles.</p>
           </div>
         </div>
 
@@ -424,12 +426,13 @@
           </div>
 
           <div class="analysis-box" style="margin:0; font-size: 0.75rem;">
-            <h4>Algorithme : Heuristic Scorer</h4>
-            <ul style="padding-left: 1rem;">
-              <li>Poids basés sur 45 millions de matchs analysés</li>
-              <li>Priorisation de la Vitesse (Génération d'énergie)</li>
-              <li>Détection de builds (ex: Esquive -> Agilité)</li>
-              <li>Gestion de l'arsenal (Choix d'armes si arsenal vide)</li>
+            <h4>🤖 Comment ça marche ?</h4>
+            <p style="margin-bottom: 0.5rem;">Le système utilise un <strong>Heuristic Scorer</strong> alimenté par l'analyse des 45 millions de matchs :</p>
+            <ul style="padding-left: 1rem; margin-bottom:0.8rem;">
+              <li><strong>Meta-Weights</strong> : Attribution de scores basés sur le taux de victoire historique (la Vitesse est priorisée comme stat de génération d'énergie).</li>
+              <li><strong>Build Synergy</strong> : Détection automatique des synergies (ex: bonus Agilité augmenté si le joueur possède déjà un trait d'esquive).</li>
+              <li><strong>Inventory Management</strong> : Évaluation de l'arsenal actuel pour proposer des armes si la force brute devient insuffisante.</li>
+              <li><strong>Jitter Factor</strong> : Ajout d'une variable aléatoire légère pour éviter des builds 100% déterministes et encourager la variété.</li>
             </ul>
           </div>
         </div>
