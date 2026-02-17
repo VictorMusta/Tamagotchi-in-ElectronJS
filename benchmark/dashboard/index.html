@@ -264,7 +264,15 @@
   <div class="main">
     <div class="report-wrap">
       <h1>📋 Étude Comparative : MongoDB vs Redis</h1>
-      <p>Ce benchmark analyse les performances de deux géants du NoSQL face à un volume de données massif : <span class="highlight">45 millions de matchs</span> générés par <span class="highlight">10 000 patates</span>.</p>
+      
+      <div class="analysis-box" style="border-left: 4px solid var(--accent); background: rgba(0, 243, 255, 0.05);">
+        <h4 style="margin-bottom: 0.8rem;">🎮 Contexte : Le Projet "Potato Rotato"</h4>
+        <p>Le projet repose sur <strong>Potato Rotato</strong>, un jeu où des patates générées aléatoirement s'affrontent dans une arène sans merci. Chaque patate possède des <strong>stats</strong> (HP, Attaque, Défense) et des <strong>traits</strong> uniques qui influencent l'issue des combats.</p>
+        <p style="margin-top: 0.5rem;">Pour générer ce dataset massif, nous avons simulé un tournoi global : <strong>chaque patate (10 000 au total) a affronté les 9 999 autres</strong>. Ce processus a généré un volume colossal de <strong>45 millions de matchs</strong>, dont nous avons enregistré les résultats, gagnants et statistiques d'évolution.</p>
+        <p style="margin-top: 0.5rem;">L'objectif de ce benchmark est de déterminer le <strong>SGBD NoSQL</strong> le plus performant pour stocker, indexer et requêter ces millions de records en temps réel. Nous comparons ici <strong>Redis</strong> et <strong>MongoDB</strong> (en version brute et indexée).</p>
+      </div>
+
+      <p style="margin-top: 2rem;">Ce benchmark analyse les performances de traitement sur ce volume critique : <span class="highlight">45 millions de matchs</span> simulés entre <span class="highlight">10 000 patates</span>.</p>
 
       <div class="report-chart-box"><canvas id="report-chart-overview"></canvas></div>
 
