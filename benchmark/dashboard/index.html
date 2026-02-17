@@ -12,9 +12,9 @@
       --bg: #050510;
       --surface: rgba(26, 26, 46, 0.7);
       --surface-2: rgba(22, 33, 62, 0.8);
-      --mongo: #39ff14;
+      --mongo: #00ed64;
       --mongo-idx: #00ffcc;
-      --redis: #ff00ff;
+      --redis: #ff4438;
       --text: #ffffff;
       --text-muted: #b0b0d0;
       --accent: #00f3ff;
@@ -193,9 +193,9 @@
       display: inline-block; margin-top: 1rem; padding: 0.3rem 0.8rem;
       border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
     }
-    .winner-mongo { background: rgba(57, 255, 20, 0.15); color: var(--mongo); }
+    .winner-mongo { background: rgba(0, 237, 100, 0.15); color: var(--mongo); }
     .winner-mongoIdx { background: rgba(0, 255, 204, 0.15); color: var(--mongo-idx); }
-    .winner-redis { background: rgba(255, 0, 255, 0.15); color: var(--redis); }
+    .winner-redis { background: rgba(255, 68, 56, 0.15); color: var(--redis); }
 
     .table-section { overflow-x: auto; margin-top: 3rem; }
     table { width: 100%; border-collapse: collapse; min-width: 600px; }
@@ -223,27 +223,21 @@
       .theme-switch { position: static; justify-content: center; margin-bottom: 1rem; }
     }
 
-    /* Global Glitch Effects */
-    body.glitch-active .scenario-card,
-    body.glitch-active .stat-card {
-      animation: glitch-jitter 0.2s infinite;
+    /* Subtle Sectional Glitch Style */
+    .report-wrap h1, .report-wrap h2, .overview-section h2, .table-section h2 {
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      position: relative;
     }
     
-    body.glitch-active .glitch {
-      animation: glitch 0.3s infinite;
+    .report-wrap h1:hover, .report-wrap h2:hover {
+      animation: glitch-subtle 0.5s infinite;
     }
 
-    body.glitch-active canvas#canvas-bg {
-      filter: hue-rotate(90deg) brightness(1.5);
-    }
-
-    @keyframes glitch-jitter {
-      0% { transform: translate(0); }
-      20% { transform: translate(-2px, 1px); }
-      40% { transform: translate(-2px, -1px); }
-      60% { transform: translate(2px, 1px); }
-      80% { transform: translate(2px, -1px); }
-      100% { transform: translate(0); }
+    @keyframes glitch-subtle {
+      0% { text-shadow: 0.03em 0 0 #ff00ff, -0.03em -0.015em 0 #00ffff, 0.015em 0.03em 0 #00ed64; }
+      50% { text-shadow: -0.03em -0.015em 0 #ff00ff, 0.015em 0.015em 0 #00ffff, -0.03em -0.03em 0 #00ed64; }
+      100% { text-shadow: 0.03em 0 0 #ff00ff, -0.03em -0.015em 0 #00ffff, 0.015em 0.03em 0 #00ed64; }
     }
   </style>
 </head>
@@ -252,7 +246,6 @@
 
 <div class="header">
   <div class="theme-switch">
-    <button class="theme-btn" id="glitch-toggle" onclick="toggleGlitch()">Glitch: OFF</button>
     <button class="theme-btn" onclick="setTheme('default')">Basic</button>
     <button class="theme-btn" onclick="setTheme('cyber-neon')">Cyber</button>
     <button class="theme-btn" onclick="setTheme('potato-glitch')">Potato</button>
@@ -372,25 +365,6 @@
   let mainData = null;
   let historyData = null;
   const renderedTabs = new Set();
-  let glitchEnabled = localStorage.getItem('glitch-active') === 'true';
-
-  function toggleGlitch() {
-    glitchEnabled = !glitchEnabled;
-    document.body.classList.toggle('glitch-active', glitchEnabled);
-    localStorage.setItem('glitch-active', glitchEnabled);
-    document.getElementById('glitch-toggle').textContent = `Glitch: ${glitchEnabled ? 'ON' : 'OFF'}`;
-    if (glitchEnabled) document.body.classList.add('glitch-active');
-    else document.body.classList.remove('glitch-active');
-  }
-
-  // Init glitch state
-  if (glitchEnabled) {
-    document.body.classList.add('glitch-active');
-    setTimeout(() => {
-        const btn = document.getElementById('glitch-toggle');
-        if (btn) btn.textContent = 'Glitch: ON';
-    }, 100);
-  }
 
   function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
