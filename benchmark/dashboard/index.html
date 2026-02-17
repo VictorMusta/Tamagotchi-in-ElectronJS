@@ -135,6 +135,55 @@
       box-shadow: var(--glow);
     }
 
+    /* Dev Vlog Styles */
+    .vlog-timeline {
+      position: relative;
+      padding-left: 2rem;
+      border-left: 2px solid var(--border);
+      margin-top: 2rem;
+    }
+    .vlog-entry {
+      position: relative;
+      margin-bottom: 3rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      border-radius: 16px;
+      transition: all 0.3s;
+    }
+    .vlog-entry:hover {
+      transform: translateX(10px);
+      box-shadow: var(--glow);
+    }
+    .vlog-entry::before {
+      content: '';
+      position: absolute;
+      left: -2.6rem;
+      top: 1.5rem;
+      width: 1rem;
+      height: 1rem;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: var(--glow);
+    }
+    .vlog-date {
+      font-size: 0.7rem;
+      color: var(--accent);
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .vlog-entry h3 {
+      font-size: 1.2rem;
+      margin-bottom: 0.8rem;
+    }
+    .vlog-entry p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
     .tab-content { display: none; }
     .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -259,6 +308,7 @@
   <button class="tab-btn" id="btn-ai" onclick="switchTab('ai')">🤖 IA Prédictive</button>
   <button class="tab-btn" id="btn-benchmark" onclick="switchTab('benchmark')">📊 Run Actuel (45M)</button>
   <button class="tab-btn" id="btn-history" onclick="switchTab('history')">🕰️ Historique (500k)</button>
+  <button class="tab-btn" id="btn-devlog" onclick="switchTab('devlog')">🎬 Dev Vlog</button>
 </div>
 
 <div id="report-tab" class="tab-content active">
@@ -448,6 +498,58 @@
       <div class="analysis-box" style="margin-top: 3rem; border-left-color: var(--redis);">
         <h4>📈 Prochaine Étape : Surrogate Model</h4>
         <p>Développement d'un réseau de neurones capable de prédire un match en <b>< 1ms</b> sans exécution du moteur physique. Cela permettra de simuler des tournois de 1 milliard de matchs pour un équilibrage parfait du jeu.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="devlog-tab" class="tab-content">
+  <div class="main">
+    <div class="report-wrap">
+      <h1>🎬 Dev Vlog : L'Aventure Potato Benchmark</h1>
+      <p>Retraçant le développement, les doutes et les victoires techniques derrière ce TP.</p>
+
+      <div class="vlog-timeline">
+        <div class="vlog-entry">
+          <span class="vlog-date">Épisode 1 — L'Époque Tamagotchi</span>
+          <h3>🥔 La Génèse & l'Inspiration "POU"</h3>
+          <p>Tout a commencé par l'envie de reproduire un jeu culte de mon enfance : <strong>POU</strong>. Projet développé pour un cours d'<strong>ElectronJS</strong>, l'idée était de s'occuper d'une patate comme d'un véritable compagnon. 
+          <br><br>
+          En plein "<strong>Vibe Coding</strong>", j'ai implémenté toutes les interactions de base : nourrir, frapper, drag n drop, et même la mort/réanimation. L'immersion était totale grâce à une playlist sonore improbable : Windows XP, Roblox, Minecraft et Worms 3D.</p>
+        </div>
+
+        <div class="vlog-entry">
+          <span class="vlog-date">Épisode 2 — L'Évolution Rogue-like</span>
+          <h3>⚔️ Un Gameplay plus profond</h3>
+          <p>La simple simulation de vie a vite laissé place à une envie de "partir en couille" techniquement. J'ai transformé le projet en un <strong>Rogue-like</strong> avec permadeath et génération procédurale. 
+          <br><br>
+          L'équilibrage est devenu un enjeu, notamment avec la fameuse "<strong>Capsule</strong>", un item au winrate insolent. C'est aussi là qu'est né l'<strong>Oracle de Combat</strong>, pensé à l'origine pour intégrer du Machine Learning et des statistiques prédictives basées sur les données réelles du jeu.</p>
+        </div>
+
+        <div class="vlog-entry">
+          <span class="vlog-date">Épisode 3 — Le Pivot "Data"</span>
+          <h3>📊 Le Mur du Benchmark</h3>
+          <p>Pour mon cours d'<strong>Opti BDD</strong>, le projet est devenu un laboratoire de test. J'ai benchmarké plusieurs SGBD sur des millions d'insertions. 
+          <br><br>
+          La surprise ? <strong>Redis</strong> a affiché une vélocité foudroyante. La déception ? <strong>Cassandra</strong>, qui s'est avéré beaucoup trop lent pour ce cas d'usage précis, rappelant que ses forces résident dans la redondance et non dans la performance brute unitaire.</p>
+        </div>
+
+        <div class="vlog-entry">
+          <span class="vlog-date">Épisode 4 — Le Rapport : 50 Millions</span>
+          <h3>📈 MongoDB : Le Maître de la Lecture</h3>
+          <p>En poussant jusqu'à <strong>50 millions d'insertions</strong>, les leçons techniques sont tombées. L'indexation s'est révélée être une arme à double tranchant : elle rend les lectures instantanées mais ralentit considérablement les écritures massives. 
+          <br><br>
+          Le grand gagnant analytique reste <strong>MongoDB</strong>, capable de réaliser un <code>Select One</code> parfait en un clin d'œil, même noyé sous une montagne de données.</p>
+        </div>
+
+        <div class="vlog-entry">
+          <span class="vlog-date">Épisode 5 — "Potato Glitch" Aesthetic</span>
+          <h3>🌐 Décorrélation Visuelle</h3>
+          <p>Le design "<strong>Potato Glitch</strong>" de ce dashboard a été choisi pour son style visuel radical ("cool effect"), volontairement décorréler de la charte graphique du jeu original. C'est le reflet d'une analyse technique brute.
+            <br><br>
+            🔗 <a href="https://victormusta.github.io/Tamagotchi-in-ElectronJS/" target="_blank" class="highlight" style="text-decoration: none;">Voir la version Live</a>
+          </p>
+        </div>
       </div>
     </div>
   </div>
