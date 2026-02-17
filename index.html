@@ -119,6 +119,8 @@
       border: 1px solid var(--border);
       padding: 3rem;
       line-height: 1.8;
+      max-width: 1000px;
+      margin: 0 auto;
     }
     .report-wrap h1 { font-size: 2.2rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
     .report-wrap h2 { font-size: 1.8rem; color: var(--accent); margin: 3rem 0 1.5rem; }
@@ -213,7 +215,6 @@
     .badge-mongo { background: rgba(0, 237, 100, 0.15); color: var(--mongo); }
     .badge-mongoIdx { background: rgba(168, 255, 120, 0.15); color: var(--mongo-idx); }
     .badge-redis { background: rgba(255, 68, 56, 0.15); color: var(--redis); }
-    .badge-cassandra { background: rgba(29, 161, 242, 0.15); color: var(--cassandra); }
 
     .footer { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem; }
 
@@ -226,6 +227,24 @@
       border-radius: 12px; padding: 2rem; text-align: center; color: var(--redis);
     }
     .error-box code { display: block; margin-top: 1rem; padding: 1rem; background: var(--surface-2); border-radius: 8px; font-size: 0.85rem; color: var(--text-muted); }
+    
+    .report-wrap .desc { 
+      font-size: 0.9rem; 
+      color: var(--text-muted); 
+      margin-top: 0.5rem; 
+      font-style: italic; 
+      border-left: 2px solid var(--border); 
+      padding-left: 1rem;
+    }
+    .decision-matrix {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+    @media (max-width: 768px) {
+      .decision-matrix { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -244,52 +263,84 @@
 <div id="report-tab" class="tab-content active">
   <div class="main">
     <div class="report-wrap">
-      <h1>📋 Rapport de Benchmark : MongoDB vs Redis</h1>
-      <p>Ce benchmark simule une plateforme de combat de patates générant un volume de données massif : <span class="highlight">10 000 patates</span> engendrant environ <span class="highlight">45 millions de matchs</span>.</p>
+      <h1>📋 Étude Comparative : MongoDB vs Redis</h1>
+      <p>Ce benchmark analyse les performances de deux géants du NoSQL face à un volume de données massif : <span class="highlight">45 millions de matchs</span> générés par <span class="highlight">10 000 patates</span>.</p>
 
       <div class="report-chart-box"><canvas id="report-chart-overview"></canvas></div>
 
-      <h2>🚀 1. Ingestion de Données (Write Performance)</h2>
-      <p>L'ingestion de 45 millions de documents teste la capacité d'écriture continue (Throughput).</p>
-      <ul>
-        <li><span class="db-tag tag-mongo">MongoDB Raw</span> est le grand vainqueur sur ce volume (<span class="highlight">~115s</span>). Sa capacité à "streamer" les insertions sans contrainte d'index immédiate est impressionnante.</li>
-        <li><span class="db-tag tag-redis">Redis</span> suit avec <span class="highlight">~300s</span> via des pipelines LPUSH. Bien qu'extrêmement rapide pour des records individuels, l'overhead du protocole réseau sur 45M de petits objets est visible.</li>
-      </ul>
-
+      <h2>🚀 Phase 1 : Ingestion et Écriture (Throughput)</h2>
+      <div class="analysis-box">
+        <h4>Scénarios : INSERT Potatoes & INSERT Matches</h4>
+        <p><strong>MongoDB</strong> brille par sa capacité d'absorption brute. Avec un temps d'environ <span class="highlight">~115s</span> pour 45M de records, il surclasse Redis (<span class="highlight">~300s</span>) sur l'écriture initiale. </p>
+        <p class="desc">Pourquoi ? MongoDB utilise des buffers mémoire très agressifs et un format BSON optimisé pour le streaming, tandis que Redis subit l'overhead du protocole réseau sur des millions de petits objets individuels.</p>
+      </div>
       <div class="report-chart-box"><canvas id="report-chart-insertion"></canvas></div>
 
-      <h2>🔍 2. Latence et Opérations CRUD</h2>
-      <p>Pour les opérations unitaires, l'architecture prime sur la puissance brute.</p>
-      
+      <h2>🔍 Phase 2 : Latence et CRUD Unitaire</h2>
       <div class="analysis-box">
-        <h4>Scenario : READ & DELETE</h4>
-        <p><strong>Redis</strong> surclasse tout le monde. La lecture d'une patate par clé (`READ One`) prend <span class="highlight">2ms</span> contre 6-9ms pour MongoDB. La suppression en cascade (`DELETE Cascade`) est quasi-instantanée (<span class="highlight">10ms</span>) car Redis peut cibler ses structures de données précisément, là où MongoDB doit filtrer des millions de documents.</p>
+        <h4>Scénarios : READ One & UPDATE Trait</h4>
+        <p>Ici, c'est le domaine de <strong>Redis</strong>. La lecture par clé est pratiquement instantanée (<span class="highlight">~2ms</span>). MongoDB suit de près avec ses index (<span class="highlight">~4-6ms</span>), mais la différence de paradigme (RAM vs Disk-backed) reste visible.</p>
+        <p class="desc">Commentaire : Redis évite tout accès disque (In-Memory). MongoDB, même avec des index, doit parfois effectuer des lectures de pages en RAM qui ajoutent quelques millisecondes de latence système.</p>
       </div>
-
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
         <div class="report-chart-box" style="height: 250px;"><canvas id="report-chart-read"></canvas></div>
         <div class="report-chart-box" style="height: 250px;"><canvas id="report-chart-delete"></canvas></div>
       </div>
 
-      <h2>📊 3. Analyse et Agrégations Complexes</h2>
-      <p>C'est ici que les paradigmes NoSQL s'opposent le plus frontalement.</p>
-      
-      <h3>🏆 Leaderboards (Sorted Sets)</h3>
-      <p>Le calcul du Top 10 des winrates sur 45 millions de matchs est l'exemple parfait. <strong>Redis</strong> utilise un <code>Sorted Set</code> mis à jour en temps réel : la lecture est immédiate (<span class="highlight">24ms</span>). <strong>MongoDB</strong> doit scanner la collection ou utiliser un pipeline d'agrégation lourd, prenant plus de <span class="highlight">110 secondes</span>.</p>
+      <h2>🧹 Phase 3 : Suppression Massive (Cleanup)</h2>
+      <div class="analysis-box">
+        <h4>Scénario : DELETE Cascade</h4>
+        <p><strong>Redis</strong> est environ <span class="highlight">6000 fois plus rapide</span>. Il supprime les liens en <span class="highlight">6ms</span> là où MongoDB nécessite <span class="highlight">~36 secondes</span>.</p>
+        <p class="desc">Analyse : Dans MongoDB, supprimer une entité et ses références nécessite un scan d'index et des ré-écritures massives sur disque. Redis gère cela presque intégralement en mémoire vive.</p>
+      </div>
 
+      <h2>📊 Phase 4 : Statistiques et Agrégations</h2>
+      
+      <div class="analysis-box">
+        <h4>Scénario : Leaderboards (Top 10 Winrate)</h4>
+        <p>Grâce aux <code>Sorted Sets</code> (ZSET), le classement dans <strong>Redis</strong> est maintenu en temps réel. La lecture prend donc <span class="highlight">~60ms</span>.</p>
+        <p><strong>MongoDB</strong> doit calculer le winrate à la volée sur 45M de matchs, ce qui prend <span class="highlight">~95 secondes</span> sans une vue matérialisée.</p>
+      </div>
       <div class="report-chart-box"><canvas id="report-chart-winrate"></canvas></div>
 
-      <h3>📈 Calculs de Masse (AVG/SUM/COUNT)</h3>
-      <p>À l'inverse, pour des calculs transversaux (Calculer la force moyenne de 10 000 patates), <span class="db-tag tag-mongo">MongoDB Indexed</span> reprend la main grâce à ses index performants et son exécution native côté serveur (<span class="highlight">~5ms</span> contre ~250ms pour Redis qui doit itérer).</p>
-
+      <div class="analysis-box">
+        <h4>Scénarios : Calculs de Masse (AVG/SUM/COUNT/GROUP)</h4>
+        <p>Pour des calculs transversaux, <strong>MongoDB</strong> est le roi de l'analytique grâce à son moteur d'agrégation natif (<span class="highlight">~8ms à ~30ms</span>).</p>
+        <p class="desc">L'échec de Redis : Sans agrégation native transverse, Redis doit itérer sur chaque objet en RAM (<span class="highlight">~200-300ms</span>), illustrant sa limite pour le "Big Data" analytique pur.</p>
+      </div>
       <div class="report-chart-box"><canvas id="report-chart-analytics"></canvas></div>
 
-      <h2>📝 Conclusion et Recommandations</h2>
-      <p>Le benchmark démontre qu'aucune base n'est parfaite seule pour ce volume :</p>
-      <ul>
-        <li>Utilisez <span class="highlight" style="color:var(--redis)">Redis</span> pour tout ce qui nécessite de la <span class="highlight">réactivité immédiate</span> (classements, sessions, compteurs temps-réel).</li>
-        <li>Utilisez <span class="highlight" style="color:var(--mongo)">MongoDB</span> pour la <span class="highlight">flexibilité analytique</span> et le stockage principal à long terme.</li>
-      </ul>
+      <div class="analysis-box">
+        <h4>Scénarios : Recherche Complexe (SELECT WHERE & MIN/MAX)</h4>
+        <p><strong>MongoDB Indexed</strong> est indispensable ici. Trouver les patates les plus fortes via un index se fait en <span class="highlight">4ms</span>. Redis (via scan JS) reste à 180ms+.</p>
+      </div>
+
+      <div style="margin-top: 4rem; padding: 2.5rem; background: var(--surface-2); border: 2px solid var(--accent); border-radius: 20px;">
+        <h2 style="margin-top: 0;">💡 Conclusion : Comment choisir ?</h2>
+        <p>Le choix dépend de votre <strong>mode d'accès aux données</strong> :</p>
+        
+        <div class="decision-matrix">
+          <div>
+            <h4 style="color:var(--redis)">Optez pour Redis si...</h4>
+            <ul style="font-size: 0.9rem;">
+              <li>Vous avez besoin de <strong>latence ultra-faible</strong> (< 1ms).</li>
+              <li>Votre logique repose sur des <strong>classements temps-réel</strong>.</li>
+              <li>Vous gérez des <strong>sessions</strong> ou des données éphémères.</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="color:var(--mongo)">Optez pour MongoDB si...</h4>
+            <ul style="font-size: 0.9rem;">
+              <li>Vous avez un <strong>volume massif</strong> dépassant votre RAM.</li>
+              <li>Vous devez faire du <strong>reporting complexe</strong>.</li>
+              <li>Vos requêtes sont <strong>adhoc</strong> (filtres variables).</li>
+            </ul>
+          </div>
+        </div>
+        <p style="text-align: center; margin-top: 2rem; font-weight: 800; border-top: 1px solid var(--border); padding-top: 1rem;">
+          🚀 <span class="highlight">Best Practice</span> : Utilisez les deux ! MongoDB pour le stockage durable, Redis pour le cache et les leaderboards.
+        </p>
+      </div>
     </div>
   </div>
 </div>
