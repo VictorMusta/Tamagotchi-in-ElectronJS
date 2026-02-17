@@ -8,8 +8,15 @@ interface InternalMob extends MobData {
 
 export class CombatPredictor {
   /**
-   * Predicts the win probability for fighter 1 against fighter 2.
-   * Runs multiple headless simulations.
+   * PREDICTIVE ORACLE ALGORITHM: Monte Carlo Simulation
+   * 
+   * This method runs N headless "fast-forward" simulations of a combat.
+   * Unlike the real-time UI combat, this simulation is purely logical and executes
+   * in milliseconds. It clones the fighters' state and iterates through 
+   * speed-based energy generation turns.
+   * 
+   * @param trials Number of simulations (default 200 for a balance of speed and precision)
+   * @returns Win percentage (0-100)
    */
   public predict(f1: MobData, f2: MobData, trials: number = 200): number {
     let wins = 0
@@ -18,6 +25,7 @@ export class CombatPredictor {
         wins++
       }
     }
+    // Result is the statistical average of simulated outcomes
     return (wins / trials) * 100
   }
 
@@ -39,12 +47,6 @@ export class CombatPredictor {
     let mag1 = 0, mag2 = 0
     let ess1 = 0, ess2 = 0
     let spr1 = 0, spr2 = 0
-
-    let guard1 = this.hasTrait(f1, 'Gardien de Racine') ? Math.floor((100 + f1.stats.vitalite * 10) * 0.5) : 0
-    let guard2 = this.hasTrait(f2, 'Gardien de Racine') ? Math.floor((100 + f2.stats.vitalite * 10) * 0.5) : 0
-    
-    let hits1 = 0, hits2 = 0
-    let brz1 = false, brz2 = false
     let stun1 = false, stun2 = false
     let blind1 = 0, blind2 = 0
 
@@ -67,27 +69,27 @@ export class CombatPredictor {
 
       // Turn Resolution
       if (energy1 >= MAX_ENERGY) {
-        if (!stun1) this.performAction(f1, f2, brz1, (v) => brz1 = v, (v) => stun2 = v, (v) => guard2 = v, () => blind2++, blind1 > 0)
+        if (!stun1) this.performAction(f1, f2, (v) => stun2 = v, blind1 > 0)
         else stun1 = false
         energy1 -= MAX_ENERGY
         if (blind1 > 0) blind1--
       } else if (energy2 >= MAX_ENERGY) {
-        if (!stun2) this.performAction(f2, f1, brz2, (v) => brz2 = v, (v) => stun1 = v, (v) => guard1 = v, () => blind1++, blind2 > 0)
+        if (!stun2) this.performAction(f2, f1, (v) => stun1 = v, blind2 > 0)
         else stun2 = false
         energy2 -= MAX_ENERGY
         if (blind2 > 0) blind2--
       } else if (mag1 >= MAX_ENERGY) {
-        this.applyDmg(f1, f2, 5 + Math.random() * 5, false, (v) => guard2 = v)
+        this.applyDmg(f2, 5 + Math.random() * 5)
         mag1 -= MAX_ENERGY
       } else if (mag2 >= MAX_ENERGY) {
-        this.applyDmg(f2, f1, 5 + Math.random() * 5, false, (v) => guard1 = v)
+        this.applyDmg(f1, 5 + Math.random() * 5)
         mag2 -= MAX_ENERGY
       } else if (ess1 >= MAX_ENERGY) {
-        this.applyDmg(f1, f2, 2 + Math.random() * 2, false, (v) => guard2 = v)
+        this.applyDmg(f2, 2 + Math.random() * 2)
         if (Math.random() < 0.3) blind2++
         ess1 -= MAX_ENERGY
       } else if (ess2 >= MAX_ENERGY) {
-        this.applyDmg(f2, f1, 2 + Math.random() * 2, false, (v) => guard1 = v)
+        this.applyDmg(f1, 2 + Math.random() * 2)
         if (Math.random() < 0.3) blind1++
         ess2 -= MAX_ENERGY
       } else if (spr1 >= MAX_ENERGY) {
@@ -113,37 +115,35 @@ export class CombatPredictor {
     return (mob.traits || []).includes(trait)
   }
 
-  private performAction(att: InternalMob, def: InternalMob, isBrz: boolean, setBrz: (v: boolean) => void, setStun: (v: boolean) => void, setGuard: (v: number) => void, addBlind: () => void, isBlinded: boolean) {
+  private performAction(att: InternalMob, def: InternalMob, setStun: (v: boolean) => void, isBlinded: boolean) {
     // Minimalistic action logic for prediction
     let dmg = att.stats.force + Math.random() * 5
     const w = WEAPON_REGISTRY[att.currentWeapon || '']
     if (w) dmg += w.damageBonus
 
     const crit = this.hasTrait(att, 'Coup Critique') ? 0.33 : 0.1
-    let isCrit = false
-    if (Math.random() < crit) { dmg *= 2; isCrit = true }
+    if (Math.random() < crit) { dmg *= 2 }
 
     // Dodge
     const dodge = 0.1 + (def.stats.agilite - (att.stats.agilite - (isBlinded ? 5 : 0))) * 0.02
     if (Math.random() < Math.max(0.05, dodge)) return
 
     // Apply
-    this.applyDmg(att, def, dmg, isCrit, setGuard)
+    this.applyDmg(def, dmg)
     
     // Weapon stun
     if (w?.effects?.stunChance && Math.random() < w.effects.stunChance) setStun(true)
   }
 
-  private applyDmg(att: MobData, def: MobData, dmg: number, isCrit: boolean, setGuard: (v: number) => void) {
+  private applyDmg(def: MobData, dmg: number) {
     let final = dmg
     let red = this.hasTrait(def, 'Peau de Cuir') ? 0.1 : 0
     final = Math.floor(final * (1 - red))
     
-    // Simplification for guard
     def.vie -= final
   }
 
-  private performSpirit(own: InternalMob, tar: InternalMob) {
+  private performSpirit(_own: InternalMob, tar: InternalMob) {
     if (Math.random() < 0.5 && tar.currentWeapon) tar.currentWeapon = undefined
     else if (tar.tempInventory.length > 0) {
       const idx = Math.floor(Math.random() * tar.tempInventory.length)

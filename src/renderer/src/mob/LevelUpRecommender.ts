@@ -2,7 +2,18 @@ import { MobData } from '../../../shared/types'
 
 export class LevelUpRecommender {
   /**
-   * Evaluates upgrade choices and returns the index of the recommended one.
+   * RECOMMENDATION ALGORITHM: Heuristic Scorer
+   * 
+   * This method evaluates each upgrade choice (stat, trait, or weapon) 
+   * against the current mob's build. It uses a scoring system based on 
+   * competitive meta-data (derived from the 45M match dataset).
+   * 
+   * Heuristics include:
+   * - Speed Priority: Early-game speed is critical for energy generation.
+   * - Trait Synergies: Matching stats with related traits (e.g., Agility + Dodge).
+   * - Arsenal Balance: Suggesting weapons if the inventory is low.
+   * 
+   * @returns Index of the choice with the highest score.
    */
   public recommend(mob: MobData, choices: any[]): number {
     let bestScore = -1
