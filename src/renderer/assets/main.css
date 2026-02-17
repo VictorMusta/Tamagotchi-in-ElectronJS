@@ -3150,11 +3150,15 @@ body.theme-cozy #parallax-background {
 /* Level Up Recommender Mod - Hidden by default */
 body.cheats-enabled .upgrade-card.recommended {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 20px rgba(0, 243, 255, 0.3) !important;
+  box-shadow: 0 0 30px var(--accent) !important;
+  transform: scale(1.08);
+  background: rgba(0, 243, 255, 0.1);
+  animation: recommendedPulse 1.5s infinite ease-in-out;
 }
 
-body.cheats-enabled .upgrade-card.recommended {
-  transform: scale(1.05);
+@keyframes recommendedPulse {
+  0%, 100% { box-shadow: 0 0 20px var(--accent); border-color: var(--accent); }
+  50% { box-shadow: 0 0 45px var(--accent); border-color: #fff; }
 }
 
 .rec-badge {
@@ -3164,19 +3168,22 @@ body.cheats-enabled .upgrade-card.recommended {
 body.cheats-enabled .rec-badge {
   display: block !important;
   position: absolute;
-  top: -12px;
+  top: -15px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--accent);
+  background: #fff;
   color: #000;
-  font-size: 10px;
-  font-weight: 900;
-  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 950;
+  padding: 5px 15px;
   border-radius: 20px;
   white-space: nowrap;
-  box-shadow: 0 0 15px var(--accent);
+  box-shadow: 0 0 20px #fff, 0 0 40px var(--accent);
   z-index: 10;
+  letter-spacing: 1px;
+  border: 2px solid var(--accent);
 }
+
 
 
 
