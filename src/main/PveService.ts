@@ -87,7 +87,11 @@ class PveServiceClass {
       combatProgress: { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 },
       inSquad: false,
       weapons: this.generateWeaponsForLevel(level),
-      hpMultiplier: 5
+      hpMultiplier: 5,
+      // A freshly generated enemy is never resting in the onsen.
+      isInOnsen: false,
+      lastOnsenEntryTimestamp: null,
+      hpAtOnsenEntry: null
     }
 
     return enemy

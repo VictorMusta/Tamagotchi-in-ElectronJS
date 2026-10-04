@@ -74,7 +74,11 @@ export class WebApi {
             skin: { hat: 'none' },
             combatProgress: { wins: 0, losses: 0, winStreak: 0, tournamentWins: 0 },
             inSquad: mobs.filter(m => m.inSquad).length < 10,
-            weapons: [] // Empty start
+            weapons: [], // Empty start
+            // A new potato is never resting in the onsen.
+            isInOnsen: false,
+            lastOnsenEntryTimestamp: null,
+            hpAtOnsenEntry: null
         }
 
         mobs.push(newMob)

@@ -8,7 +8,7 @@ export class MobAnimation {
         this.showSoundVisualFeedback(sound)
     }
 
-    private showSoundVisualFeedback(sound: string): void {
+    private showSoundVisualFeedback(_sound: string): void {
         // Disabled by user request (buggy blinking)
     }
 
